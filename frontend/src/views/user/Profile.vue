@@ -7,13 +7,14 @@
             <span>个人信息</span>
           </template>
           <div class="avatar-section">
-            <el-avatar :size="100" :src="userStore.user?.avatar" />
+            <el-avatar :size="100" :src="getAvatarUrl(userStore.user?.avatar)" />
             <el-upload
               class="avatar-upload"
               :action="uploadUrl"
               :headers="headers"
               :show-file-list="false"
               :on-success="handleAvatarSuccess"
+              :on-error="handleAvatarError"
             >
               <el-button type="primary" link>更换头像</el-button>
             </el-upload>
@@ -127,12 +128,30 @@ const roleMap = {
   user: { label: '普通用户', type: 'info' },
 }
 
-const uploadUrl = computed(() => `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'}/media/`)
+const uploadUrl = computed(() => `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'}/media/`)
 const headers = computed(() => ({ Authorization: `Bearer ${userStore.token}` }))
 
-const handleAvatarSuccess = async () => {
-  await userStore.fetchProfile()
-  ElMessage.success('头像更新成功')
+const getAvatarUrl = (avatar) => {
+  if (!avatar) return ''
+  if (avatar.startsWith('http')) return avatar
+  return `http://localhost:8001${avatar}`
+}
+
+const handleAvatarSuccess = async (response) => {
+  const avatarUrl = response.url || response.file
+  if (avatarUrl) {
+    try {
+      await updateProfile({ avatar_url: avatarUrl })
+      await userStore.fetchProfile()
+      ElMessage.success('头像更新成功')
+    } catch (error) {
+      ElMessage.error('头像更新失败')
+    }
+  }
+}
+
+const handleAvatarError = () => {
+  ElMessage.error('头像上传失败')
 }
 
 const handleUpdateProfile = async () => {

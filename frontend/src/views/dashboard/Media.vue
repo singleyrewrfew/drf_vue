@@ -57,7 +57,8 @@ const mediaList = ref([])
 const page = ref(1)
 const total = ref(0)
 
-const uploadUrl = computed(() => `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'}/media/`)
+const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'
+const uploadUrl = computed(() => `${baseUrl}/media/`)
 const headers = computed(() => ({ Authorization: `Bearer ${userStore.token}` }))
 
 const fetchMedia = async () => {
@@ -89,7 +90,13 @@ const handleUploadError = () => {
 }
 
 const handlePreview = (row) => {
-  window.open(row.url, '_blank')
+  const fileUrl = row.url || row.file
+  if (fileUrl) {
+    const fullUrl = fileUrl.startsWith('http') ? fileUrl : `http://localhost:8001${fileUrl}`
+    window.open(fullUrl, '_blank')
+  } else {
+    ElMessage.warning('文件 URL 不可用')
+  }
 }
 
 const handleDelete = async (row) => {

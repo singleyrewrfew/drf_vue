@@ -85,7 +85,7 @@ const rules = {
   content: [{ required: true, message: '请输入内容', trigger: 'blur' }],
 }
 
-const uploadUrl = computed(() => `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'}/media/`)
+const uploadUrl = computed(() => `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'}/media/`)
 const headers = computed(() => ({ Authorization: `Bearer ${userStore.token}` }))
 
 const handleCoverSuccess = (response) => {

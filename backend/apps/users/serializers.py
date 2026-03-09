@@ -31,9 +31,21 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
+    avatar = serializers.ImageField(required=False, allow_null=True)
+    avatar_url = serializers.CharField(required=False, write_only=True)
+
     class Meta:
         model = User
-        fields = ['email', 'avatar']
+        fields = ['email', 'avatar', 'avatar_url']
+
+    def update(self, instance, validated_data):
+        avatar_url = validated_data.pop('avatar_url', None)
+        if avatar_url:
+            if avatar_url.startswith('/media/'):
+                instance.avatar.name = avatar_url.replace('/media/', '')
+            else:
+                instance.avatar = avatar_url
+        return super().update(instance, validated_data)
 
 
 class PasswordChangeSerializer(serializers.Serializer):

@@ -15,4 +15,10 @@ class IsOwnerOrAdmin(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         if request.user.is_admin:
             return True
-        return hasattr(obj, 'author') and obj.author == request.user or hasattr(obj, 'user') and obj.user == request.user
+        if hasattr(obj, 'author') and obj.author == request.user:
+            return True
+        if hasattr(obj, 'user') and obj.user == request.user:
+            return True
+        if hasattr(obj, 'uploader') and obj.uploader == request.user:
+            return True
+        return False
