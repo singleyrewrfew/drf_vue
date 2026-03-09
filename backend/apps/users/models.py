@@ -5,15 +5,9 @@ from django.db import models
 
 
 class User(AbstractUser):
-    ROLE_CHOICES = [
-        ('admin', '管理员'),
-        ('editor', '编辑'),
-        ('user', '普通用户'),
-    ]
-
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True, verbose_name='头像')
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='user', verbose_name='角色')
+    role = models.ForeignKey('roles.Role', on_delete=models.SET_NULL, null=True, blank=True, related_name='users', verbose_name='角色')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')
 
@@ -28,8 +22,13 @@ class User(AbstractUser):
 
     @property
     def is_admin(self):
-        return self.role == 'admin'
+        return self.role and self.role.code == 'admin'
 
     @property
     def is_editor(self):
-        return self.role in ['admin', 'editor']
+        return self.role and self.role.code in ['admin', 'editor']
+
+    def has_permission(self, permission_code):
+        if not self.role:
+            return False
+        return self.role.permissions.filter(code=permission_code).exists()

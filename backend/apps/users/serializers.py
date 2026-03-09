@@ -5,9 +5,12 @@ User = get_user_model()
 
 
 class UserSerializer(serializers.ModelSerializer):
+    role_name = serializers.CharField(source='role.name', read_only=True)
+    role_code = serializers.CharField(source='role.code', read_only=True)
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'avatar', 'role', 'created_at', 'updated_at']
+        fields = ['id', 'username', 'email', 'avatar', 'role', 'role_name', 'role_code', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at']
 
 
@@ -26,7 +29,12 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data.pop('password_confirm')
+        from apps.roles.models import Role
+        default_role = Role.objects.filter(code='user').first()
         user = User.objects.create_user(**validated_data)
+        if default_role:
+            user.role = default_role
+            user.save()
         return user
 
 
@@ -36,7 +44,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['email', 'avatar', 'avatar_url']
+        fields = ['email', 'avatar', 'avatar_url', 'role']
 
     def update(self, instance, validated_data):
         avatar_url = validated_data.pop('avatar_url', None)

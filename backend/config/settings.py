@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'drf_spectacular',
     'apps.users',
+    'apps.roles',
     'apps.contents',
     'apps.categories',
     'apps.tags',
