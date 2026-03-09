@@ -44,9 +44,9 @@ export const useUserStore = defineStore('user', () => {
 
   const isLoggedIn = () => !!token.value
 
-  const isAdmin = () => user.value?.role === 'admin'
+  const isAdmin = () => user.value?.role_code === 'admin'
 
-  const isEditor = () => ['admin', 'editor'].includes(user.value?.role)
+  const isEditor = () => ['admin', 'editor'].includes(user.value?.role_code)
 
   return {
     token,

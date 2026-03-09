@@ -23,8 +23,8 @@
             <el-descriptions-item label="用户名">{{ userStore.user?.username }}</el-descriptions-item>
             <el-descriptions-item label="邮箱">{{ userStore.user?.email }}</el-descriptions-item>
             <el-descriptions-item label="角色">
-              <el-tag :type="roleMap[userStore.user?.role]?.type">
-                {{ roleMap[userStore.user?.role]?.label }}
+              <el-tag :type="getRoleType(userStore.user?.role_code)">
+                {{ userStore.user?.role_name || '未分配' }}
               </el-tag>
             </el-descriptions-item>
             <el-descriptions-item label="注册时间">{{ userStore.user?.created_at }}</el-descriptions-item>
@@ -122,10 +122,13 @@ const passwordRules = {
   ],
 }
 
-const roleMap = {
-  admin: { label: '管理员', type: 'danger' },
-  editor: { label: '编辑', type: 'warning' },
-  user: { label: '普通用户', type: 'info' },
+const getRoleType = (roleCode) => {
+  const typeMap = {
+    admin: 'danger',
+    editor: 'warning',
+    user: 'info',
+  }
+  return typeMap[roleCode] || 'info'
 }
 
 const uploadUrl = computed(() => `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'}/media/`)

@@ -7,10 +7,10 @@
       <el-table :data="userList" v-loading="loading" stripe>
         <el-table-column prop="username" label="用户名" />
         <el-table-column prop="email" label="邮箱" />
-        <el-table-column prop="role" label="角色" width="100">
+        <el-table-column prop="role_name" label="角色" width="100">
           <template #default="{ row }">
-            <el-tag :type="roleMap[row.role]?.type">
-              {{ roleMap[row.role]?.label }}
+            <el-tag :type="getRoleType(row.role_code)">
+              {{ row.role_name || '未分配' }}
             </el-tag>
           </template>
         </el-table-column>
@@ -48,10 +48,8 @@
           <el-input v-model="form.email" />
         </el-form-item>
         <el-form-item label="角色">
-          <el-select v-model="form.role">
-            <el-option label="管理员" value="admin" />
-            <el-option label="编辑" value="editor" />
-            <el-option label="普通用户" value="user" />
+          <el-select v-model="form.role" placeholder="请选择角色">
+            <el-option v-for="role in roles" :key="role.id" :label="role.name" :value="role.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="状态">
@@ -70,10 +68,12 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getUsers, updateUser, deleteUser } from '@/api/user'
+import api from '@/api'
 
 const loading = ref(false)
 const submitLoading = ref(false)
 const userList = ref([])
+const roles = ref([])
 const page = ref(1)
 const total = ref(0)
 const dialogVisible = ref(false)
@@ -83,14 +83,17 @@ const formRef = ref()
 const form = reactive({
   username: '',
   email: '',
-  role: 'user',
+  role: null,
   is_active: true,
 })
 
-const roleMap = {
-  admin: { label: '管理员', type: 'danger' },
-  editor: { label: '编辑', type: 'warning' },
-  user: { label: '普通用户', type: 'info' },
+const getRoleType = (roleCode) => {
+  const typeMap = {
+    admin: 'danger',
+    editor: 'warning',
+    user: 'info',
+  }
+  return typeMap[roleCode] || 'info'
 }
 
 const fetchUsers = async () => {
@@ -103,6 +106,15 @@ const fetchUsers = async () => {
     ElMessage.error('获取用户列表失败')
   } finally {
     loading.value = false
+  }
+}
+
+const fetchRoles = async () => {
+  try {
+    const { data } = await api.get('/roles/roles/')
+    roles.value = data.results || data
+  } catch (error) {
+    console.error(error)
   }
 }
 
@@ -144,6 +156,7 @@ const handleDelete = async (row) => {
 
 onMounted(() => {
   fetchUsers()
+  fetchRoles()
 })
 </script>
 
