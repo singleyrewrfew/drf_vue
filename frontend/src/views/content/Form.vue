@@ -133,11 +133,21 @@ const handleSubmit = async () => {
   await formRef.value.validate()
   loading.value = true
   try {
+    const submitData = { ...form }
+    if (!submitData.category) {
+      delete submitData.category
+    }
+    if (!submitData.cover_image) {
+      delete submitData.cover_image
+    }
+    if (submitData.tags.length === 0) {
+      delete submitData.tags
+    }
     if (isEdit.value) {
-      await updateContent(route.params.id, form)
+      await updateContent(route.params.id, submitData)
       ElMessage.success('保存成功')
     } else {
-      await createContent(form)
+      await createContent(submitData)
       ElMessage.success('创建成功')
     }
     router.push('/contents')

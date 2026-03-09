@@ -1,3 +1,4 @@
+from django.utils.text import slugify
 from rest_framework import serializers
 
 from apps.categories.serializers import CategorySerializer
@@ -38,12 +39,29 @@ class ContentListSerializer(serializers.ModelSerializer):
 class ContentCreateUpdateSerializer(serializers.ModelSerializer):
     tags = serializers.ListField(child=serializers.UUIDField(), write_only=True, required=False)
 
+    category = serializers.PrimaryKeyRelatedField(allow_null=True, required=False, queryset=Content._meta.get_field('category').related_model.objects.all())
+
+    cover_image = serializers.ImageField(required=False, allow_null=True)
+    status = serializers.CharField(required=False, default='draft')
+    is_top = serializers.BooleanField(required=False, default=False)
+
     class Meta:
         model = Content
         fields = [
             'title', 'slug', 'summary', 'content', 'cover_image',
             'category', 'tags', 'status', 'is_top'
         ]
+
+    def validate(self, data):
+        if not data.get('slug'):
+            base_slug = slugify(data['title'])
+            slug = base_slug
+            counter = 1
+            while Content.objects.filter(slug=slug).exclude(id=self.instance.id if self.instance else None).exists():
+                slug = f'{base_slug}-{counter}'
+                counter += 1
+            data['slug'] = slug
+        return data
 
     def create(self, validated_data):
         tags_data = validated_data.pop('tags', [])

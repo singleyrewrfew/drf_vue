@@ -92,11 +92,15 @@ const handleSubmit = async () => {
   await formRef.value.validate()
   submitLoading.value = true
   try {
+    const submitData = { ...form }
+    if (!submitData.slug) {
+      delete submitData.slug
+    }
     if (isEdit.value) {
-      await updateTag(editingId.value, form)
+      await updateTag(editingId.value, submitData)
       ElMessage.success('更新成功')
     } else {
-      await createTag(form)
+      await createTag(submitData)
       ElMessage.success('创建成功')
     }
     dialogVisible.value = false

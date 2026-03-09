@@ -1,5 +1,4 @@
 from django.utils import timezone
-from django.utils.text import slugify
 from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -31,11 +30,7 @@ class ContentViewSet(viewsets.ModelViewSet):
         return super().get_permissions()
 
     def perform_create(self, serializer):
-        if not serializer.validated_data.get('slug'):
-            slug = slugify(serializer.validated_data['title'])
-            serializer.save(author=self.request.user, slug=slug)
-        else:
-            serializer.save(author=self.request.user)
+        serializer.save(author=self.request.user)
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()

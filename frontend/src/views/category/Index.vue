@@ -124,11 +124,18 @@ const handleSubmit = async () => {
   await formRef.value.validate()
   submitLoading.value = true
   try {
+    const submitData = { ...form }
+    if (!submitData.slug) {
+      delete submitData.slug
+    }
+    if (!submitData.parent) {
+      delete submitData.parent
+    }
     if (isEdit.value) {
-      await updateCategory(editingId.value, form)
+      await updateCategory(editingId.value, submitData)
       ElMessage.success('更新成功')
     } else {
-      await createCategory(form)
+      await createCategory(submitData)
       ElMessage.success('创建成功')
     }
     dialogVisible.value = false
