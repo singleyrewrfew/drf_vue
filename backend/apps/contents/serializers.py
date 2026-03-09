@@ -1,3 +1,5 @@
+import uuid
+
 from django.utils.text import slugify
 from rest_framework import serializers
 
@@ -38,9 +40,7 @@ class ContentListSerializer(serializers.ModelSerializer):
 
 class ContentCreateUpdateSerializer(serializers.ModelSerializer):
     tags = serializers.ListField(child=serializers.UUIDField(), write_only=True, required=False)
-
     category = serializers.PrimaryKeyRelatedField(allow_null=True, required=False, queryset=Content._meta.get_field('category').related_model.objects.all())
-
     cover_image = serializers.ImageField(required=False, allow_null=True)
     status = serializers.CharField(required=False, default='draft')
     is_top = serializers.BooleanField(required=False, default=False)
@@ -55,6 +55,8 @@ class ContentCreateUpdateSerializer(serializers.ModelSerializer):
     def validate(self, data):
         if not data.get('slug'):
             base_slug = slugify(data['title'])
+            if not base_slug:
+                base_slug = uuid.uuid4().hex[:8]
             slug = base_slug
             counter = 1
             while Content.objects.filter(slug=slug).exclude(id=self.instance.id if self.instance else None).exists():
