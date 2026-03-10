@@ -39,6 +39,20 @@
           <el-icon><User /></el-icon>
           <span>用户管理</span>
         </el-menu-item>
+        <el-sub-menu v-if="userStore.isAdmin()" index="system">
+          <template #title>
+            <el-icon><Setting /></el-icon>
+            <span>系统管理</span>
+          </template>
+          <el-menu-item index="/roles">
+            <el-icon><Key /></el-icon>
+            <span>角色管理</span>
+          </el-menu-item>
+          <el-menu-item index="/permissions">
+            <el-icon><Lock /></el-icon>
+            <span>权限管理</span>
+          </el-menu-item>
+        </el-sub-menu>
       </el-menu>
     </el-aside>
     <el-container>
@@ -71,7 +85,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { Odometer, Document, Folder, PriceTag, Picture, ChatDotRound, User, UserFilled } from '@element-plus/icons-vue'
+import { Odometer, Document, Folder, PriceTag, Picture, ChatDotRound, User, UserFilled, Setting, Key, Lock } from '@element-plus/icons-vue'
 import { getAvatarUrl } from '@/utils'
 
 const route = useRoute()

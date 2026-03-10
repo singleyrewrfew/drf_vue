@@ -70,6 +70,18 @@ const routes = [
         meta: { requiresAdmin: true },
       },
       {
+        path: 'roles',
+        name: 'Roles',
+        component: () => import('@/views/system/Role.vue'),
+        meta: { requiresAdmin: true },
+      },
+      {
+        path: 'permissions',
+        name: 'Permissions',
+        component: () => import('@/views/system/Permission.vue'),
+        meta: { requiresAdmin: true },
+      },
+      {
         path: 'profile',
         name: 'Profile',
         component: () => import('@/views/user/Profile.vue'),
