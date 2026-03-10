@@ -14,6 +14,14 @@ const props = defineProps({
   poster: {
     type: String,
     default: ''
+  },
+  thumbnails: {
+    type: String,
+    default: ''
+  },
+  thumbnailsCount: {
+    type: Number,
+    default: 0
   }
 })
 
@@ -21,6 +29,11 @@ const emit = defineEmits(['ready', 'error'])
 
 const artRef = ref(null)
 let artInstance = null
+
+const getMediaBaseUrl = () => {
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'
+  return apiBaseUrl.replace(/\/api\/?$/, '')
+}
 
 const initPlayer = () => {
   if (artInstance) {
@@ -38,8 +51,11 @@ const initPlayer = () => {
   }
 
   console.log('VideoPlayer: initializing with src =', props.src)
+  console.log('VideoPlayer: thumbnails =', props.thumbnails)
+  console.log('VideoPlayer: thumbnailsVtt =', props.thumbnailsVtt)
 
-  artInstance = new Artplayer({
+  const baseUrl = getMediaBaseUrl()
+  const options = {
     container: artRef.value,
     url: props.src,
     poster: props.poster,
@@ -66,7 +82,24 @@ const initPlayer = () => {
     moreVideoAttr: {
       crossOrigin: 'anonymous'
     }
-  })
+  }
+  
+  if (props.thumbnails && props.thumbnailsCount > 0) {
+    const thumbnailsUrl = props.thumbnails.startsWith('http') ? props.thumbnails : `${baseUrl}${props.thumbnails}`
+    
+    console.log('VideoPlayer: thumbnailsUrl =', thumbnailsUrl)
+    console.log('VideoPlayer: thumbnailsCount =', props.thumbnailsCount)
+    
+    options.thumbnails = {
+      url: thumbnailsUrl,
+      number: props.thumbnailsCount,
+      width: 160,
+      height: 90,
+      column: 10,
+    }
+  }
+
+  artInstance = new Artplayer(options)
 
   artInstance.on('ready', () => {
     console.log('VideoPlayer: ready')

@@ -9,12 +9,21 @@
             :headers="headers"
             :on-success="handleUploadSuccess"
             :on-error="handleUploadError"
+            :on-progress="handleUploadProgress"
             :show-file-list="false"
             multiple
           >
-            <el-button type="primary">上传文件</el-button>
+            <el-button type="primary" :loading="uploading">
+              {{ uploading ? `上传中 ${uploadProgress}%` : '上传文件' }}
+            </el-button>
           </el-upload>
         </div>
+        <el-progress
+          v-if="uploading"
+          :percentage="uploadProgress"
+          :stroke-width="6"
+          style="margin-top: 10px"
+        />
       </template>
       <el-table :data="mediaList" v-loading="loading" stripe>
         <el-table-column prop="filename" label="文件名" />
@@ -22,6 +31,22 @@
         <el-table-column prop="file_size" label="大小" width="100">
           <template #default="{ row }">
             {{ formatSize(row.file_size) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="缩略图" width="120">
+          <template #default="{ row }">
+            <template v-if="row.is_video">
+              <el-tag v-if="row.thumbnail_status === 'pending'" type="info" size="small">等待中</el-tag>
+              <el-tag v-else-if="row.thumbnail_status === 'processing'" type="warning" size="small">
+                <span style="display: inline-flex; align-items: center; gap: 4px;">
+                  <el-icon class="is-loading"><Loading /></el-icon>
+                  <span>生成中</span>
+                </span>
+              </el-tag>
+              <el-tag v-else-if="row.thumbnail_status === 'completed'" type="success" size="small">已完成</el-tag>
+              <el-tag v-else-if="row.thumbnail_status === 'failed'" type="danger" size="small">失败</el-tag>
+            </template>
+            <span v-else>-</span>
           </template>
         </el-table-column>
         <el-table-column prop="uploader_name" label="上传者" width="120" />
@@ -60,6 +85,8 @@
           v-else-if="isVideo"
           :src="previewUrl"
           :poster="videoPoster"
+          :thumbnails="previewFile?.thumbnails_url"
+          :thumbnails-count="previewFile?.thumbnails_count || 0"
           @ready="onVideoReady"
           @error="onVideoError"
         />
@@ -80,9 +107,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Document } from '@element-plus/icons-vue'
+import { Document, Loading } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { getMediaUrl } from '@/utils'
 import VideoPlayer from '@/components/VideoPlayer.vue'
@@ -96,6 +123,9 @@ const total = ref(0)
 const previewVisible = ref(false)
 const previewFile = ref(null)
 const videoPoster = ref('')
+const uploading = ref(false)
+const uploadProgress = ref(0)
+let refreshTimer = null
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'
 const uploadUrl = computed(() => `${baseUrl}/media/`)
@@ -128,12 +158,33 @@ const previewUrl = computed(() => {
   return getMediaUrl(url)
 })
 
+const hasProcessingThumbnails = () => {
+  return mediaList.value.some(item => item.thumbnail_status === 'pending' || item.thumbnail_status === 'processing')
+}
+
+const startAutoRefresh = () => {
+  if (refreshTimer) {
+    clearInterval(refreshTimer)
+  }
+  refreshTimer = setInterval(() => {
+    if (hasProcessingThumbnails()) {
+      fetchMedia()
+    } else {
+      clearInterval(refreshTimer)
+      refreshTimer = null
+    }
+  }, 3000)
+}
+
 const fetchMedia = async () => {
   loading.value = true
   try {
     const { data } = await api.get('/media/', { params: { page: page.value } })
     mediaList.value = data.results || data
     total.value = data.count || mediaList.value.length
+    if (hasProcessingThumbnails()) {
+      startAutoRefresh()
+    }
   } catch (error) {
     ElMessage.error('获取媒体列表失败')
   } finally {
@@ -147,12 +198,21 @@ const formatSize = (bytes) => {
   return (bytes / (1024 * 1024)).toFixed(2) + ' MB'
 }
 
+const handleUploadProgress = (event) => {
+  uploading.value = true
+  uploadProgress.value = Math.round(event.percent)
+}
+
 const handleUploadSuccess = () => {
+  uploading.value = false
+  uploadProgress.value = 0
   ElMessage.success('上传成功')
   fetchMedia()
 }
 
 const handleUploadError = () => {
+  uploading.value = false
+  uploadProgress.value = 0
   ElMessage.error('上传失败')
 }
 
@@ -195,6 +255,13 @@ const handleDelete = async (row) => {
 
 onMounted(() => {
   fetchMedia()
+})
+
+onUnmounted(() => {
+  if (refreshTimer) {
+    clearInterval(refreshTimer)
+    refreshTimer = null
+  }
 })
 </script>
 
