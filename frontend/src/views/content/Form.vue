@@ -187,8 +187,12 @@ onMounted(() => {
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  width: 178px;
-  height: 178px;
+  width: 320px;
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f5f7fa;
 }
 
 .cover-uploader:hover {
@@ -198,16 +202,12 @@ onMounted(() => {
 .cover-uploader-icon {
   font-size: 28px;
   color: #8c939d;
-  width: 178px;
-  height: 178px;
-  text-align: center;
-  line-height: 178px;
 }
 
 .cover-image {
-  width: 178px;
-  height: 178px;
+  max-width: 100%;
+  max-height: 100%;
   display: block;
-  object-fit: cover;
+  object-fit: contain;
 }
 </style>
