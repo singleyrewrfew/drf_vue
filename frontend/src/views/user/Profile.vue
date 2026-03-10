@@ -78,6 +78,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { updateProfile, changePassword } from '@/api/user'
+import { getAvatarUrl } from '@/utils'
 
 const userStore = useUserStore()
 const formRef = ref()
@@ -133,12 +134,6 @@ const getRoleType = (roleCode) => {
 
 const uploadUrl = computed(() => `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'}/media/`)
 const headers = computed(() => ({ Authorization: `Bearer ${userStore.token}` }))
-
-const getAvatarUrl = (avatar) => {
-  if (!avatar) return ''
-  if (avatar.startsWith('http')) return avatar
-  return `http://localhost:8001${avatar}`
-}
 
 const handleAvatarSuccess = async (response) => {
   const avatarUrl = response.url || response.file

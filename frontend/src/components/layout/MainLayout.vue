@@ -72,18 +72,13 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { Odometer, Document, Folder, PriceTag, Picture, ChatDotRound, User, UserFilled } from '@element-plus/icons-vue'
+import { getAvatarUrl } from '@/utils'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 
 const activeMenu = computed(() => route.path)
-
-const getAvatarUrl = (avatar) => {
-  if (!avatar) return ''
-  if (avatar.startsWith('http')) return avatar
-  return `http://localhost:8001${avatar}`
-}
 
 const handleLogout = async () => {
   await userStore.logout()

@@ -42,13 +42,50 @@
         @current-change="fetchMedia"
       />
     </el-card>
+
+    <el-dialog
+      v-model="previewVisible"
+      :title="previewFile?.filename || '预览'"
+      width="900px"
+      destroy-on-close
+    >
+      <div class="preview-container">
+        <img
+          v-if="isImage"
+          :src="previewUrl"
+          class="preview-image"
+          alt="预览图片"
+        />
+        <VideoPlayer
+          v-else-if="isVideo"
+          :src="previewUrl"
+          :poster="videoPoster"
+          @ready="onVideoReady"
+          @error="onVideoError"
+        />
+        <audio
+          v-else-if="isAudio"
+          :src="previewUrl"
+          controls
+          class="preview-audio"
+        />
+        <div v-else class="preview-unsupported">
+          <el-icon :size="64"><Document /></el-icon>
+          <p>该文件类型不支持预览</p>
+          <el-button type="primary" @click="downloadFile">下载文件</el-button>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Document } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
+import { getMediaUrl } from '@/utils'
+import VideoPlayer from '@/components/VideoPlayer.vue'
 import api from '@/api'
 
 const userStore = useUserStore()
@@ -56,10 +93,40 @@ const loading = ref(false)
 const mediaList = ref([])
 const page = ref(1)
 const total = ref(0)
+const previewVisible = ref(false)
+const previewFile = ref(null)
+const videoPoster = ref('')
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'
 const uploadUrl = computed(() => `${baseUrl}/media/`)
 const headers = computed(() => ({ Authorization: `Bearer ${userStore.token}` }))
+
+const isImage = computed(() => {
+  if (!previewFile.value) return false
+  const type = previewFile.value.file_type || ''
+  return type.startsWith('image/')
+})
+
+const isVideo = computed(() => {
+  if (!previewFile.value) return false
+  const type = previewFile.value.file_type || ''
+  return type.startsWith('video/')
+})
+
+const isAudio = computed(() => {
+  if (!previewFile.value) return false
+  const type = previewFile.value.file_type || ''
+  return type.startsWith('audio/')
+})
+
+const previewUrl = computed(() => {
+  if (!previewFile.value) return ''
+  if (isVideo.value) {
+    return `${baseUrl}/media/${previewFile.value.id}/`
+  }
+  const url = previewFile.value.url || previewFile.value.file
+  return getMediaUrl(url)
+})
 
 const fetchMedia = async () => {
   loading.value = true
@@ -90,12 +157,28 @@ const handleUploadError = () => {
 }
 
 const handlePreview = (row) => {
-  const fileUrl = row.url || row.file
-  if (fileUrl) {
-    const fullUrl = fileUrl.startsWith('http') ? fileUrl : `http://localhost:8001${fileUrl}`
-    window.open(fullUrl, '_blank')
-  } else {
-    ElMessage.warning('文件 URL 不可用')
+  previewFile.value = row
+  previewVisible.value = true
+}
+
+const onVideoReady = () => {
+  console.log('Video player ready')
+}
+
+const onVideoError = (error) => {
+  console.error('Video load error:', error)
+  ElMessage.error('视频加载失败，请检查视频格式或网络连接')
+}
+
+const downloadFile = () => {
+  if (previewUrl.value) {
+    const link = document.createElement('a')
+    link.href = previewUrl.value
+    link.download = previewFile.value?.filename || 'download'
+    link.target = '_blank'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 }
 
@@ -124,5 +207,35 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.preview-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+}
+
+.preview-image {
+  max-width: 100%;
+  max-height: 60vh;
+  object-fit: contain;
+}
+
+.preview-audio {
+  width: 100%;
+}
+
+.preview-unsupported {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  color: #909399;
+}
+
+.preview-unsupported p {
+  margin: 0;
 }
 </style>
