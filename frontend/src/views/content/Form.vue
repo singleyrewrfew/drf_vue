@@ -4,44 +4,90 @@
       <template #header>
         <span>{{ isEdit ? '编辑内容' : '新建内容' }}</span>
       </template>
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="标题" prop="title">
-          <el-input v-model="form.title" placeholder="请输入标题" />
-        </el-form-item>
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
+        <el-row :gutter="20">
+          <el-col :span="16">
+            <el-form-item label="标题" prop="title">
+              <el-input v-model="form.title" placeholder="请输入标题" maxlength="200" show-word-limit />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="URL别名" prop="slug">
+              <el-input v-model="form.slug" placeholder="留空自动生成" maxlength="200" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
         <el-form-item label="摘要" prop="summary">
-          <el-input v-model="form.summary" type="textarea" :rows="3" placeholder="请输入摘要" />
+          <el-input v-model="form.summary" type="textarea" :rows="3" placeholder="请输入摘要（可选）" maxlength="500" show-word-limit />
         </el-form-item>
+        
         <el-form-item label="内容" prop="content">
-          <el-input v-model="form.content" type="textarea" :rows="10" placeholder="请输入内容" />
+          <el-input v-model="form.content" type="textarea" :rows="15" placeholder="请输入正文内容" />
         </el-form-item>
-        <el-form-item label="分类" prop="category">
-          <el-select v-model="form.category" placeholder="请选择分类" clearable>
-            <el-option v-for="cat in categories" :key="cat.id" :label="cat.name" :value="cat.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="标签" prop="tags">
-          <el-select v-model="form.tags" multiple placeholder="请选择标签">
-            <el-option v-for="tag in tags" :key="tag.id" :label="tag.name" :value="tag.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="封面图">
-          <el-upload
-            class="cover-uploader"
-            :action="uploadUrl"
-            :headers="headers"
-            :show-file-list="false"
-            :on-success="handleCoverSuccess"
-          >
-            <img v-if="form.cover_image" :src="form.cover_image" class="cover-image" />
-            <el-icon v-else class="cover-uploader-icon"><Plus /></el-icon>
-          </el-upload>
-        </el-form-item>
-        <el-form-item label="置顶">
-          <el-switch v-model="form.is_top" />
-        </el-form-item>
+        
+        <el-divider content-position="left">分类与标签</el-divider>
+        
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="分类" prop="category">
+              <el-select v-model="form.category" placeholder="请选择分类" clearable style="width: 100%">
+                <el-option v-for="cat in categories" :key="cat.id" :label="cat.name" :value="cat.id" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="标签" prop="tags">
+              <el-select v-model="form.tags" multiple placeholder="请选择标签" style="width: 100%">
+                <el-option v-for="tag in tags" :key="tag.id" :label="tag.name" :value="tag.id" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-divider content-position="left">封面与设置</el-divider>
+        
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="封面图">
+              <el-upload
+                class="cover-uploader"
+                :action="uploadUrl"
+                :headers="headers"
+                :show-file-list="false"
+                :on-success="handleCoverSuccess"
+              >
+                <img v-if="form.cover_image" :src="form.cover_image" class="cover-image" />
+                <div v-else class="cover-placeholder">
+                  <el-icon class="cover-uploader-icon"><Plus /></el-icon>
+                  <span>点击上传封面</span>
+                </div>
+              </el-upload>
+              <div class="cover-tip">建议尺寸: 1920x1080，支持 jpg/png 格式</div>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="状态" prop="status">
+              <el-radio-group v-model="form.status">
+                <el-radio value="draft">草稿</el-radio>
+                <el-radio value="published">发布</el-radio>
+              </el-radio-group>
+            </el-form-item>
+            <el-form-item label="置顶">
+              <el-switch v-model="form.is_top" />
+              <span class="form-tip">置顶内容将优先显示在列表顶部</span>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <el-divider />
+        
         <el-form-item>
           <el-button type="primary" @click="handleSubmit" :loading="loading">
-            {{ isEdit ? '保存' : '创建' }}
+            {{ isEdit ? '保存修改' : '创建内容' }}
+          </el-button>
+          <el-button @click="handleSaveDraft" :loading="loading" v-if="!isEdit">
+            保存草稿
           </el-button>
           <el-button @click="$router.back()">取消</el-button>
         </el-form-item>
@@ -199,8 +245,16 @@ onMounted(() => {
   border-color: #409eff;
 }
 
+.cover-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
 .cover-uploader-icon {
-  font-size: 28px;
+  font-size: 32px;
   color: #8c939d;
 }
 
@@ -209,5 +263,17 @@ onMounted(() => {
   max-height: 100%;
   display: block;
   object-fit: contain;
+}
+
+.cover-tip {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 8px;
+}
+
+.form-tip {
+  font-size: 12px;
+  color: #909399;
+  margin-left: 10px;
 }
 </style>
