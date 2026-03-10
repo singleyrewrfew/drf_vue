@@ -2,7 +2,10 @@
   <div class="user-page">
     <el-card>
       <template #header>
-        <span>用户管理</span>
+        <div class="card-header">
+          <span>用户管理</span>
+          <el-button type="primary" @click="handleCreate">新建用户</el-button>
+        </div>
       </template>
       <el-table :data="userList" v-loading="loading" stripe>
         <el-table-column prop="username" label="用户名" />
@@ -39,16 +42,22 @@
       />
     </el-card>
 
-    <el-dialog v-model="dialogVisible" title="编辑用户" width="500px">
-      <el-form ref="formRef" :model="form" label-width="80px">
-        <el-form-item label="用户名">
-          <el-input v-model="form.username" disabled />
+    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑用户' : '新建用户'" width="500px" destroy-on-close>
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
+        <el-form-item label="用户名" prop="username">
+          <el-input v-model="form.username" placeholder="请输入用户名" :disabled="isEdit" maxlength="150" />
         </el-form-item>
-        <el-form-item label="邮箱">
-          <el-input v-model="form.email" />
+        <el-form-item v-if="!isEdit" label="密码" prop="password">
+          <el-input v-model="form.password" type="password" placeholder="请输入密码" show-password maxlength="128" />
         </el-form-item>
-        <el-form-item label="角色">
-          <el-select v-model="form.role" placeholder="请选择角色" :disabled="isEditingSelf">
+        <el-form-item v-if="!isEdit" label="确认密码" prop="password_confirm">
+          <el-input v-model="form.password_confirm" type="password" placeholder="请确认密码" show-password maxlength="128" />
+        </el-form-item>
+        <el-form-item label="邮箱" prop="email">
+          <el-input v-model="form.email" placeholder="请输入邮箱" />
+        </el-form-item>
+        <el-form-item label="角色" prop="role">
+          <el-select v-model="form.role" placeholder="请选择角色" :disabled="isEditingSelf" style="width: 100%">
             <el-option v-for="role in roles" :key="role.id" :label="role.name" :value="role.id" />
           </el-select>
           <div v-if="isEditingSelf" class="form-tip">不能修改自己的角色</div>
@@ -69,7 +78,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getUsers, updateUser, deleteUser } from '@/api/user'
+import { getUsers, updateUser, deleteUser, register } from '@/api/user'
 import { useUserStore } from '@/stores/user'
 import api from '@/api'
 
@@ -84,12 +93,49 @@ const dialogVisible = ref(false)
 const editingId = ref(null)
 const formRef = ref()
 
+const isEdit = computed(() => !!editingId.value)
+
 const form = reactive({
   username: '',
+  password: '',
+  password_confirm: '',
   email: '',
   role: null,
   is_active: true,
 })
+
+const validatePassword = (rule, value, callback) => {
+  if (!isEdit.value && !value) {
+    callback(new Error('请输入密码'))
+  } else if (value && value.length < 6) {
+    callback(new Error('密码长度不能少于6位'))
+  } else {
+    callback()
+  }
+}
+
+const validatePasswordConfirm = (rule, value, callback) => {
+  if (!isEdit.value && !value) {
+    callback(new Error('请确认密码'))
+  } else if (value !== form.password) {
+    callback(new Error('两次输入的密码不一致'))
+  } else {
+    callback()
+  }
+}
+
+const rules = {
+  username: [
+    { required: true, message: '请输入用户名', trigger: 'blur' },
+    { min: 3, max: 150, message: '用户名长度在 3 到 150 个字符', trigger: 'blur' },
+  ],
+  password: [{ validator: validatePassword, trigger: 'blur' }],
+  password_confirm: [{ validator: validatePasswordConfirm, trigger: 'blur' }],
+  email: [
+    { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' },
+  ],
+  role: [{ required: true, message: '请选择角色', trigger: 'change' }],
+}
 
 const isEditingSelf = computed(() => {
   return editingId.value === userStore.user?.id
@@ -130,10 +176,27 @@ const fetchRoles = async () => {
   }
 }
 
+const resetForm = () => {
+  form.username = ''
+  form.password = ''
+  form.password_confirm = ''
+  form.email = ''
+  form.role = null
+  form.is_active = true
+  editingId.value = null
+}
+
+const handleCreate = () => {
+  resetForm()
+  dialogVisible.value = true
+}
+
 const handleEdit = (row) => {
   editingId.value = row.id
   Object.assign(form, {
     username: row.username,
+    password: '',
+    password_confirm: '',
     email: row.email,
     role: row.role,
     is_active: row.is_active,
@@ -142,14 +205,32 @@ const handleEdit = (row) => {
 }
 
 const handleSubmit = async () => {
+  await formRef.value.validate()
   submitLoading.value = true
   try {
-    await updateUser(editingId.value, form)
-    ElMessage.success('更新成功')
+    if (isEdit.value) {
+      await updateUser(editingId.value, {
+        email: form.email,
+        role: form.role,
+        is_active: form.is_active,
+      })
+      ElMessage.success('更新成功')
+    } else {
+      await register({
+        username: form.username,
+        password: form.password,
+        password_confirm: form.password_confirm,
+        email: form.email,
+        role: form.role,
+        is_active: form.is_active,
+      })
+      ElMessage.success('创建成功')
+    }
     dialogVisible.value = false
     fetchUsers()
   } catch (error) {
-    ElMessage.error('更新失败')
+    const msg = error.response?.data?.error || error.response?.data?.username?.[0] || (isEdit.value ? '更新失败' : '创建失败')
+    ElMessage.error(msg)
   } finally {
     submitLoading.value = false
   }
@@ -175,6 +256,12 @@ onMounted(() => {
 <style scoped>
 .user-page {
   padding: 20px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .form-tip {

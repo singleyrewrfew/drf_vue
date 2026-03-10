@@ -10,17 +10,19 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'avatar', 'role', 'role_name', 'role_code', 'created_at', 'updated_at']
+        fields = ['id', 'username', 'email', 'avatar', 'role', 'role_name', 'role_code', 'is_active', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at']
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=6)
     password_confirm = serializers.CharField(write_only=True)
+    role = serializers.PrimaryKeyRelatedField(queryset=User._meta.get_field('role').related_model.objects.all(), required=False, allow_null=True)
+    is_active = serializers.BooleanField(required=False, default=True)
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'password', 'password_confirm']
+        fields = ['username', 'email', 'password', 'password_confirm', 'role', 'is_active']
 
     def validate(self, data):
         if data['password'] != data['password_confirm']:
@@ -29,12 +31,21 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data.pop('password_confirm')
+        role = validated_data.pop('role', None)
+        is_active = validated_data.pop('is_active', True)
+        
         from apps.roles.models import Role
-        default_role = Role.objects.filter(code='user').first()
         user = User.objects.create_user(**validated_data)
-        if default_role:
-            user.role = default_role
-            user.save()
+        user.is_active = is_active
+        
+        if role:
+            user.role = role
+        else:
+            default_role = Role.objects.filter(code='user').first()
+            if default_role:
+                user.role = default_role
+        
+        user.save()
         return user
 
 

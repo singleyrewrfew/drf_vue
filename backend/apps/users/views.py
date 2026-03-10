@@ -27,8 +27,10 @@ class UserViewSet(viewsets.ModelViewSet):
     parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def get_permissions(self):
-        if self.action in ['create', 'login']:
+        if self.action == 'login':
             return [AllowAny()]
+        elif self.action == 'create':
+            return [IsAuthenticated(), IsAdminUser()]
         elif self.action in ['list', 'destroy']:
             return [IsAdminUser()]
         return [IsAuthenticated()]
