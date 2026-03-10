@@ -6,6 +6,10 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from apps.comments.models import Comment
+from apps.contents.models import Content
+from apps.media.models import Media
+
 from .permissions import IsAdminUser
 from .serializers import (
     PasswordChangeSerializer,
@@ -91,3 +95,36 @@ class UserViewSet(viewsets.ModelViewSet):
         except Exception:
             pass
         return Response({'message': '退出成功'})
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def stats(self, request):
+        """获取仪表盘统计数据"""
+        content_count = Content.objects.count()
+        published_count = Content.objects.filter(status='published').count()
+        draft_count = Content.objects.filter(status='draft').count()
+        comment_count = Comment.objects.count()
+        user_count = User.objects.count()
+        media_count = Media.objects.count()
+        total_views = sum(Content.objects.values_list('view_count', flat=True))
+        
+        recent_contents = Content.objects.filter(status='published').order_by('-created_at')[:5]
+        recent_contents_data = []
+        for content in recent_contents:
+            recent_contents_data.append({
+                'id': str(content.id),
+                'title': content.title,
+                'author_name': content.author.username,
+                'view_count': content.view_count,
+                'created_at': content.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            })
+        
+        return Response({
+            'contents': content_count,
+            'published': published_count,
+            'drafts': draft_count,
+            'comments': comment_count,
+            'users': user_count,
+            'media': media_count,
+            'views': total_views,
+            'recent_contents': recent_contents_data,
+        })

@@ -24,8 +24,8 @@
         <el-table-column prop="created_at" label="注册时间" width="180" />
         <el-table-column label="操作" width="150">
           <template #default="{ row }">
-            <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
-            <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
+            <el-button type="primary" link @click="handleEdit(row)" :disabled="isCurrentUser(row)">编辑</el-button>
+            <el-button type="danger" link @click="handleDelete(row)" :disabled="isCurrentUser(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -48,12 +48,14 @@
           <el-input v-model="form.email" />
         </el-form-item>
         <el-form-item label="角色">
-          <el-select v-model="form.role" placeholder="请选择角色">
+          <el-select v-model="form.role" placeholder="请选择角色" :disabled="isEditingSelf">
             <el-option v-for="role in roles" :key="role.id" :label="role.name" :value="role.id" />
           </el-select>
+          <div v-if="isEditingSelf" class="form-tip">不能修改自己的角色</div>
         </el-form-item>
         <el-form-item label="状态">
-          <el-switch v-model="form.is_active" active-text="启用" inactive-text="禁用" />
+          <el-switch v-model="form.is_active" active-text="启用" inactive-text="禁用" :disabled="isEditingSelf" />
+          <div v-if="isEditingSelf" class="form-tip">不能禁用自己的账号</div>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -65,11 +67,13 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getUsers, updateUser, deleteUser } from '@/api/user'
+import { useUserStore } from '@/stores/user'
 import api from '@/api'
 
+const userStore = useUserStore()
 const loading = ref(false)
 const submitLoading = ref(false)
 const userList = ref([])
@@ -86,6 +90,14 @@ const form = reactive({
   role: null,
   is_active: true,
 })
+
+const isEditingSelf = computed(() => {
+  return editingId.value === userStore.user?.id
+})
+
+const isCurrentUser = (row) => {
+  return row.id === userStore.user?.id
+}
 
 const getRoleType = (roleCode) => {
   const typeMap = {
@@ -111,7 +123,7 @@ const fetchUsers = async () => {
 
 const fetchRoles = async () => {
   try {
-    const { data } = await api.get('/roles/roles/')
+    const { data } = await api.get('/roles/')
     roles.value = data.results || data
   } catch (error) {
     console.error(error)
@@ -163,5 +175,11 @@ onMounted(() => {
 <style scoped>
 .user-page {
   padding: 20px;
+}
+
+.form-tip {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 4px;
 }
 </style>
