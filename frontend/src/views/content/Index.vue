@@ -9,19 +9,19 @@
       </template>
       <el-form :inline="true" :model="searchForm" class="search-form">
         <el-form-item label="状态">
-          <el-select v-model="searchForm.status" placeholder="全部" clearable>
+          <el-select v-model="searchForm.status" placeholder="全部" clearable popper-class="content-select-popper" style="width: 120px">
             <el-option label="草稿" value="draft" />
             <el-option label="已发布" value="published" />
             <el-option label="已归档" value="archived" />
           </el-select>
         </el-form-item>
         <el-form-item label="分类">
-          <el-select v-model="searchForm.category" placeholder="全部" clearable>
+          <el-select v-model="searchForm.category" placeholder="全部" clearable popper-class="content-select-popper" style="width: 150px">
             <el-option v-for="cat in categories" :key="cat.id" :label="cat.name" :value="cat.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="搜索">
-          <el-input v-model="searchForm.search" placeholder="标题搜索" clearable />
+          <el-input v-model="searchForm.search" placeholder="标题搜索" clearable style="width: 200px" />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleSearch">搜索</el-button>
@@ -82,8 +82,8 @@ const page = ref(1)
 const total = ref(0)
 
 const searchForm = reactive({
-  status: '',
-  category: '',
+  status: null,
+  category: null,
   search: '',
 })
 
@@ -114,6 +114,7 @@ const fetchCategories = async () => {
   try {
     const { data } = await api.get('/categories/')
     categories.value = data.results || data
+    console.log('Categories loaded:', categories.value)
   } catch (error) {
     console.error(error)
   }
@@ -168,5 +169,11 @@ onMounted(() => {
 
 .search-form {
   margin-bottom: 16px;
+}
+</style>
+
+<style>
+.content-select-popper {
+  z-index: 9999 !important;
 }
 </style>

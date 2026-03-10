@@ -59,13 +59,14 @@ class ContentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        if self.action == 'list':
-            queryset = queryset.filter(status='published')
         status_filter = self.request.query_params.get('status')
-        if status_filter and self.request.user.is_authenticated:
-            if self.request.user.is_editor:
-                queryset = Content.objects.select_related('author', 'category').prefetch_related('tags')
+        if self.action == 'list':
+            if status_filter:
                 queryset = queryset.filter(status=status_filter)
+            elif self.request.user.is_authenticated and self.request.user.is_editor:
+                pass
+            else:
+                queryset = queryset.filter(status='published')
         category_id = self.request.query_params.get('category')
         if category_id:
             queryset = queryset.filter(category_id=category_id)

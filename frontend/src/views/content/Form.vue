@@ -143,15 +143,18 @@ const handleSubmit = async () => {
     if (submitData.tags.length === 0) {
       delete submitData.tags
     }
+    console.log('Submitting data:', submitData)
     if (isEdit.value) {
       await updateContent(route.params.id, submitData)
       ElMessage.success('保存成功')
     } else {
-      await createContent(submitData)
+      const response = await createContent(submitData)
+      console.log('Create response:', response)
       ElMessage.success('创建成功')
     }
     router.push('/contents')
   } catch (error) {
+    console.error('Submit error:', error.response?.data || error)
     ElMessage.error(isEdit.value ? '保存失败' : '创建失败')
   } finally {
     loading.value = false
