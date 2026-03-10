@@ -88,8 +88,16 @@ const rules = {
 const uploadUrl = computed(() => `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'}/media/`)
 const headers = computed(() => ({ Authorization: `Bearer ${userStore.token}` }))
 
+const getMediaBaseUrl = () => {
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'
+  return apiBaseUrl.replace(/\/api\/?$/, '')
+}
+
 const handleCoverSuccess = (response) => {
-  form.cover_image = response.url
+  if (response.url) {
+    const baseUrl = getMediaBaseUrl()
+    form.cover_image = response.url.startsWith('http') ? response.url : `${baseUrl}${response.url}`
+  }
 }
 
 const fetchCategories = async () => {
