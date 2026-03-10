@@ -25,9 +25,12 @@ export const useUserStore = defineStore('user', () => {
 
   const logout = async () => {
     try {
-      await logoutApi({ refresh: localStorage.getItem('refresh') })
+      const refreshToken = localStorage.getItem('refresh')
+      if (refreshToken) {
+        await logoutApi({ refresh: refreshToken })
+      }
     } catch (e) {
-      console.error(e)
+      console.error('Logout API error:', e)
     }
     token.value = ''
     user.value = null

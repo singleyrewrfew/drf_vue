@@ -81,7 +81,7 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer.save()
         return Response({'message': '密码修改成功'})
 
-    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def logout(self, request):
         try:
             refresh_token = request.data.get('refresh')
