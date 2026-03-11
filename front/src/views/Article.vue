@@ -39,7 +39,7 @@
                 <img :src="getCoverUrl(article.cover_image)" :alt="article.title" />
               </div>
 
-              <div class="article-content" v-html="article.content"></div>
+              <div class="article-content markdown-body" v-html="renderedContent"></div>
             </article>
 
             <div class="article-nav">
@@ -90,16 +90,6 @@
 
         <el-col :span="7">
           <div class="sidebar">
-            <div class="sidebar-card author-card">
-              <div class="author-profile">
-                <el-avatar :size="56">{{ article.author_name?.charAt(0) }}</el-avatar>
-                <div class="author-info">
-                  <span class="author-name">{{ article.author_name }}</span>
-                  <span class="author-title">内容创作者</span>
-                </div>
-              </div>
-            </div>
-
             <div class="sidebar-card">
               <div class="sidebar-title">
                 <el-icon><Document /></el-icon>
@@ -120,7 +110,27 @@
                     <span class="related-views">{{ item.view_count }} 阅读</span>
                   </div>
                 </div>
+                <el-empty v-if="relatedArticles.length === 0" description="暂无相关文章" :image-size="60" />
               </div>
+            </div>
+
+            <div class="sidebar-card toc-card">
+              <div class="sidebar-title">
+                <el-icon><List /></el-icon>
+                <span>目录</span>
+              </div>
+              <div class="toc-list" v-if="headings.length">
+                <a
+                  v-for="(heading, index) in headings"
+                  :key="index"
+                  v-show="heading.level <= 3"
+                  :href="'#' + heading.id"
+                  :class="['toc-item', 'toc-' + heading.level]"
+                >
+                  {{ heading.text }}
+                </a>
+              </div>
+              <el-empty v-else description="暂无目录" :image-size="60" />
             </div>
           </div>
         </el-col>
@@ -130,10 +140,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { View, ArrowLeft, ArrowRight, ChatDotRound, Document } from '@element-plus/icons-vue'
+import { View, ArrowLeft, ArrowRight, ChatDotRound, Document, List } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import { marked } from 'marked'
+import hljs from 'highlight.js'
+import 'highlight.js/styles/github-dark.css'
 import { useUserStore } from '@/stores/user'
 import { getContent, getContents, getComments, createComment } from '@/api/content'
 
@@ -160,6 +173,49 @@ const formatDate = (dateStr) => {
   const date = new Date(dateStr)
   return date.toLocaleDateString('zh-CN')
 }
+
+const headings = ref([])
+
+const extractHeadings = (html) => {
+  const tempDiv = document.createElement('div')
+  tempDiv.innerHTML = html
+  const headingElements = tempDiv.querySelectorAll('h1, h2, h3, h4, h5, h6')
+  const result = []
+  headingElements.forEach((el, index) => {
+    const id = `heading-${index}`
+    el.id = id
+    result.push({
+      id,
+      level: parseInt(el.tagName.charAt(1)),
+      text: el.textContent,
+    })
+  })
+  return { html: tempDiv.innerHTML, headings: result }
+}
+
+const renderedContent = computed(() => {
+  if (!article.value.content) return ''
+  
+  marked.setOptions({
+    highlight: function(code, lang) {
+      if (lang && hljs.getLanguage(lang)) {
+        try {
+          return hljs.highlight(code, { language: lang }).value
+        } catch (e) {
+          console.error(e)
+        }
+      }
+      return hljs.highlightAuto(code).value
+    },
+    breaks: true,
+    gfm: true,
+  })
+  
+  let html = marked.parse(article.value.content)
+  const result = extractHeadings(html)
+  headings.value = result.headings
+  return result.html
+})
 
 const fetchArticle = async () => {
   loading.value = true
@@ -322,48 +378,6 @@ watch(() => route.params.id, () => {
   height: auto;
 }
 
-.article-content {
-  font-size: 16px;
-  line-height: 1.8;
-  color: #303133;
-}
-
-.article-content :deep(p) {
-  margin-bottom: 20px;
-}
-
-.article-content :deep(h2) {
-  font-size: 22px;
-  margin: 28px 0 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #ebeef5;
-}
-
-.article-content :deep(h3) {
-  font-size: 18px;
-  margin: 24px 0 12px;
-}
-
-.article-content :deep(img) {
-  max-width: 100%;
-  border-radius: 8px;
-  margin: 16px 0;
-}
-
-.article-content :deep(pre) {
-  background: #f5f7fa;
-  padding: 16px;
-  border-radius: 8px;
-  overflow-x: auto;
-}
-
-.article-content :deep(blockquote) {
-  border-left: 4px solid #409eff;
-  padding-left: 16px;
-  margin: 16px 0;
-  color: #606266;
-}
-
 .article-nav {
   display: flex;
   justify-content: space-between;
@@ -458,6 +472,17 @@ watch(() => route.params.id, () => {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  align-self: flex-start;
+  position: sticky;
+  top: 96px;
+  max-height: calc(100vh - 116px);
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.sidebar::-webkit-scrollbar {
+  display: none;
 }
 
 .sidebar-card {
@@ -483,29 +508,57 @@ watch(() => route.params.id, () => {
   color: #409eff;
 }
 
-.author-card {
-  padding: 24px;
-}
-
-.author-profile {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.author-profile .author-info {
+.toc-list {
   display: flex;
   flex-direction: column;
+  gap: 4px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 8px;
 }
 
-.author-profile .author-name {
-  font-size: 16px;
-  font-weight: 600;
+.toc-list::-webkit-scrollbar {
+  width: 6px;
 }
 
-.author-profile .author-title {
+.toc-list::-webkit-scrollbar-track {
+  background: #f5f7fa;
+  border-radius: 3px;
+}
+
+.toc-list::-webkit-scrollbar-thumb {
+  background: #c0c4cc;
+  border-radius: 3px;
+  transition: background 0.3s;
+}
+
+.toc-list::-webkit-scrollbar-thumb:hover {
+  background: #909399;
+}
+
+.toc-item {
   font-size: 13px;
-  color: #909399;
+  color: #606266;
+  text-decoration: none;
+  padding: 6px 0;
+  display: block;
+  transition: color 0.3s;
+}
+
+.toc-item:hover {
+  color: #409eff;
+}
+
+.toc-2 {
+  padding-left: 0;
+}
+
+.toc-3 {
+  padding-left: 12px;
+}
+
+.toc-4 {
+  padding-left: 24px;
 }
 
 .related-list {
@@ -563,5 +616,140 @@ watch(() => route.params.id, () => {
 .related-views {
   font-size: 12px;
   color: #909399;
+}
+</style>
+
+<style>
+.markdown-body {
+  font-size: 16px;
+  line-height: 1.8;
+  color: #303133;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  margin-top: 24px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.markdown-body h1 {
+  font-size: 28px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.markdown-body h2 {
+  font-size: 24px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.markdown-body h3 {
+  font-size: 20px;
+}
+
+.markdown-body h4 {
+  font-size: 18px;
+}
+
+.markdown-body p {
+  margin-bottom: 16px;
+}
+
+.markdown-body a {
+  color: #409eff;
+  text-decoration: none;
+}
+
+.markdown-body a:hover {
+  text-decoration: underline;
+}
+
+.markdown-body img {
+  max-width: 100%;
+  border-radius: 8px;
+  margin: 16px 0;
+}
+
+.markdown-body pre {
+  background: #1e1e1e;
+  padding: 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 16px 0;
+}
+
+.markdown-body code {
+  font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
+  font-size: 14px;
+}
+
+.markdown-body pre code {
+  color: #d4d4d4;
+}
+
+.markdown-body p code {
+  background: #f5f7fa;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #e96900;
+  font-size: 14px;
+}
+
+.markdown-body blockquote {
+  border-left: 4px solid #409eff;
+  padding: 12px 16px;
+  margin: 16px 0;
+  background: #ecf5ff;
+  color: #606266;
+  border-radius: 0 8px 8px 0;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 24px;
+  margin-bottom: 16px;
+}
+
+.markdown-body li {
+  margin-bottom: 8px;
+}
+
+.markdown-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+}
+
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid #ebeef5;
+  padding: 12px;
+  text-align: left;
+}
+
+.markdown-body th {
+  background: #f5f7fa;
+  font-weight: 600;
+}
+
+.markdown-body tr:hover {
+  background: #f5f7fa;
+}
+
+.markdown-body hr {
+  border: none;
+  border-top: 1px solid #ebeef5;
+  margin: 24px 0;
+}
+
+.markdown-body .hljs {
+  background: transparent;
 }
 </style>

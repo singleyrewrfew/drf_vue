@@ -13,6 +13,9 @@
     "artplayer": "^5.3.0",
     "axios": "^1.13.6",
     "element-plus": "^2.13.5",
+    "highlight.js": "^11.11.1",
+    "marked": "^17.0.4",
+    "md-editor-v3": "^6.4.0",
     "pinia": "^3.0.4",
     "vue": "^3.5.25",
     "vue-router": "^4.6.4"

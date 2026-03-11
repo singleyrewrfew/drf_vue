@@ -23,7 +23,13 @@
         </el-form-item>
         
         <el-form-item label="内容" prop="content">
-          <el-input v-model="form.content" type="textarea" :rows="15" placeholder="请输入正文内容" />
+          <MdEditor
+            v-model="form.content"
+            :toolbars="toolbars"
+            :preview="true"
+            :style="{ height: '500px' }"
+            placeholder="请输入正文内容，支持 Markdown 语法"
+          />
         </el-form-item>
         
         <el-divider content-position="left">分类与标签</el-divider>
@@ -101,28 +107,31 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
-import { useUserStore } from '@/stores/user'
+import MdEditor from 'md-editor-v3'
+import 'md-editor-v3/lib/style.css'
 import { createContent, updateContent, getContent } from '@/api/content'
 import api from '@/api'
+import { useUserStore } from '@/stores/user'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 
+const isEdit = computed(() => !!route.params.id)
 const formRef = ref()
 const loading = ref(false)
 const categories = ref([])
 const tags = ref([])
 
-const isEdit = computed(() => !!route.params.id)
-
 const form = reactive({
   title: '',
+  slug: '',
   summary: '',
   content: '',
-  category: '',
+  category: null,
   tags: [],
   cover_image: '',
+  status: 'draft',
   is_top: false,
 })
 
@@ -133,6 +142,36 @@ const rules = {
 
 const uploadUrl = computed(() => `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'}/media/`)
 const headers = computed(() => ({ Authorization: `Bearer ${userStore.token}` }))
+
+const toolbars = [
+  'bold',
+  'underline',
+  'italic',
+  '-',
+  'strikeThrough',
+  'title',
+  'sub',
+  'sup',
+  'quote',
+  'unorderedList',
+  'orderedList',
+  'task',
+  '-',
+  'codeRow',
+  'code',
+  'link',
+  'image',
+  'table',
+  'mermaid',
+  '-',
+  'revoke',
+  'next',
+  '=',
+  'pageFullscreen',
+  'fullscreen',
+  'preview',
+  'catalog',
+]
 
 const getMediaBaseUrl = () => {
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'
@@ -165,21 +204,25 @@ const fetchTags = async () => {
 }
 
 const fetchContent = async () => {
-  if (!isEdit.value) return
+  if (!route.params.id) return
+  loading.value = true
   try {
     const { data } = await getContent(route.params.id)
     Object.assign(form, {
       title: data.title,
+      slug: data.slug,
       summary: data.summary,
       content: data.content,
       category: data.category,
-      tags: data.tags.map((t) => t.id),
+      tags: data.tags?.map(t => t.id) || [],
       cover_image: data.cover_image,
+      status: data.status,
       is_top: data.is_top,
     })
   } catch (error) {
     ElMessage.error('获取内容失败')
-    router.back()
+  } finally {
+    loading.value = false
   }
 }
 
