@@ -11,7 +11,7 @@
         </div>
         
         <nav class="nav">
-          <router-link to="/" class="nav-item">
+          <router-link to="/" class="nav-item" exact-path>
             <el-icon><HomeFilled /></el-icon>
             <span>首页</span>
           </router-link>
@@ -50,7 +50,7 @@
           <template v-if="userStore.isLoggedIn">
             <el-dropdown trigger="click">
               <div class="user-info">
-                <el-avatar :size="36" :src="userStore.user?.avatar">{{ userStore.user?.username?.charAt(0).toUpperCase() }}</el-avatar>
+                <el-avatar :size="36" :src="getAvatarUrl(userStore.user?.avatar)">{{ userStore.user?.username?.charAt(0).toUpperCase() }}</el-avatar>
                 <span class="username">{{ userStore.user?.username }}</span>
                 <el-icon><ArrowDown /></el-icon>
               </div>
@@ -116,6 +116,12 @@ const userStore = useUserStore()
 const searchKeyword = ref('')
 const categories = ref([])
 
+const getAvatarUrl = (avatar) => {
+  if (!avatar) return ''
+  if (avatar.startsWith('http')) return avatar
+  return `http://localhost:8001${avatar}`
+}
+
 const handleSearch = () => {
   if (searchKeyword.value.trim()) {
     router.push({ path: '/search', query: { q: searchKeyword.value } })
@@ -164,6 +170,7 @@ onMounted(() => {
   height: 72px;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 32px;
 }
 
@@ -233,7 +240,7 @@ onMounted(() => {
   background: #ecf5ff;
 }
 
-.nav-item.router-link-active {
+.nav-item.router-link-exact-active {
   color: #409eff;
   background: #ecf5ff;
   font-weight: 500;

@@ -5,7 +5,7 @@
         <el-col :span="6">
           <div class="profile-card">
             <div class="avatar-section">
-              <el-avatar :size="80">{{ userStore.user?.username?.charAt(0).toUpperCase() }}</el-avatar>
+              <el-avatar :size="80" :src="getAvatarUrl(userStore.user?.avatar)">{{ userStore.user?.username?.charAt(0).toUpperCase() }}</el-avatar>
               <h3>{{ userStore.user?.username }}</h3>
               <p>{{ userStore.user?.email }}</p>
             </div>
@@ -95,6 +95,12 @@ const userStore = useUserStore()
 
 const activeMenu = ref('profile')
 const comments = ref([])
+
+const getAvatarUrl = (avatar) => {
+  if (!avatar) return ''
+  if (avatar.startsWith('http')) return avatar
+  return `http://localhost:8001${avatar}`
+}
 
 const profileForm = reactive({
   username: userStore.user?.username || '',

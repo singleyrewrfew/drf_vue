@@ -1,7 +1,7 @@
 <template>
   <div class="home-page">
     <section class="hero-section" v-if="featuredContents.length">
-      <el-carousel height="480px" :interval="6000" indicator-position="outside">
+      <el-carousel height="480px" :interval="6000">
         <el-carousel-item v-for="item in featuredContents" :key="item.id">
           <div class="hero-item" @click="$router.push(`/article/${item.id}`)">
             <img :src="getCoverUrl(item.cover_image)" :alt="item.title" />
