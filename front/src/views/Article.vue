@@ -120,15 +120,15 @@
                 <span>目录</span>
               </div>
               <div class="toc-list" v-if="headings.length">
-                <a
+                <div
                   v-for="(heading, index) in headings"
                   :key="index"
                   v-show="heading.level <= 3"
-                  :href="'#' + heading.id"
                   :class="['toc-item', 'toc-' + heading.level]"
+                  @click="scrollToHeading(heading.id)"
                 >
                   {{ heading.text }}
-                </a>
+                </div>
               </div>
               <el-empty v-else description="暂无目录" :image-size="60" />
             </div>
@@ -172,6 +172,18 @@ const getAvatarUrl = (avatar) => {
   if (!avatar) return ''
   if (avatar.startsWith('http')) return avatar
   return `http://localhost:8001${avatar}`
+}
+
+const scrollToHeading = (id) => {
+  const element = document.getElementById(id)
+  if (element) {
+    const headerHeight = 72
+    const elementPosition = element.getBoundingClientRect().top + window.pageYOffset
+    window.scrollTo({
+      top: elementPosition - headerHeight - 16,
+      behavior: 'smooth'
+    })
+  }
 }
 
 const formatDate = (dateStr) => {
@@ -549,6 +561,7 @@ watch(() => route.params.id, () => {
   padding: 6px 0;
   display: block;
   transition: color 0.3s;
+  cursor: pointer;
 }
 
 .toc-item:hover {
