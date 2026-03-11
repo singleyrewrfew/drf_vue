@@ -2,7 +2,14 @@
   <div class="content-form">
     <el-card>
       <template #header>
-        <span>{{ isEdit ? '编辑内容' : '新建内容' }}</span>
+        <div class="card-header">
+          <span>{{ isEdit ? '编辑内容' : '新建内容' }}</span>
+          <div class="header-actions">
+            <el-tag v-if="autoSaveStatus" :type="autoSaveStatus === 'saving' ? 'warning' : 'success'" size="small">
+              {{ autoSaveStatus === 'saving' ? '自动保存中...' : '已自动保存' }}
+            </el-tag>
+          </div>
+        </div>
       </template>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-row :gutter="20">
@@ -23,13 +30,33 @@
         </el-form-item>
         
         <el-form-item label="内容" prop="content">
-          <MdEditor
-            v-model="form.content"
-            :toolbars="toolbars"
-            :preview="true"
-            :style="{ height: '500px' }"
-            placeholder="请输入正文内容，支持 Markdown 语法"
-          />
+          <div class="editor-wrapper">
+            <div class="editor-toolbar">
+              <el-button-group>
+                <el-button size="small" @click="togglePreview">
+                  {{ showPreview ? '隐藏预览' : '显示预览' }}
+                </el-button>
+                <el-button size="small" @click="handleSaveDraft" :loading="loading">
+                  保存草稿
+                </el-button>
+              </el-button-group>
+            </div>
+            <MdEditor
+              v-if="editorLoaded"
+              v-model="form.content"
+              :toolbars="toolbars"
+              :preview="showPreview"
+              :previewTheme="previewTheme"
+              :codeTheme="codeTheme"
+              :style="{ height: editorHeight }"
+              placeholder="请输入正文内容，支持 Markdown 语法"
+              @onChange="handleContentChange"
+            />
+            <div v-else class="editor-loading">
+              <el-icon class="is-loading"><Loading /></el-icon>
+              <span>编辑器加载中...</span>
+            </div>
+          </div>
         </el-form-item>
         
         <el-divider content-position="left">分类与标签</el-divider>
@@ -103,11 +130,11 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, defineAsyncComponent, shallowRef } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
-import MdEditor from 'md-editor-v3'
+import { Plus, Loading } from '@element-plus/icons-vue'
+import { MdEditor } from 'md-editor-v3'
 import 'md-editor-v3/lib/style.css'
 import { createContent, updateContent, getContent } from '@/api/content'
 import api from '@/api'
@@ -122,6 +149,15 @@ const formRef = ref()
 const loading = ref(false)
 const categories = ref([])
 const tags = ref([])
+
+const editorLoaded = ref(false)
+const showPreview = ref(false)
+const previewTheme = ref('github')
+const codeTheme = ref('github')
+const editorHeight = ref('500px')
+const autoSaveStatus = ref('')
+const autoSaveTimer = ref(null)
+const lastSaveContent = ref('')
 
 const form = reactive({
   title: '',
@@ -148,21 +184,17 @@ const toolbars = [
   'underline',
   'italic',
   '-',
-  'strikeThrough',
   'title',
-  'sub',
-  'sup',
+  'strikeThrough',
   'quote',
   'unorderedList',
   'orderedList',
-  'task',
   '-',
   'codeRow',
   'code',
   'link',
   'image',
   'table',
-  'mermaid',
   '-',
   'revoke',
   'next',
@@ -170,8 +202,58 @@ const toolbars = [
   'pageFullscreen',
   'fullscreen',
   'preview',
-  'catalog',
 ]
+
+const togglePreview = () => {
+  showPreview.value = !showPreview.value
+}
+
+const handleContentChange = () => {
+  if (form.content && form.content !== lastSaveContent.value && form.content.length > 100) {
+    triggerAutoSave()
+  }
+}
+
+const triggerAutoSave = () => {
+  if (autoSaveTimer.value) {
+    clearTimeout(autoSaveTimer.value)
+  }
+  autoSaveTimer.value = setTimeout(() => {
+    if (isEdit.value) {
+      autoSave()
+    }
+  }, 3000)
+}
+
+const autoSave = async () => {
+  if (!form.content || form.content === lastSaveContent.value) return
+  
+  autoSaveStatus.value = 'saving'
+  try {
+    const submitData = {
+      title: form.title,
+      content: form.content,
+      summary: form.summary,
+      category: form.category,
+      tags: form.tags,
+      cover_image: form.cover_image,
+      status: form.status,
+      is_top: form.is_top,
+    }
+    if (!submitData.category) delete submitData.category
+    if (!submitData.cover_image) delete submitData.cover_image
+    if (submitData.tags.length === 0) delete submitData.tags
+    
+    await updateContent(route.params.id, submitData)
+    lastSaveContent.value = form.content
+    autoSaveStatus.value = 'saved'
+    setTimeout(() => {
+      autoSaveStatus.value = ''
+    }, 2000)
+  } catch (error) {
+    autoSaveStatus.value = ''
+  }
+}
 
 const getMediaBaseUrl = () => {
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'
@@ -219,6 +301,7 @@ const fetchContent = async () => {
       status: data.status,
       is_top: data.is_top,
     })
+    lastSaveContent.value = data.content
   } catch (error) {
     ElMessage.error('获取内容失败')
   } finally {
@@ -231,15 +314,10 @@ const handleSubmit = async () => {
   loading.value = true
   try {
     const submitData = { ...form }
-    if (!submitData.category) {
-      delete submitData.category
-    }
-    if (!submitData.cover_image) {
-      delete submitData.cover_image
-    }
-    if (submitData.tags.length === 0) {
-      delete submitData.tags
-    }
+    if (!submitData.category) delete submitData.category
+    if (!submitData.cover_image) delete submitData.cover_image
+    if (submitData.tags.length === 0) delete submitData.tags
+    
     if (isEdit.value) {
       await updateContent(route.params.id, submitData)
       ElMessage.success('保存成功')
@@ -256,22 +334,25 @@ const handleSubmit = async () => {
 }
 
 const handleSaveDraft = async () => {
-  await formRef.value.validate()
+  if (!form.title && !form.content) {
+    ElMessage.warning('请至少填写标题或内容')
+    return
+  }
   loading.value = true
   try {
     const submitData = { ...form, status: 'draft' }
-    if (!submitData.category) {
-      delete submitData.category
+    if (!submitData.category) delete submitData.category
+    if (!submitData.cover_image) delete submitData.cover_image
+    if (submitData.tags.length === 0) delete submitData.tags
+    
+    if (isEdit.value) {
+      await updateContent(route.params.id, submitData)
+      ElMessage.success('草稿保存成功')
+    } else {
+      await createContent(submitData)
+      ElMessage.success('草稿保存成功')
+      router.push('/contents')
     }
-    if (!submitData.cover_image) {
-      delete submitData.cover_image
-    }
-    if (submitData.tags.length === 0) {
-      delete submitData.tags
-    }
-    await createContent(submitData)
-    ElMessage.success('草稿保存成功')
-    router.push('/contents')
   } catch (error) {
     ElMessage.error('保存草稿失败')
   } finally {
@@ -279,16 +360,66 @@ const handleSaveDraft = async () => {
   }
 }
 
-onMounted(() => {
-  fetchCategories()
-  fetchTags()
-  fetchContent()
+onMounted(async () => {
+  await Promise.all([
+    fetchCategories(),
+    fetchTags(),
+    fetchContent(),
+  ])
+  
+  setTimeout(() => {
+    editorLoaded.value = true
+  }, 100)
+})
+
+onUnmounted(() => {
+  if (autoSaveTimer.value) {
+    clearTimeout(autoSaveTimer.value)
+  }
 })
 </script>
 
 <style scoped>
 .content-form {
   padding: 20px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.editor-wrapper {
+  width: 100%;
+}
+
+.editor-toolbar {
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.editor-loading {
+  height: 500px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #909399;
+  background: #f5f7fa;
+  border-radius: 8px;
+}
+
+.editor-loading .el-icon {
+  font-size: 32px;
 }
 
 .cover-uploader {

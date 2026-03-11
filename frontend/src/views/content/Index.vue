@@ -40,8 +40,16 @@
         </el-table-column>
         <el-table-column prop="view_count" label="浏览量" width="100" />
         <el-table-column prop="created_at" label="创建时间" width="180" />
-        <el-table-column label="操作" width="200">
+        <el-table-column label="操作" width="240">
           <template #default="{ row }">
+            <el-button
+              v-if="row.status === 'published'"
+              type="primary"
+              link
+              @click="handleView(row)"
+            >
+              查看
+            </el-button>
             <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
             <el-button
               v-if="row.status === 'draft'"
@@ -127,6 +135,10 @@ const handleSearch = () => {
 
 const handleEdit = (row) => {
   router.push(`/contents/${row.id}/edit`)
+}
+
+const handleView = (row) => {
+  window.open(`http://localhost:3000/article/${row.id}`, '_blank')
 }
 
 const handlePublish = async (row) => {

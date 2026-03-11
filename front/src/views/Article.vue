@@ -12,7 +12,7 @@
                 <h1>{{ article.title }}</h1>
                 <div class="article-meta">
                   <div class="author-info">
-                    <el-avatar :size="40">{{ article.author_name?.charAt(0) }}</el-avatar>
+                    <el-avatar :size="40" :src="getAvatarUrl(article.author_avatar)">{{ article.author_name?.charAt(0)?.toUpperCase() }}</el-avatar>
                     <div class="author-detail">
                       <span class="author-name">{{ article.author_name }}</span>
                       <span class="publish-time">{{ formatDate(article.created_at) }}</span>
@@ -73,7 +73,7 @@
 
               <div class="comment-list">
                 <div v-for="comment in comments" :key="comment.id" class="comment-item">
-                  <el-avatar :size="40">{{ comment.user_name?.charAt(0) }}</el-avatar>
+                  <el-avatar :size="40" :src="getAvatarUrl(comment.user_avatar)">{{ comment.user_name?.charAt(0)?.toUpperCase() }}</el-avatar>
                   <div class="comment-content">
                     <div class="comment-header">
                       <span class="comment-author">{{ comment.user_name }}</span>
@@ -166,6 +166,12 @@ const getCoverUrl = (coverImage) => {
   if (!coverImage) return ''
   if (coverImage.startsWith('http')) return coverImage
   return `http://localhost:8001${coverImage}`
+}
+
+const getAvatarUrl = (avatar) => {
+  if (!avatar) return ''
+  if (avatar.startsWith('http')) return avatar
+  return `http://localhost:8001${avatar}`
 }
 
 const formatDate = (dateStr) => {

@@ -27,6 +27,7 @@ def extract_media_path(url):
 
 class ContentSerializer(serializers.ModelSerializer):
     author_name = serializers.CharField(source='author.username', read_only=True)
+    author_avatar = serializers.ImageField(source='author.avatar', read_only=True)
     category_name = serializers.CharField(source='category.name', read_only=True)
     tags = TagSerializer(many=True, read_only=True)
 
@@ -34,7 +35,7 @@ class ContentSerializer(serializers.ModelSerializer):
         model = Content
         fields = [
             'id', 'title', 'slug', 'summary', 'content', 'cover_image',
-            'author', 'author_name', 'category', 'category_name', 'tags',
+            'author', 'author_name', 'author_avatar', 'category', 'category_name', 'tags',
             'status', 'view_count', 'is_top', 'published_at', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'author', 'view_count', 'created_at', 'updated_at']
@@ -42,6 +43,7 @@ class ContentSerializer(serializers.ModelSerializer):
 
 class ContentListSerializer(serializers.ModelSerializer):
     author_name = serializers.CharField(source='author.username', read_only=True)
+    author_avatar = serializers.ImageField(source='author.avatar', read_only=True)
     category_name = serializers.CharField(source='category.name', read_only=True)
     tags = TagSerializer(many=True, read_only=True)
 
@@ -49,7 +51,7 @@ class ContentListSerializer(serializers.ModelSerializer):
         model = Content
         fields = [
             'id', 'title', 'slug', 'summary', 'cover_image',
-            'author_name', 'category_name', 'tags',
+            'author_name', 'author_avatar', 'category_name', 'tags',
             'status', 'view_count', 'is_top', 'published_at', 'created_at'
         ]
 

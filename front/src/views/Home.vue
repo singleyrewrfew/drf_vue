@@ -52,7 +52,7 @@
                     <p class="article-summary">{{ article.summary || '暂无摘要' }}</p>
                     <div class="article-footer">
                       <div class="article-author">
-                        <el-avatar :size="24">{{ article.author_name?.charAt(0) }}</el-avatar>
+                        <el-avatar :size="24" :src="getAvatarUrl(article.author_avatar)">{{ article.author_name?.charAt(0)?.toUpperCase() }}</el-avatar>
                         <span>{{ article.author_name }}</span>
                       </div>
                       <div class="article-stats">
@@ -149,6 +149,12 @@ const getCoverUrl = (coverImage) => {
   if (!coverImage) return 'https://picsum.photos/800/400?random=' + Math.random()
   if (coverImage.startsWith('http')) return coverImage
   return `http://localhost:8001${coverImage}`
+}
+
+const getAvatarUrl = (avatar) => {
+  if (!avatar) return ''
+  if (avatar.startsWith('http')) return avatar
+  return `http://localhost:8001${avatar}`
 }
 
 const formatDate = (dateStr) => {
