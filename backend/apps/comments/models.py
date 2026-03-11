@@ -14,6 +14,7 @@ class Comment(models.Model):
     article = models.ForeignKey(Content, on_delete=models.CASCADE, related_name='comments', verbose_name='关联文章')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments', verbose_name='评论用户')
     parent = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True, related_name='replies', verbose_name='父评论')
+    reply_to = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True, related_name='replied_comments', verbose_name='回复对象')
     is_approved = models.BooleanField(default=True, verbose_name='是否审核通过')
     like_count = models.PositiveIntegerField(default=0, verbose_name='点赞数')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')

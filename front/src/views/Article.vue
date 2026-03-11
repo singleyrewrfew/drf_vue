@@ -90,21 +90,26 @@
                           <el-icon><Pointer /></el-icon>
                           <span>{{ comment.like_count || '' }}</span>
                         </span>
-                        <span class="action-btn" @click="toggleReply(comment.id)">
+                        <span class="action-btn" @click="openReplyForm(comment.id, comment.user_name, comment.id)">
                           <el-icon><ChatDotRound /></el-icon>
                           <span>回复</span>
                         </span>
                       </div>
                     </div>
-                    <div v-if="replyTo === comment.id" class="reply-form">
+                    <div v-if="replyToParent === comment.id" class="reply-form">
+                      <div class="reply-form-header">
+                        <span>回复 <span class="reply-target">@{{ replyToName }}</span></span>
+                        <el-button link size="small" @click="closeReplyForm">取消</el-button>
+                      </div>
                       <el-input
                         v-model="replyContent"
                         type="textarea"
                         :rows="2"
-                        :placeholder="`回复 ${comment.user_name}...`"
+                        placeholder="写下你的回复..."
+                        @keyup.ctrl.enter="submitReply(comment.id)"
                       />
                       <div class="reply-form-actions">
-                        <el-button size="small" @click="replyTo = null; replyContent = ''">取消</el-button>
+                        <span class="reply-tip">Ctrl + Enter 发送</span>
                         <el-button type="primary" size="small" @click="submitReply(comment.id)" :loading="submittingReply">
                           发送
                         </el-button>
@@ -120,10 +125,14 @@
                       </div>
                       <div v-if="expandedReplies.includes(comment.id) && comment.replies?.length" class="reply-list">
                         <div v-for="reply in comment.replies" :key="reply.id" class="reply-item">
-                          <el-avatar :size="32" :src="getAvatarUrl(reply.user_avatar)">{{ reply.user_name?.charAt(0)?.toUpperCase() }}</el-avatar>
+                          <el-avatar :size="24" :src="getAvatarUrl(reply.user_avatar)">{{ reply.user_name?.charAt(0)?.toUpperCase() }}</el-avatar>
                           <div class="reply-body">
                             <div class="reply-header">
                               <span class="reply-author">{{ reply.user_name }}</span>
+                              <template v-if="reply.reply_to_name">
+                                <span class="reply-arrow">回复</span>
+                                <span class="reply-to-user">@{{ reply.reply_to_name }}</span>
+                              </template>
                               <span class="reply-time">{{ formatRelativeTime(reply.created_at) }}</span>
                             </div>
                             <p class="reply-text">{{ reply.content }}</p>
@@ -136,7 +145,7 @@
                                 <el-icon><Pointer /></el-icon>
                                 <span>{{ reply.like_count || '' }}</span>
                               </span>
-                              <span class="action-btn small" @click="toggleReply(reply.id, reply.user_name)">
+                              <span class="action-btn small" @click="openReplyForm(comment.id, reply.user_name, reply.id)">
                                 <el-icon><ChatDotRound /></el-icon>
                                 <span>回复</span>
                               </span>
@@ -223,7 +232,9 @@ const article = ref({})
 const comments = ref([])
 const commentContent = ref('')
 const submitting = ref(false)
-const replyTo = ref(null)
+const replyToParent = ref(null)
+const replyToName = ref('')
+const replyToUserId = ref(null)
 const replyContent = ref('')
 const submittingReply = ref(false)
 const expandedReplies = ref([])
@@ -381,14 +392,18 @@ const submitComment = async () => {
   }
 }
 
-const toggleReply = (commentId, userName = '') => {
-  if (replyTo.value === commentId) {
-    replyTo.value = null
-    replyContent.value = ''
-  } else {
-    replyTo.value = commentId
-    replyContent.value = userName ? `@${userName} ` : ''
-  }
+const openReplyForm = (parentId, userName, userId) => {
+  replyToParent.value = parentId
+  replyToName.value = userName
+  replyToUserId.value = userId
+  replyContent.value = ''
+}
+
+const closeReplyForm = () => {
+  replyToParent.value = null
+  replyToName.value = ''
+  replyToUserId.value = null
+  replyContent.value = ''
 }
 
 const toggleReplies = (commentId) => {
@@ -437,10 +452,10 @@ const submitReply = async (parentId) => {
       article: route.params.id,
       content: replyContent.value,
       parent: parentId,
+      reply_to_id: replyToUserId.value,
     })
     ElMessage.success('回复成功')
-    replyContent.value = ''
-    replyTo.value = null
+    closeReplyForm()
     fetchComments()
   } catch (e) {
     ElMessage.error('回复失败')
@@ -682,11 +697,31 @@ watch(() => route.params.id, () => {
   border-radius: 8px;
 }
 
+.reply-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.reply-target {
+  color: #409eff;
+  font-weight: 500;
+}
+
+.reply-form .el-textarea {
+  margin-bottom: 8px;
+}
+
 .reply-form-actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  margin-top: 8px;
+}
+
+.reply-tip {
+  font-size: 12px;
+  color: #8590a6;
 }
 
 .reply-section {
