@@ -56,7 +56,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getPermissions, getPermission, createPermission, updatePermission, deletePermission } from '@/api/role'
+import { getPermissions, createPermission, updatePermission, deletePermission } from '@/api/role'
 
 const loading = ref(false)
 const submitting = ref(false)

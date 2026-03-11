@@ -197,19 +197,40 @@ const handleSubmit = async () => {
     if (submitData.tags.length === 0) {
       delete submitData.tags
     }
-    console.log('Submitting data:', submitData)
     if (isEdit.value) {
       await updateContent(route.params.id, submitData)
       ElMessage.success('保存成功')
     } else {
-      const response = await createContent(submitData)
-      console.log('Create response:', response)
+      await createContent(submitData)
       ElMessage.success('创建成功')
     }
     router.push('/contents')
   } catch (error) {
-    console.error('Submit error:', error.response?.data || error)
     ElMessage.error(isEdit.value ? '保存失败' : '创建失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleSaveDraft = async () => {
+  await formRef.value.validate()
+  loading.value = true
+  try {
+    const submitData = { ...form, status: 'draft' }
+    if (!submitData.category) {
+      delete submitData.category
+    }
+    if (!submitData.cover_image) {
+      delete submitData.cover_image
+    }
+    if (submitData.tags.length === 0) {
+      delete submitData.tags
+    }
+    await createContent(submitData)
+    ElMessage.success('草稿保存成功')
+    router.push('/contents')
+  } catch (error) {
+    ElMessage.error('保存草稿失败')
   } finally {
     loading.value = false
   }

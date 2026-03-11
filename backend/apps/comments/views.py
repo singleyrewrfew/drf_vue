@@ -43,7 +43,6 @@ class CommentViewSet(viewsets.ModelViewSet):
         is_approved = self.request.query_params.get('is_approved')
         if is_approved is not None and self.request.user.is_authenticated:
             if self.request.user.is_editor:
-                queryset = Comment.objects.select_related('user', 'article', 'parent')
                 queryset = queryset.filter(is_approved=is_approved.lower() == 'true')
         return queryset
 

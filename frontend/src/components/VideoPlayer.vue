@@ -40,19 +40,9 @@ const initPlayer = () => {
     artInstance.destroy()
   }
 
-  if (!artRef.value) {
-    console.error('VideoPlayer: artRef is null')
+  if (!artRef.value || !props.src) {
     return
   }
-  
-  if (!props.src) {
-    console.error('VideoPlayer: src is empty')
-    return
-  }
-
-  console.log('VideoPlayer: initializing with src =', props.src)
-  console.log('VideoPlayer: thumbnails =', props.thumbnails)
-  console.log('VideoPlayer: thumbnailsVtt =', props.thumbnailsVtt)
 
   const baseUrl = getMediaBaseUrl()
   const options = {
@@ -87,9 +77,6 @@ const initPlayer = () => {
   if (props.thumbnails && props.thumbnailsCount > 0) {
     const thumbnailsUrl = props.thumbnails.startsWith('http') ? props.thumbnails : `${baseUrl}${props.thumbnails}`
     
-    console.log('VideoPlayer: thumbnailsUrl =', thumbnailsUrl)
-    console.log('VideoPlayer: thumbnailsCount =', props.thumbnailsCount)
-    
     options.thumbnails = {
       url: thumbnailsUrl,
       number: props.thumbnailsCount,
@@ -102,21 +89,11 @@ const initPlayer = () => {
   artInstance = new Artplayer(options)
 
   artInstance.on('ready', () => {
-    console.log('VideoPlayer: ready')
     emit('ready')
   })
 
   artInstance.on('error', (error) => {
-    console.error('VideoPlayer: error', error)
     emit('error', error)
-  })
-  
-  artInstance.on('play', () => {
-    console.log('VideoPlayer: playing')
-  })
-  
-  artInstance.on('pause', () => {
-    console.log('VideoPlayer: paused')
   })
 }
 
