@@ -55,7 +55,7 @@ const total = ref(0)
 const fetchComments = async () => {
   loading.value = true
   try {
-    const { data } = await api.get('/comments/', { params: { page: page.value } })
+    const { data } = await api.get('/comments/', { params: { page: page.value, all: true } })
     commentList.value = data.results || data
     total.value = data.count || commentList.value.length
   } catch (error) {

@@ -36,6 +36,9 @@ class CommentViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         if self.action == 'list':
+            show_all = self.request.query_params.get('all')
+            if show_all and self.request.user.is_authenticated and self.request.user.is_editor:
+                return queryset
             queryset = queryset.filter(is_approved=True, parent__isnull=True)
         article_id = self.request.query_params.get('article')
         if article_id:

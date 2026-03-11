@@ -90,7 +90,7 @@
                           <el-icon><Pointer /></el-icon>
                           <span>{{ comment.like_count || '' }}</span>
                         </span>
-                        <span class="action-btn" @click="openReplyForm(comment.id, comment.user_name, comment.id)">
+                        <span class="action-btn" @click="openReplyForm(comment.id, comment.user_name, comment.user)">
                           <el-icon><ChatDotRound /></el-icon>
                           <span>回复</span>
                         </span>
@@ -145,7 +145,7 @@
                                 <el-icon><Pointer /></el-icon>
                                 <span>{{ reply.like_count || '' }}</span>
                               </span>
-                              <span class="action-btn small" @click="openReplyForm(comment.id, reply.user_name, reply.id)">
+                              <span class="action-btn small" @click="openReplyForm(comment.id, reply.user_name, reply.user_id)">
                                 <el-icon><ChatDotRound /></el-icon>
                                 <span>回复</span>
                               </span>
