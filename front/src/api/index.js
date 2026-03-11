@@ -9,7 +9,14 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token')
+    let token = localStorage.getItem('front_token')
+    if (!token) {
+      token = localStorage.getItem('token')
+      if (token) {
+        localStorage.setItem('front_token', token)
+        localStorage.removeItem('token')
+      }
+    }
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -22,8 +29,9 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
+      localStorage.removeItem('front_token')
+      localStorage.removeItem('front_user')
+      localStorage.removeItem('front_refresh')
       if (router.currentRoute.value.meta.requiresAuth) {
         router.push('/login')
       }

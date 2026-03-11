@@ -8,11 +8,22 @@ class CommentSerializer(serializers.ModelSerializer):
     user_avatar = serializers.ImageField(source='user.avatar', read_only=True)
     replies = serializers.SerializerMethodField()
     is_reply = serializers.ReadOnlyField()
+    is_liked = serializers.SerializerMethodField()
+    reply_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Comment
-        fields = ['id', 'content', 'article', 'user', 'user_name', 'user_avatar', 'parent', 'is_reply', 'is_approved', 'replies', 'created_at']
-        read_only_fields = ['id', 'user', 'is_approved', 'created_at']
+        fields = ['id', 'content', 'article', 'user', 'user_name', 'user_avatar', 'parent', 'is_reply', 'is_approved', 'like_count', 'is_liked', 'reply_count', 'replies', 'created_at']
+        read_only_fields = ['id', 'user', 'is_approved', 'like_count', 'created_at']
+
+    def get_is_liked(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.likes.filter(user=request.user).exists()
+        return False
+
+    def get_reply_count(self, obj):
+        return obj.replies.filter(is_approved=True).count()
 
     def get_replies(self, obj):
         replies = obj.replies.filter(is_approved=True)
@@ -34,7 +45,23 @@ class CommentListSerializer(serializers.ModelSerializer):
     user_avatar = serializers.ImageField(source='user.avatar', read_only=True)
     article_title = serializers.CharField(source='article.title', read_only=True)
     is_reply = serializers.ReadOnlyField()
+    is_liked = serializers.SerializerMethodField()
+    reply_count = serializers.SerializerMethodField()
+    replies = serializers.SerializerMethodField()
 
     class Meta:
         model = Comment
-        fields = ['id', 'content', 'article', 'article_title', 'user_name', 'user_avatar', 'parent', 'is_reply', 'is_approved', 'created_at']
+        fields = ['id', 'content', 'article', 'article_title', 'user_name', 'user_avatar', 'parent', 'is_reply', 'is_approved', 'like_count', 'is_liked', 'reply_count', 'replies', 'created_at']
+
+    def get_is_liked(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.likes.filter(user=request.user).exists()
+        return False
+
+    def get_reply_count(self, obj):
+        return obj.replies.filter(is_approved=True).count()
+
+    def get_replies(self, obj):
+        replies = obj.replies.filter(is_approved=True)
+        return CommentListSerializer(replies, many=True).data

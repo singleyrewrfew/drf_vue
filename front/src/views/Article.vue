@@ -74,12 +74,77 @@
               <div class="comment-list">
                 <div v-for="comment in comments" :key="comment.id" class="comment-item">
                   <el-avatar :size="40" :src="getAvatarUrl(comment.user_avatar)">{{ comment.user_name?.charAt(0)?.toUpperCase() }}</el-avatar>
-                  <div class="comment-content">
-                    <div class="comment-header">
-                      <span class="comment-author">{{ comment.user_name }}</span>
-                      <span class="comment-time">{{ formatDate(comment.created_at) }}</span>
+                  <div class="comment-body">
+                    <div class="comment-main">
+                      <div class="comment-header">
+                        <span class="comment-author">{{ comment.user_name }}</span>
+                        <span class="comment-time">{{ formatRelativeTime(comment.created_at) }}</span>
+                      </div>
+                      <p class="comment-text">{{ comment.content }}</p>
+                      <div class="comment-actions">
+                        <span 
+                          class="action-btn" 
+                          :class="{ liked: comment.is_liked }"
+                          @click="handleLike(comment)"
+                        >
+                          <el-icon><Pointer /></el-icon>
+                          <span>{{ comment.like_count || '' }}</span>
+                        </span>
+                        <span class="action-btn" @click="toggleReply(comment.id)">
+                          <el-icon><ChatDotRound /></el-icon>
+                          <span>回复</span>
+                        </span>
+                      </div>
                     </div>
-                    <p class="comment-text">{{ comment.content }}</p>
+                    <div v-if="replyTo === comment.id" class="reply-form">
+                      <el-input
+                        v-model="replyContent"
+                        type="textarea"
+                        :rows="2"
+                        :placeholder="`回复 ${comment.user_name}...`"
+                      />
+                      <div class="reply-form-actions">
+                        <el-button size="small" @click="replyTo = null; replyContent = ''">取消</el-button>
+                        <el-button type="primary" size="small" @click="submitReply(comment.id)" :loading="submittingReply">
+                          发送
+                        </el-button>
+                      </div>
+                    </div>
+                    <div v-if="comment.reply_count > 0" class="reply-section">
+                      <div 
+                        class="reply-toggle" 
+                        @click="toggleReplies(comment.id)"
+                      >
+                        <el-icon><ArrowDown :class="{ rotated: expandedReplies.includes(comment.id) }" /></el-icon>
+                        <span>{{ expandedReplies.includes(comment.id) ? '收起回复' : `${comment.reply_count} 条回复` }}</span>
+                      </div>
+                      <div v-if="expandedReplies.includes(comment.id) && comment.replies?.length" class="reply-list">
+                        <div v-for="reply in comment.replies" :key="reply.id" class="reply-item">
+                          <el-avatar :size="32" :src="getAvatarUrl(reply.user_avatar)">{{ reply.user_name?.charAt(0)?.toUpperCase() }}</el-avatar>
+                          <div class="reply-body">
+                            <div class="reply-header">
+                              <span class="reply-author">{{ reply.user_name }}</span>
+                              <span class="reply-time">{{ formatRelativeTime(reply.created_at) }}</span>
+                            </div>
+                            <p class="reply-text">{{ reply.content }}</p>
+                            <div class="reply-actions">
+                              <span 
+                                class="action-btn small" 
+                                :class="{ liked: reply.is_liked }"
+                                @click="handleLike(reply, comment.id)"
+                              >
+                                <el-icon><Pointer /></el-icon>
+                                <span>{{ reply.like_count || '' }}</span>
+                              </span>
+                              <span class="action-btn small" @click="toggleReply(reply.id, reply.user_name)">
+                                <el-icon><ChatDotRound /></el-icon>
+                                <span>回复</span>
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <el-empty v-if="comments.length === 0" description="暂无评论，快来抢沙发吧~" />
@@ -142,13 +207,13 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { View, ArrowLeft, ArrowRight, ChatDotRound, Document, List } from '@element-plus/icons-vue'
+import { View, ArrowLeft, ArrowRight, ChatDotRound, Document, List, Pointer, ArrowDown } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { marked } from 'marked'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github-dark.css'
 import { useUserStore } from '@/stores/user'
-import { getContent, getContents, getComments, createComment } from '@/api/content'
+import { getContent, getContents, getComments, createComment, likeComment } from '@/api/content'
 
 const route = useRoute()
 const userStore = useUserStore()
@@ -158,6 +223,10 @@ const article = ref({})
 const comments = ref([])
 const commentContent = ref('')
 const submitting = ref(false)
+const replyTo = ref(null)
+const replyContent = ref('')
+const submittingReply = ref(false)
+const expandedReplies = ref([])
 const prevArticle = ref(null)
 const nextArticle = ref(null)
 const relatedArticles = ref([])
@@ -184,6 +253,25 @@ const scrollToHeading = (id) => {
       behavior: 'smooth'
     })
   }
+}
+
+const formatRelativeTime = (dateStr) => {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diff = now - date
+  const seconds = Math.floor(diff / 1000)
+  const minutes = Math.floor(seconds / 60)
+  const hours = Math.floor(minutes / 60)
+  const days = Math.floor(hours / 24)
+  
+  if (seconds < 60) return '刚刚'
+  if (minutes < 60) return `${minutes} 分钟前`
+  if (hours < 24) return `${hours} 小时前`
+  if (days < 7) return `${days} 天前`
+  if (days < 30) return `${Math.floor(days / 7)} 周前`
+  if (days < 365) return `${Math.floor(days / 30)} 个月前`
+  return `${Math.floor(days / 365)} 年前`
 }
 
 const formatDate = (dateStr) => {
@@ -283,12 +371,81 @@ const submitComment = async () => {
       article: route.params.id,
       content: commentContent.value,
     })
-    ElMessage.success('评论成功，等待审核')
+    ElMessage.success('评论成功')
     commentContent.value = ''
+    fetchComments()
   } catch (e) {
     ElMessage.error('评论失败')
   } finally {
     submitting.value = false
+  }
+}
+
+const toggleReply = (commentId, userName = '') => {
+  if (replyTo.value === commentId) {
+    replyTo.value = null
+    replyContent.value = ''
+  } else {
+    replyTo.value = commentId
+    replyContent.value = userName ? `@${userName} ` : ''
+  }
+}
+
+const toggleReplies = (commentId) => {
+  const index = expandedReplies.value.indexOf(commentId)
+  if (index > -1) {
+    expandedReplies.value.splice(index, 1)
+  } else {
+    expandedReplies.value.push(commentId)
+  }
+}
+
+const handleLike = async (comment, parentCommentId = null) => {
+  if (!userStore.isLoggedIn) {
+    ElMessage.warning('请先登录')
+    return
+  }
+  try {
+    const { data } = await likeComment(comment.id)
+    if (parentCommentId) {
+      const parentComment = comments.value.find(c => c.id === parentCommentId)
+      if (parentComment && parentComment.replies) {
+        const replyIndex = parentComment.replies.findIndex(r => r.id === comment.id)
+        if (replyIndex > -1) {
+          parentComment.replies[replyIndex] = data
+        }
+      }
+    } else {
+      const commentIndex = comments.value.findIndex(c => c.id === comment.id)
+      if (commentIndex > -1) {
+        comments.value[commentIndex] = { ...comments.value[commentIndex], ...data }
+      }
+    }
+  } catch (e) {
+    ElMessage.error('操作失败')
+  }
+}
+
+const submitReply = async (parentId) => {
+  if (!replyContent.value.trim()) {
+    ElMessage.warning('请输入回复内容')
+    return
+  }
+  submittingReply.value = true
+  try {
+    await createComment({
+      article: route.params.id,
+      content: replyContent.value,
+      parent: parentId,
+    })
+    ElMessage.success('回复成功')
+    replyContent.value = ''
+    replyTo.value = null
+    fetchComments()
+  } catch (e) {
+    ElMessage.error('回复失败')
+  } finally {
+    submittingReply.value = false
   }
 }
 
@@ -448,7 +605,7 @@ watch(() => route.params.id, () => {
 .comment-list {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
 }
 
 .comment-item {
@@ -456,9 +613,12 @@ watch(() => route.params.id, () => {
   gap: 12px;
 }
 
-.comment-content {
+.comment-body {
   flex: 1;
-  background: #f5f7fa;
+}
+
+.comment-main {
+  background: #f7f8fa;
   padding: 16px;
   border-radius: 8px;
 }
@@ -471,19 +631,140 @@ watch(() => route.params.id, () => {
 }
 
 .comment-author {
-  font-weight: 500;
+  font-weight: 600;
   color: #303133;
+  font-size: 15px;
 }
 
 .comment-time {
-  font-size: 12px;
-  color: #909399;
+  font-size: 13px;
+  color: #8590a6;
 }
 
 .comment-text {
+  font-size: 15px;
+  color: #1a1a1a;
+  line-height: 1.7;
+}
+
+.comment-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 20px;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #8590a6;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.action-btn:hover {
+  color: #409eff;
+}
+
+.action-btn.liked {
+  color: #409eff;
+}
+
+.action-btn.small {
+  font-size: 12px;
+}
+
+.reply-form {
+  margin-top: 12px;
+  padding: 16px;
+  background: #f7f8fa;
+  border-radius: 8px;
+}
+
+.reply-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.reply-section {
+  margin-top: 8px;
+}
+
+.reply-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  color: #409eff;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.reply-toggle:hover {
+  background: #ecf5ff;
+}
+
+.reply-toggle .el-icon {
+  transition: transform 0.3s;
+}
+
+.reply-toggle .el-icon.rotated {
+  transform: rotate(180deg);
+}
+
+.reply-list {
+  margin-top: 12px;
+  padding-left: 24px;
+}
+
+.reply-item {
+  display: flex;
+  gap: 10px;
+  padding: 16px 0;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.reply-item:last-child {
+  border-bottom: none;
+}
+
+.reply-body {
+  flex: 1;
+}
+
+.reply-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.reply-author {
+  font-weight: 600;
+  color: #303133;
   font-size: 14px;
-  color: #606266;
+}
+
+.reply-time {
+  font-size: 12px;
+  color: #8590a6;
+}
+
+.reply-text {
+  font-size: 14px;
+  color: #1a1a1a;
   line-height: 1.6;
+}
+
+.reply-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 16px;
 }
 
 .sidebar {

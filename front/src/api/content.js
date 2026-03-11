@@ -16,4 +16,6 @@ export const getComments = (params) => api.get('/comments/', { params })
 
 export const createComment = (data) => api.post('/comments/', data)
 
+export const likeComment = (id) => api.post(`/comments/${id}/like/`)
+
 export const searchContents = (keyword) => api.get('/contents/', { params: { search: keyword } })

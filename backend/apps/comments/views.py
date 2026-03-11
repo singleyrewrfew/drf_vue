@@ -6,7 +6,7 @@ from rest_framework.response import Response
 
 from apps.users.permissions import IsEditorUser, IsOwnerOrAdmin
 
-from .models import Comment
+from .models import Comment, CommentLike
 from .serializers import CommentCreateSerializer, CommentListSerializer, CommentSerializer
 
 
@@ -26,8 +26,8 @@ class CommentViewSet(viewsets.ModelViewSet):
             return [IsAuthenticated()]
         elif self.action in ['update', 'partial_update', 'destroy']:
             return [IsOwnerOrAdmin()]
-        elif self.action in ['approve']:
-            return [IsEditorUser()]
+        elif self.action in ['approve', 'like']:
+            return [IsAuthenticated()]
         return super().get_permissions()
 
     def perform_create(self, serializer):
@@ -53,3 +53,20 @@ class CommentViewSet(viewsets.ModelViewSet):
         comment.is_approved = True
         comment.save()
         return Response(CommentSerializer(comment).data)
+
+    @extend_schema(request=None, responses=CommentSerializer)
+    @action(detail=True, methods=['post'])
+    def like(self, request, pk=None):
+        comment = self.get_object()
+        like, created = CommentLike.objects.get_or_create(
+            comment=comment,
+            user=request.user
+        )
+        if created:
+            comment.like_count += 1
+            comment.save(update_fields=['like_count'])
+        else:
+            like.delete()
+            comment.like_count -= 1
+            comment.save(update_fields=['like_count'])
+        return Response(CommentSerializer(comment, context={'request': request}).data)
