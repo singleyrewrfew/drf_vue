@@ -5,10 +5,15 @@ from .models import Tag
 
 
 class TagSerializer(serializers.ModelSerializer):
+    content_count = serializers.SerializerMethodField()
+
     class Meta:
         model = Tag
-        fields = ['id', 'name', 'slug', 'created_at']
+        fields = ['id', 'name', 'slug', 'created_at', 'content_count']
         read_only_fields = ['id', 'slug', 'created_at']
+
+    def get_content_count(self, obj):
+        return obj.contents.filter(status='published').count()
 
 
 class TagCreateUpdateSerializer(serializers.ModelSerializer):

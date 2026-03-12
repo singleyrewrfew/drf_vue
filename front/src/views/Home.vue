@@ -43,8 +43,11 @@
                 >
                   <div class="article-cover">
                     <img :src="getCoverUrl(article.cover_image)" :alt="article.title" />
-                    <div class="article-category" v-if="article.category_name">
-                      {{ article.category_name }}
+                    <div class="article-badges">
+                      <el-tag v-if="article.is_top" type="danger" size="small" effect="dark">置顶</el-tag>
+                      <div class="article-category" v-if="article.category_name">
+                        {{ article.category_name }}
+                      </div>
                     </div>
                   </div>
                   <div class="article-info">
@@ -62,6 +65,17 @@
                     </div>
                   </div>
                 </div>
+              </div>
+              <div class="pagination-container">
+                <el-pagination
+                  v-model:current-page="currentPage"
+                  v-model:page-size="pageSize"
+                  :page-sizes="[4, 8, 12, 16]"
+                  :total="total"
+                  layout="total, sizes, prev, pager, next, jumper"
+                  @size-change="handleSizeChange"
+                  @current-change="handleCurrentChange"
+                />
               </div>
             </section>
           </el-col>
@@ -104,7 +118,7 @@
                     @click="$router.push(`/category/${cat.id}`)"
                   >
                     <span>{{ cat.name }}</span>
-                    <el-tag size="small" type="info" round>{{ cat.content_count || 0 }}</el-tag>
+                    <el-tag size="small" type="success" round>{{ cat.content_count || 0 }}</el-tag>
                   </div>
                 </div>
               </div>
@@ -119,6 +133,7 @@
                     v-for="tag in tags"
                     :key="tag.id"
                     class="tag-item"
+                    type="info"
                     effect="plain"
                     @click="$router.push(`/tag/${tag.id}`)"
                   >
@@ -144,6 +159,9 @@ const latestArticles = ref([])
 const hotArticles = ref([])
 const categories = ref([])
 const tags = ref([])
+const currentPage = ref(1)
+const pageSize = ref(4)
+const total = ref(0)
 
 const getCoverUrl = (coverImage) => {
   if (!coverImage) return 'https://picsum.photos/800/400?random=' + Math.random()
@@ -165,22 +183,35 @@ const formatDate = (dateStr) => {
 
 const fetchData = async () => {
   try {
+    const offset = (currentPage.value - 1) * pageSize.value
     const [featuredRes, latestRes, hotRes, catRes, tagRes] = await Promise.all([
-      getContents({ status: 'published', is_top: true, page_size: 5 }),
-      getContents({ status: 'published', ordering: '-created_at', page_size: 6 }),
-      getContents({ status: 'published', ordering: '-view_count', page_size: 8 }),
+      getContents({ status: 'published', is_top: true, limit: 5 }),
+      getContents({ status: 'published', ordering: '-created_at', offset: offset, limit: pageSize.value }),
+      getContents({ status: 'published', ordering: '-view_count', limit: 8 }),
       getCategories(),
       getTags(),
     ])
 
     featuredContents.value = featuredRes.data.results || featuredRes.data
     latestArticles.value = latestRes.data.results || latestRes.data
+    total.value = latestRes.data.count || 0
     hotArticles.value = hotRes.data.results || hotRes.data
     categories.value = catRes.data.results || catRes.data
     tags.value = tagRes.data.results || tagRes.data
   } catch (e) {
     console.error(e)
   }
+}
+
+const handleSizeChange = (size) => {
+  pageSize.value = size
+  currentPage.value = 1
+  fetchData()
+}
+
+const handleCurrentChange = (page) => {
+  currentPage.value = page
+  fetchData()
 }
 
 onMounted(() => {
@@ -331,15 +362,39 @@ onMounted(() => {
   transform: scale(1.05);
 }
 
-.article-category {
+.article-badges {
   position: absolute;
   top: 12px;
   left: 12px;
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  z-index: 1;
+}
+
+.article-category {
   padding: 4px 12px;
   background: rgba(64, 158, 255, 0.9);
   color: #fff;
   font-size: 12px;
   border-radius: 4px;
+  align-self: flex-start;
+  font-weight: 500;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.el-tag.el-tag--danger.el-tag--small.el-tag--dark {
+  font-size: 12px;
+  font-weight: 500;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
 }
 
 .article-info {
@@ -536,6 +591,12 @@ onMounted(() => {
   .article-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.pagination-container {
+  margin-top: 32px;
+  display: flex;
+  justify-content: center;
 }
 
 @media (max-width: 768px) {

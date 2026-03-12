@@ -24,7 +24,6 @@
             <div class="nav-item">
               <el-icon><Folder /></el-icon>
               <span>分类</span>
-              <el-icon class="arrow"><ArrowDown /></el-icon>
             </div>
             <template #dropdown>
               <el-dropdown-menu>
@@ -52,7 +51,6 @@
               <div class="user-info">
                 <el-avatar :size="36" :src="getAvatarUrl(userStore.user?.avatar)">{{ userStore.user?.username?.charAt(0).toUpperCase() }}</el-avatar>
                 <span class="username">{{ userStore.user?.username }}</span>
-                <el-icon><ArrowDown /></el-icon>
               </div>
               <template #dropdown>
                 <el-dropdown-menu>
@@ -106,7 +104,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { HomeFilled, Document, Folder, ArrowDown, Search, User, SwitchButton } from '@element-plus/icons-vue'
+import { HomeFilled, Document, Folder, Search, User, SwitchButton } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { getCategories } from '@/api/content'
 
@@ -278,6 +276,10 @@ onMounted(() => {
   padding: 6px 12px;
   border-radius: 24px;
   transition: all 0.3s;
+}
+
+.user-info .el-avatar {
+  border-radius: 4px !important;
 }
 
 .user-info:hover {

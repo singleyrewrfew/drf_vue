@@ -67,7 +67,7 @@
                 @click="filterByCategory(cat.id)"
               >
                 <span>{{ cat.name }}</span>
-                <el-tag size="small" type="info">{{ cat.content_count || 0 }}</el-tag>
+                <el-tag size="small" type="success">{{ cat.content_count || 0 }}</el-tag>
               </div>
             </div>
           </div>
@@ -79,6 +79,8 @@
                 v-for="tag in tags"
                 :key="tag.id"
                 class="tag-item"
+                type="info"
+                effect="plain"
                 @click="$router.push(`/tag/${tag.id}`)"
               >
                 {{ tag.name }}

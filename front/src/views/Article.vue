@@ -7,7 +7,7 @@
             <article class="article">
               <header class="article-header">
                 <div class="article-category" v-if="article.category_name">
-                  <el-tag type="primary" effect="plain">{{ article.category_name }}</el-tag>
+                  <el-tag type="success" effect="plain">{{ article.category_name }}</el-tag>
                 </div>
                 <h1>{{ article.title }}</h1>
                 <div class="article-meta">
@@ -58,13 +58,47 @@
               </div>
 
               <div v-if="userStore.isLoggedIn" class="comment-form">
-                <el-input
-                  v-model="commentContent"
-                  type="textarea"
-                  :rows="3"
-                  placeholder="写下你的评论..."
-                />
-                <el-button type="primary" @click="submitComment" :loading="submitting">发表评论</el-button>
+                <div class="comment-form-wrapper">
+                  <el-avatar :size="36" :src="getAvatarUrl(userStore.user?.avatar)">{{ userStore.user?.username?.charAt(0).toUpperCase() }}</el-avatar>
+                  <div class="comment-form-content">
+                    <el-input
+                      v-model="commentContent"
+                      type="textarea"
+                      :rows="3"
+                      placeholder="理性发言，友善互动..."
+                      :autosize="{ minRows: 3, maxRows: 8 }"
+                      resize="none"
+                      class="comment-textarea"
+                    />
+                    <div class="comment-form-footer">
+                      <div class="comment-form-tools">
+                        <el-popover placement="top-start" :width="300" trigger="click">
+                          <template #reference>
+                            <el-button link class="tool-btn">
+                              <svg width="1.2em" height="1.2em" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M14.413 14.223a.785.785 0 0 1 1.45.601A4.174 4.174 0 0 1 12 17.4a4.19 4.19 0 0 1-2.957-1.221 4.174 4.174 0 0 1-.906-1.355.785.785 0 1 1 1.449-.601 2.604 2.604 0 0 0 1.413 1.41 2.621 2.621 0 0 0 2.849-.566c.242-.242.434-.529.565-.844ZM8.6 8.77a1.308 1.308 0 1 1 0 2.615 1.308 1.308 0 0 1 0-2.615ZM15.4 8.77a1.308 1.308 0 1 1 0 2.615 1.308 1.308 0 0 1 0-2.615Z"></path>
+                                <path fill-rule="evenodd" d="M12 1.573c5.758 0 10.427 4.669 10.427 10.427S17.758 22.427 12 22.427 1.573 17.758 1.573 12 6.242 1.573 12 1.573Zm0 1.746a8.681 8.681 0 1 0 .001 17.362A8.681 8.681 0 0 0 12 3.32Z" clip-rule="evenodd"></path>
+                              </svg>
+                            </el-button>
+                          </template>
+                          <div class="emoji-picker">
+                            <div class="emoji-list">
+                              <span v-for="emoji in emojis" :key="emoji" class="emoji-item" @click="insertEmoji(emoji)">
+                                {{ emoji }}
+                              </span>
+                            </div>
+                          </div>
+                        </el-popover>
+                      </div>
+                      <div class="comment-form-actions">
+                        <span class="char-count">{{ commentContent.length }}/500</span>
+                        <el-button type="primary" @click="submitComment" :loading="submitting" :disabled="!commentContent.trim()">
+                          发布
+                        </el-button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div v-else class="login-tip">
                 <p>登录后才能评论</p>
@@ -72,7 +106,7 @@
               </div>
 
               <div class="comment-list">
-                <div v-for="comment in comments" :key="comment.id" class="comment-item">
+                <div v-for="comment in displayComments" :key="comment.id" class="comment-item">
                   <el-avatar :size="40" :src="getAvatarUrl(comment.user_avatar)">{{ comment.user_name?.charAt(0)?.toUpperCase() }}</el-avatar>
                   <div class="comment-body">
                     <div class="comment-main">
@@ -106,6 +140,8 @@
                         type="textarea"
                         :rows="2"
                         placeholder="写下你的回复..."
+                        :autosize="{ minRows: 2, maxRows: 6 }"
+                        resize="none"
                         @keyup.ctrl.enter="submitReply(comment.id)"
                       />
                       <div class="reply-form-actions">
@@ -120,8 +156,8 @@
                         class="reply-toggle" 
                         @click="toggleReplies(comment.id)"
                       >
-                        <el-icon><ArrowDown :class="{ rotated: expandedReplies.includes(comment.id) }" /></el-icon>
                         <span>{{ expandedReplies.includes(comment.id) ? '收起回复' : `${comment.reply_count} 条回复` }}</span>
+                        <el-icon :class="{ rotated: expandedReplies.includes(comment.id) }"><ArrowRight /></el-icon>
                       </div>
                       <div v-if="expandedReplies.includes(comment.id) && comment.replies?.length" class="reply-list">
                         <div v-for="reply in comment.replies" :key="reply.id" class="reply-item">
@@ -130,8 +166,8 @@
                             <div class="reply-header">
                               <span class="reply-author">{{ reply.user_name }}</span>
                               <template v-if="reply.reply_to_name">
-                                <span class="reply-arrow">回复</span>
-                                <span class="reply-to-user">@{{ reply.reply_to_name }}</span>
+                                <el-icon class="reply-arrow"><ArrowRight /></el-icon>
+                                <span class="reply-to-user">{{ reply.reply_to_name }}</span>
                               </template>
                               <span class="reply-time">{{ formatRelativeTime(reply.created_at) }}</span>
                             </div>
@@ -156,10 +192,117 @@
                     </div>
                   </div>
                 </div>
+                <div v-if="comments.length > 2" class="show-more-comments">
+                  <el-button 
+                    type="primary" 
+                    plain 
+                    @click="showCommentsDialog = true"
+                  >
+                    查看全部 {{ comments.length }} 条评论
+                  </el-button>
+                </div>
                 <el-empty v-if="comments.length === 0" description="暂无评论，快来抢沙发吧~" />
               </div>
             </div>
           </div>
+
+          <!-- 评论对话框 -->
+          <el-dialog
+            v-model="showCommentsDialog"
+            title="全部评论"
+            width="800px"
+            destroy-on-close
+          >
+            <div class="dialog-comment-list">
+              <div v-for="comment in comments" :key="comment.id" class="dialog-comment-item">
+                <el-avatar :size="40" :src="getAvatarUrl(comment.user_avatar)">{{ comment.user_name?.charAt(0)?.toUpperCase() }}</el-avatar>
+                <div class="dialog-comment-body">
+                  <div class="dialog-comment-main">
+                    <div class="dialog-comment-header">
+                      <span class="dialog-comment-author">{{ comment.user_name }}</span>
+                      <span class="dialog-comment-time">{{ formatRelativeTime(comment.created_at) }}</span>
+                    </div>
+                    <p class="dialog-comment-text">{{ comment.content }}</p>
+                    <div class="dialog-comment-actions">
+                      <span 
+                        class="dialog-action-btn" 
+                        :class="{ liked: comment.is_liked }"
+                        @click="handleLike(comment)"
+                      >
+                        <el-icon><Pointer /></el-icon>
+                        <span>{{ comment.like_count || '' }}</span>
+                      </span>
+                      <span class="dialog-action-btn" @click="openReplyForm(comment.id, comment.user_name, comment.user)">
+                        <el-icon><ChatDotRound /></el-icon>
+                        <span>回复</span>
+                      </span>
+                    </div>
+                  </div>
+                  <div v-if="replyToParent === comment.id" class="dialog-reply-form">
+                      <div class="dialog-reply-form-header">
+                        <span>回复 <span class="dialog-reply-target">@{{ replyToName }}</span></span>
+                        <el-button link size="small" @click="closeReplyForm">取消</el-button>
+                      </div>
+                      <el-input
+                        v-model="replyContent"
+                        type="textarea"
+                        :rows="2"
+                        placeholder="写下你的回复..."
+                        :autosize="{ minRows: 2, maxRows: 6 }"
+                        resize="none"
+                        @keyup.ctrl.enter="submitReply(comment.id)"
+                      />
+                      <div class="dialog-reply-form-actions">
+                        <span class="dialog-reply-tip">Ctrl + Enter 发送</span>
+                        <el-button type="primary" size="small" @click="submitReply(comment.id)" :loading="submittingReply">
+                          发送
+                        </el-button>
+                      </div>
+                    </div>
+                  <div v-if="comment.reply_count > 0" class="dialog-reply-section">
+                    <div 
+                      class="dialog-reply-toggle" 
+                      @click="toggleReplies(comment.id)"
+                    >
+                      <span>{{ expandedReplies.includes(comment.id) ? '收起回复' : `${comment.reply_count} 条回复` }}</span>
+                      <el-icon :class="{ rotated: expandedReplies.includes(comment.id) }"><ArrowRight /></el-icon>
+                    </div>
+                    <div v-if="expandedReplies.includes(comment.id) && comment.replies?.length" class="dialog-reply-list">
+                      <div v-for="reply in comment.replies" :key="reply.id" class="dialog-reply-item">
+                        <el-avatar :size="24" :src="getAvatarUrl(reply.user_avatar)">{{ reply.user_name?.charAt(0)?.toUpperCase() }}</el-avatar>
+                        <div class="dialog-reply-body">
+                          <div class="dialog-reply-header">
+                            <span class="dialog-reply-author">{{ reply.user_name }}</span>
+                            <template v-if="reply.reply_to_name">
+                              <el-icon class="dialog-reply-arrow"><ArrowRight /></el-icon>
+                              <span class="dialog-reply-to-user">{{ reply.reply_to_name }}</span>
+                            </template>
+                            <span class="dialog-reply-time">{{ formatRelativeTime(reply.created_at) }}</span>
+                          </div>
+                          <p class="dialog-reply-text">{{ reply.content }}</p>
+                          <div class="dialog-reply-actions">
+                            <span 
+                              class="dialog-action-btn small" 
+                              :class="{ liked: reply.is_liked }"
+                              @click="handleLike(reply, comment.id)"
+                            >
+                              <el-icon><Pointer /></el-icon>
+                              <span>{{ reply.like_count || '' }}</span>
+                            </span>
+                            <span class="dialog-action-btn small" @click="openReplyForm(comment.id, reply.user_name, reply.user_id)">
+                              <el-icon><ChatDotRound /></el-icon>
+                              <span>回复</span>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <el-empty v-if="comments.length === 0" description="暂无评论" />
+            </div>
+          </el-dialog>
         </el-col>
 
         <el-col :span="7">
@@ -216,7 +359,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { View, ArrowLeft, ArrowRight, ChatDotRound, Document, List, Pointer, ArrowDown } from '@element-plus/icons-vue'
+import { View, ArrowLeft, ArrowRight, ChatDotRound, Document, List, Pointer, Picture, VideoCamera, Link } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { marked } from 'marked'
 import hljs from 'highlight.js'
@@ -241,6 +384,19 @@ const expandedReplies = ref([])
 const prevArticle = ref(null)
 const nextArticle = ref(null)
 const relatedArticles = ref([])
+const showAllComments = ref(false)
+const imageInput = ref(null)
+
+const emojis = ['😀', '😂', '😍', '🥰', '😎', '🤔', '👍', '👎', '❤️', '💔', '🎉', '🔥', '✨', '🌟', '⭐', '💯', '💪', '🙏', '😭', '😱', '🤣', '😊', '🥺', '👏', '🙄', '😴', '😋', '😜', '🤪', '😇']
+
+const displayComments = computed(() => {
+  if (showAllComments.value) {
+    return comments.value
+  }
+  return comments.value.slice(0, 2)
+})
+
+const showCommentsDialog = ref(false)
 
 const getCoverUrl = (coverImage) => {
   if (!coverImage) return ''
@@ -369,6 +525,54 @@ const fetchRelatedArticles = async () => {
   } catch (e) {
     console.error(e)
   }
+}
+
+const triggerImageUpload = () => {
+  imageInput.value?.click()
+}
+
+const handleImageUpload = async (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+  
+  if (file.size > 5 * 1024 * 1024) {
+    ElMessage.error('图片大小不能超过 5MB')
+    return
+  }
+  
+  try {
+    // 这里需要调用上传接口，暂时只显示图片
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const imgMarkdown = `![图片](${e.target.result})`
+      commentContent.value += imgMarkdown
+    }
+    reader.readAsDataURL(file)
+  } catch (e) {
+    ElMessage.error('图片上传失败')
+  }
+  
+  // 清空 input，确保同一文件可以再次选择
+  event.target.value = ''
+}
+
+const insertLink = () => {
+  const url = prompt('请输入链接地址：')
+  if (!url) return
+  
+  const text = prompt('请输入链接文本：', url)
+  if (!text) return
+  
+  const linkMarkdown = `[${text}](${url})`
+  commentContent.value += linkMarkdown
+}
+
+const showTooltip = (message) => {
+  ElMessage.info(message)
+}
+
+const insertEmoji = (emoji) => {
+  commentContent.value += emoji
 }
 
 const submitComment = async () => {
@@ -518,6 +722,10 @@ watch(() => route.params.id, () => {
   gap: 12px;
 }
 
+.author-info .el-avatar {
+  border-radius: 4px !important;
+}
+
 .author-detail {
   display: flex;
   flex-direction: column;
@@ -600,6 +808,106 @@ watch(() => route.params.id, () => {
   margin-bottom: 28px;
 }
 
+.comment-form-wrapper {
+  display: flex;
+  gap: 12px;
+  background: #f7f8fa;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #e8e8e8;
+}
+
+.comment-form-wrapper .el-avatar {
+  border-radius: 4px !important;
+}
+
+.comment-form-content {
+  flex: 1;
+}
+
+.comment-form-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+}
+
+.comment-textarea .el-textarea__inner {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 4px;
+  padding: 12px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.comment-form-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.comment-form-tools {
+  display: flex;
+  gap: 8px;
+}
+
+.tool-btn {
+  padding: 4px 8px;
+  color: #8590a6;
+  font-size: 18px;
+  transition: all 0.2s;
+}
+
+.tool-btn:hover {
+  color: #409eff;
+  background: #ecf5ff;
+}
+
+.comment-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.char-count {
+  font-size: 12px;
+  color: #8590a6;
+}
+
+.comment-form .el-button--primary {
+  min-width: 80px;
+  height: 32px;
+  font-size: 14px;
+}
+
+.emoji-picker {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.emoji-list {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 8px;
+}
+
+.emoji-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  font-size: 20px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.emoji-item:hover {
+  background: #f0f2f5;
+}
+
 .comment-form .el-textarea {
   margin-bottom: 12px;
 }
@@ -626,6 +934,14 @@ watch(() => route.params.id, () => {
 .comment-item {
   display: flex;
   gap: 12px;
+  background: #f7f8fa;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.comment-item .el-avatar {
+  border-radius: 4px !important;
 }
 
 .comment-body {
@@ -633,9 +949,9 @@ watch(() => route.params.id, () => {
 }
 
 .comment-main {
-  background: #f7f8fa;
-  padding: 16px;
-  border-radius: 8px;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
 }
 
 .comment-header {
@@ -693,8 +1009,9 @@ watch(() => route.params.id, () => {
 .reply-form {
   margin-top: 12px;
   padding: 16px;
-  background: #f7f8fa;
+  background: rgba(255, 255, 255, 0.8);
   border-radius: 8px;
+  border: 1px solid #e8e8e8;
 }
 
 .reply-form-header {
@@ -731,25 +1048,31 @@ watch(() => route.params.id, () => {
 .reply-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 8px 12px;
-  color: #409eff;
-  font-size: 13px;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #f0f0f0;
+  color: #666;
+  font-size: 12px;
   cursor: pointer;
   border-radius: 4px;
-  transition: background 0.2s;
+  transition: all 0.2s;
+  border: 1px solid #e0e0e0;
+  font-weight: 500;
 }
 
 .reply-toggle:hover {
-  background: #ecf5ff;
+  background: #e0e0e0;
+  border-color: #d0d0d0;
 }
 
 .reply-toggle .el-icon {
+  font-size: 16px;
+  color: #666;
   transition: transform 0.3s;
 }
 
 .reply-toggle .el-icon.rotated {
-  transform: rotate(180deg);
+  transform: rotate(90deg);
 }
 
 .reply-list {
@@ -760,12 +1083,19 @@ watch(() => route.params.id, () => {
 .reply-item {
   display: flex;
   gap: 10px;
-  padding: 16px 0;
-  border-bottom: 1px solid #f0f2f5;
+  padding: 12px;
+  margin-bottom: 8px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 6px;
+  border: 1px solid #f0f2f5;
+}
+
+.reply-item .el-avatar {
+  border-radius: 3px !important;
 }
 
 .reply-item:last-child {
-  border-bottom: none;
+  margin-bottom: 0;
 }
 
 .reply-body {
@@ -777,6 +1107,11 @@ watch(() => route.params.id, () => {
   align-items: center;
   gap: 8px;
   margin-bottom: 4px;
+}
+
+.reply-arrow {
+  color: #8590a6;
+  font-size: 12px;
 }
 
 .reply-author {
@@ -952,6 +1287,225 @@ watch(() => route.params.id, () => {
   font-size: 12px;
   color: #909399;
 }
+
+.show-more-comments {
+  margin-top: 20px;
+  text-align: center;
+}
+
+/* 对话框评论样式 */
+.dialog-comment-list {
+  max-height: 600px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.dialog-comment-item {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  background: #f7f8fa;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.dialog-comment-item .el-avatar {
+  border-radius: 4px !important;
+}
+
+.dialog-comment-body {
+  flex: 1;
+}
+
+.dialog-comment-main {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+
+.dialog-comment-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.dialog-comment-author {
+  font-weight: 600;
+  color: #303133;
+  font-size: 15px;
+}
+
+.dialog-comment-time {
+  font-size: 13px;
+  color: #8590a6;
+}
+
+.dialog-comment-text {
+  font-size: 15px;
+  color: #1a1a1a;
+  line-height: 1.7;
+}
+
+.dialog-comment-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 20px;
+}
+
+.dialog-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #8590a6;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.dialog-action-btn:hover {
+  color: #409eff;
+}
+
+.dialog-action-btn.liked {
+  color: #409eff;
+}
+
+.dialog-action-btn.small {
+  font-size: 12px;
+}
+
+.dialog-reply-form {
+  margin-top: 12px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  border: 1px solid #e8e8e8;
+}
+
+.dialog-reply-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.dialog-reply-target {
+  color: #409eff;
+  font-weight: 500;
+}
+
+.dialog-reply-form .el-textarea {
+  margin-bottom: 8px;
+}
+
+.dialog-reply-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.dialog-reply-tip {
+  font-size: 12px;
+  color: #8590a6;
+}
+
+.dialog-reply-section {
+  margin-top: 8px;
+}
+
+.dialog-reply-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #f0f0f0;
+  color: #666;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+  border: 1px solid #e0e0e0;
+  font-weight: 500;
+}
+
+.dialog-reply-toggle:hover {
+  background: #e0e0e0;
+  border-color: #d0d0d0;
+}
+
+.dialog-reply-toggle .el-icon {
+  font-size: 16px;
+  color: #666;
+  transition: transform 0.3s;
+}
+
+.dialog-reply-toggle .el-icon.rotated {
+  transform: rotate(90deg);
+}
+
+.dialog-reply-list {
+  margin-top: 12px;
+  padding-left: 24px;
+}
+
+.dialog-reply-item {
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+  margin-bottom: 8px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 6px;
+  border: 1px solid #f0f2f5;
+}
+
+.dialog-reply-item .el-avatar {
+  border-radius: 3px !important;
+}
+
+.dialog-reply-item:last-child {
+  margin-bottom: 0;
+}
+
+.dialog-reply-body {
+  flex: 1;
+}
+
+.dialog-reply-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.dialog-reply-author {
+  font-weight: 600;
+  color: #303133;
+  font-size: 14px;
+}
+
+.dialog-reply-time {
+  font-size: 12px;
+  color: #8590a6;
+}
+
+.dialog-reply-text {
+  font-size: 14px;
+  color: #1a1a1a;
+  line-height: 1.6;
+}
+
+.dialog-reply-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 16px;
+}
+
+.dialog-reply-arrow {
+  color: #8590a6;
+  font-size: 12px;
+}
 </style>
 
 <style>
@@ -1086,5 +1640,39 @@ watch(() => route.params.id, () => {
 
 .markdown-body .hljs {
   background: transparent;
+}
+
+/* 确保所有 textarea 不能调整大小 */
+textarea {
+  resize: none !important;
+  scrollbar-width: none; /* Firefox */
+}
+
+textarea::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+/* 确保 Element Plus 的 textarea 不能调整大小 */
+.el-textarea__inner {
+  resize: none !important;
+  scrollbar-width: none; /* Firefox */
+}
+
+.el-textarea__inner::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+/* 确保评论和回复的 textarea 不能调整大小 */
+.comment-form .el-textarea__inner,
+.reply-form .el-textarea__inner,
+.dialog-reply-form .el-textarea__inner {
+  resize: none !important;
+  scrollbar-width: none; /* Firefox */
+}
+
+.comment-form .el-textarea__inner::-webkit-scrollbar,
+.reply-form .el-textarea__inner::-webkit-scrollbar,
+.dialog-reply-form .el-textarea__inner::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
 }
 </style>
