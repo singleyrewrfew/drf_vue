@@ -49,6 +49,7 @@
             v-model:current-page="page"
             :page-size="pageSize"
             :total="total"
+            :pager-count="5"
             layout="prev, pager, next"
             background
             @current-change="fetchArticles"
@@ -106,7 +107,7 @@ const articles = ref([])
 const categories = ref([])
 const tags = ref([])
 const page = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(4)
 const total = ref(0)
 const currentCategory = ref(null)
 
@@ -125,10 +126,11 @@ const formatDate = (dateStr) => {
 const fetchArticles = async () => {
   loading.value = true
   try {
+    const offset = (page.value - 1) * pageSize.value
     const params = {
       status: 'published',
-      page: page.value,
-      page_size: pageSize.value,
+      offset: offset,
+      limit: pageSize.value,
       ordering: '-created_at',
     }
     if (currentCategory.value) {

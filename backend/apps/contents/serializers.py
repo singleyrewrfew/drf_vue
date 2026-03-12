@@ -30,15 +30,22 @@ class ContentSerializer(serializers.ModelSerializer):
     author_avatar = serializers.ImageField(source='author.avatar', read_only=True)
     category_name = serializers.CharField(source='category.name', read_only=True)
     tags = TagSerializer(many=True, read_only=True)
+    content_preview = serializers.SerializerMethodField(help_text='文章预览内容（前 5000 字符）')
 
     class Meta:
         model = Content
         fields = [
-            'id', 'title', 'slug', 'summary', 'content', 'cover_image',
+            'id', 'title', 'slug', 'summary', 'content', 'content_preview', 'cover_image',
             'author', 'author_name', 'author_avatar', 'category', 'category_name', 'tags',
             'status', 'view_count', 'is_top', 'published_at', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'author', 'view_count', 'created_at', 'updated_at']
+
+    def get_content_preview(self, obj):
+        """返回文章预览内容（前 5000 个字符）"""
+        if not obj.content:
+            return ''
+        return obj.content[:5000] if len(obj.content) > 5000 else obj.content
 
 
 class ContentListSerializer(serializers.ModelSerializer):

@@ -40,6 +40,10 @@
               </div>
 
               <div class="article-content markdown-body" v-html="renderedContent"></div>
+              
+              <div v-if="!fullContentLoaded && article.content_preview" class="full-content-loading">
+                <el-skeleton :rows="10" animated />
+              </div>
             </article>
 
             <div class="article-nav">
@@ -357,7 +361,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onUnmounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { View, ArrowLeft, ArrowRight, ChatDotRound, Document, List, Pointer, Picture, VideoCamera, Link } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
@@ -372,6 +376,7 @@ const userStore = useUserStore()
 
 const loading = ref(false)
 const article = ref({})
+const fullContentLoaded = ref(false)
 const comments = ref([])
 const commentContent = ref('')
 const submitting = ref(false)
@@ -490,14 +495,80 @@ const renderedContent = computed(() => {
   return result.html
 })
 
+const initArticleContent = () => {
+  if (!article.value.content) return
+  
+  marked.setOptions({
+    highlight: function(code, lang) {
+      if (lang && hljs.getLanguage(lang)) {
+        try {
+          return hljs.highlight(code, { language: lang }).value
+        } catch (e) {
+          console.error(e)
+        }
+      }
+      return hljs.highlightAuto(code).value
+    },
+    breaks: true,
+    gfm: true,
+  })
+  
+  let html = marked.parse(article.value.content)
+  const result = extractHeadings(html)
+  headings.value = result.headings
+  
+  // 文章渲染完成后，初始化图片懒加载
+  nextTick(() => {
+    initImageLazyLoad()
+  })
+  
+  // 如果当前是预览内容，异步加载完整内容
+  if (article.value.content === article.value.content_preview && !fullContentLoaded.value) {
+    loadFullContent()
+  }
+}
+
+const loadFullContent = async () => {
+  try {
+    const { data } = await getContent(route.params.id)
+    if (data.content && data.content !== article.value.content) {
+      article.value.content = data.content
+      fullContentLoaded.value = true
+      
+      // 重新渲染完整内容
+      nextTick(() => {
+        initArticleContent()
+      })
+    }
+  } catch (e) {
+    console.error('加载完整内容失败:', e)
+  }
+}
+
 const fetchArticle = async () => {
   loading.value = true
+  fullContentLoaded.value = false
   try {
     const { data } = await getContent(route.params.id)
     article.value = data
-    fetchComments()
-    fetchRelatedArticles()
+    
+    // 如果有 preview 字段且内容超过 preview，先使用 preview
+    if (data.content_preview && data.content.length > data.content_preview.length) {
+      article.value.content = data.content_preview
+    }
+    
+    // 文章加载成功后，初始化内容渲染
+    initArticleContent()
+    
+    // 并行加载评论和相关文章（失败不影响文章显示）
+    Promise.all([
+      fetchComments(),
+      fetchRelatedArticles(),
+    ]).catch(e => {
+      console.error('加载评论或相关文章失败:', e)
+    })
   } catch (e) {
+    console.error(e)
     ElMessage.error('文章不存在')
   } finally {
     loading.value = false
@@ -573,6 +644,50 @@ const showTooltip = (message) => {
 
 const insertEmoji = (emoji) => {
   commentContent.value += emoji
+}
+
+// 图片懒加载
+const imageObserver = ref(null)
+
+const initImageLazyLoad = () => {
+  if (!('IntersectionObserver' in window)) {
+    // 不支持 IntersectionObserver 的浏览器直接加载所有图片
+    return
+  }
+  
+  // 创建 IntersectionObserver 实例
+  imageObserver.value = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const img = entry.target
+        const dataSrc = img.getAttribute('data-src')
+        if (dataSrc) {
+          img.src = dataSrc
+          img.removeAttribute('data-src')
+          img.classList.remove('lazy-loading')
+          imageObserver.value.unobserve(img)
+        }
+      }
+    })
+  }, {
+    rootMargin: '50px 0px', // 提前 50px 开始加载
+    threshold: 0.01
+  })
+  
+  // 查找文章内容中的所有图片
+  const articleContent = document.querySelector('.article-content')
+  if (articleContent) {
+    const images = articleContent.querySelectorAll('img')
+    images.forEach(img => {
+      const src = img.getAttribute('src')
+      if (src) {
+        img.setAttribute('data-src', src)
+        img.removeAttribute('src')
+        img.classList.add('lazy-loading')
+        imageObserver.value.observe(img)
+      }
+    })
+  }
 }
 
 const submitComment = async () => {
@@ -673,6 +788,13 @@ watch(() => route.params.id, () => {
     fetchArticle()
   }
 }, { immediate: true })
+
+onUnmounted(() => {
+  // 清理图片观察者
+  if (imageObserver.value) {
+    imageObserver.value.disconnect()
+  }
+})
 </script>
 
 <style scoped>
@@ -906,6 +1028,29 @@ watch(() => route.params.id, () => {
 
 .emoji-item:hover {
   background: #f0f2f5;
+}
+
+/* 图片懒加载样式 */
+.article-content img {
+  transition: opacity 0.3s;
+}
+
+.article-content img.lazy-loading {
+  opacity: 0;
+  background: #f0f2f5;
+  min-height: 200px;
+}
+
+.article-content img[data-src] {
+  opacity: 0;
+}
+
+/* 完整内容加载提示 */
+.full-content-loading {
+  margin-top: 20px;
+  padding: 20px;
+  background: #f5f7fa;
+  border-radius: 8px;
 }
 
 .comment-form .el-textarea {
