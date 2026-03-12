@@ -5,18 +5,36 @@
         <span>评论管理</span>
       </template>
       <el-table :data="commentList" v-loading="loading" stripe>
-        <el-table-column prop="content" label="评论内容" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="article_title" label="文章" width="150" />
+        <el-table-column prop="content" label="评论内容" min-width="250" show-overflow-tooltip />
+        <el-table-column prop="article_title" label="所属文章" width="180" show-overflow-tooltip />
+        <el-table-column label="评论类型" width="100">
+          <template #default="{ row }">
+            <el-tag :type="row.parent ? 'info' : 'primary'" size="small">
+              {{ row.parent ? '回复' : '主评论' }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="user_name" label="评论者" width="120" />
-        <el-table-column prop="is_approved" label="状态" width="100">
+        <el-table-column label="回复对象" width="120">
+          <template #default="{ row }">
+            <span v-if="row.reply_to_name">@{{ row.reply_to_name }}</span>
+            <span v-else style="color: #909399;">-</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="like_count" label="点赞数" width="90" align="center">
+          <template #default="{ row }">
+            <span>{{ row.like_count || 0 }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="is_approved" label="审核状态" width="100">
           <template #default="{ row }">
             <el-tag :type="row.is_approved ? 'success' : 'warning'">
               {{ row.is_approved ? '已审核' : '待审核' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="created_at" label="时间" width="180" />
-        <el-table-column label="操作" width="150">
+        <el-table-column prop="created_at" label="创建时间" width="180" />
+        <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <el-button
               v-if="!row.is_approved"
