@@ -138,7 +138,7 @@
                     effect="plain"
                     @click="$router.push(`/tag/${tag.id}`)"
                   >
-                    {{ tag.name }}
+                    #{{ tag.name }}
                   </el-tag>
                 </div>
               </div>

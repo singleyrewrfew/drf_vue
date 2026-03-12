@@ -28,6 +28,18 @@
       </div>
 
       <el-empty v-if="!loading && articles.length === 0" description="该标签下暂无文章" />
+
+      <div v-if="total > pageSize" class="pagination-container">
+        <el-pagination
+          v-model:current-page="page"
+          :page-size="pageSize"
+          :total="total"
+          :pager-count="5"
+          layout="prev, pager, next"
+          background
+          @current-change="fetchData"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -43,6 +55,9 @@ const route = useRoute()
 const loading = ref(false)
 const tag = ref({})
 const articles = ref([])
+const page = ref(1)
+const pageSize = ref(4)
+const total = ref(0)
 
 const getCoverUrl = (coverImage) => {
   if (!coverImage) return ''
@@ -58,12 +73,20 @@ const formatDate = (dateStr) => {
 const fetchData = async () => {
   loading.value = true
   try {
+    const offset = (page.value - 1) * pageSize.value
     const [tagRes, contentRes] = await Promise.all([
       getTag(route.params.id),
-      getContents({ status: 'published', tags: route.params.id }),
+      getContents({ 
+        status: 'published', 
+        tags: route.params.id,
+        offset: offset,
+        limit: pageSize.value,
+        ordering: '-created_at',
+      }),
     ])
     tag.value = tagRes.data
     articles.value = contentRes.data.results || contentRes.data
+    total.value = contentRes.data.count || articles.value.length
   } catch (e) {
     console.error(e)
   } finally {
@@ -156,5 +179,11 @@ watch(() => route.params.id, fetchData, { immediate: true })
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+.pagination-container {
+  margin-top: 32px;
+  display: flex;
+  justify-content: center;
 }
 </style>

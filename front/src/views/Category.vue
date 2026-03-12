@@ -3,7 +3,6 @@
     <div class="container">
       <div class="page-header">
         <h1>{{ category.name }}</h1>
-        <p>{{ category.description }}</p>
       </div>
 
       <div class="article-list">
@@ -29,22 +28,36 @@
       </div>
 
       <el-empty v-if="!loading && articles.length === 0" description="该分类下暂无文章" />
+
+      <div v-if="total > pageSize" class="pagination-container">
+        <el-pagination
+          v-model:current-page="page"
+          :page-size="pageSize"
+          :total="total"
+          :pager-count="5"
+          layout="prev, pager, next"
+          background
+          @current-change="fetchData"
+        />
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { User, View, Calendar } from '@element-plus/icons-vue'
-import { getCategory } from '@/api/content'
-import { getContents } from '@/api/content'
+import { getCategory, getContents } from '@/api/content'
 
 const route = useRoute()
 
 const loading = ref(false)
 const category = ref({})
 const articles = ref([])
+const page = ref(1)
+const pageSize = ref(4)
+const total = ref(0)
 
 const getCoverUrl = (coverImage) => {
   if (!coverImage) return ''
@@ -60,12 +73,20 @@ const formatDate = (dateStr) => {
 const fetchData = async () => {
   loading.value = true
   try {
+    const offset = (page.value - 1) * pageSize.value
     const [catRes, contentRes] = await Promise.all([
       getCategory(route.params.id),
-      getContents({ status: 'published', category: route.params.id }),
+      getContents({ 
+        status: 'published', 
+        category: route.params.id,
+        offset: offset,
+        limit: pageSize.value,
+        ordering: '-created_at',
+      }),
     ])
     category.value = catRes.data
     articles.value = contentRes.data.results || contentRes.data
+    total.value = contentRes.data.count || articles.value.length
   } catch (e) {
     console.error(e)
   } finally {
@@ -163,5 +184,11 @@ watch(() => route.params.id, fetchData, { immediate: true })
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+.pagination-container {
+  margin-top: 32px;
+  display: flex;
+  justify-content: center;
 }
 </style>

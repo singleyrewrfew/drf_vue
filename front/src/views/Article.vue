@@ -30,7 +30,7 @@
                     effect="plain"
                     @click="$router.push(`/tag/${tag.id}`)"
                   >
-                    {{ tag.name }}
+                    #{{ tag.name }}
                   </el-tag>
                 </div>
               </header>
@@ -522,9 +522,14 @@ const initArticleContent = () => {
     initImageLazyLoad()
   })
   
-  // 如果当前是预览内容，异步加载完整内容
-  if (article.value.content === article.value.content_preview && !fullContentLoaded.value) {
+  // 如果当前是预览内容且内容长度等于 5000，异步加载完整内容
+  if (article.value.content === article.value.content_preview && 
+      article.value.content.length === 5000 && 
+      !fullContentLoaded.value) {
     loadFullContent()
+  } else {
+    // 否则标记为已加载完成
+    fullContentLoaded.value = true
   }
 }
 
