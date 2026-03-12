@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.db.models import Count
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
@@ -30,7 +31,7 @@ class UserViewSet(viewsets.ModelViewSet):
         if self.action == 'login':
             return [AllowAny()]
         elif self.action == 'create':
-            return [IsAuthenticated(), IsAdminUser()]
+            return [AllowAny()]
         elif self.action in ['list', 'destroy']:
             return [IsAdminUser()]
         return [IsAuthenticated()]
@@ -97,6 +98,25 @@ class UserViewSet(viewsets.ModelViewSet):
         except Exception:
             pass
         return Response({'message': '退出成功'})
+
+    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
+    def popular(self, request):
+        """获取热门作者（按文章数量排序）"""
+        users = User.objects.filter(
+            contents__status='published'
+        ).annotate(
+            article_count=Count('contents')
+        ).order_by('-article_count')[:10]
+        
+        data = []
+        for user in users:
+            data.append({
+                'id': str(user.id),
+                'username': user.username,
+                'avatar': user.avatar.url if user.avatar else None,
+                'article_count': user.article_count,
+            })
+        return Response(data)
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def stats(self, request):

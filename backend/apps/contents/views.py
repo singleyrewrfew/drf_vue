@@ -60,19 +60,30 @@ class ContentViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         status_filter = self.request.query_params.get('status')
+        
         if self.action == 'list':
-            if status_filter:
-                queryset = queryset.filter(status=status_filter)
-            elif self.request.user.is_authenticated and self.request.user.is_editor:
-                pass
+            if self.request.user.is_authenticated:
+                if self.request.user.is_admin or self.request.user.is_superuser:
+                    if status_filter:
+                        queryset = queryset.filter(status=status_filter)
+                elif self.request.user.is_editor:
+                    queryset = queryset.filter(author=self.request.user)
+                    if status_filter:
+                        queryset = queryset.filter(status=status_filter)
+                else:
+                    queryset = queryset.filter(status='published')
             else:
                 queryset = queryset.filter(status='published')
+        
         category_id = self.request.query_params.get('category')
         if category_id:
             queryset = queryset.filter(category_id=category_id)
         tag_id = self.request.query_params.get('tag')
         if tag_id:
             queryset = queryset.filter(tags__id=tag_id)
+        author_id = self.request.query_params.get('author')
+        if author_id:
+            queryset = queryset.filter(author_id=author_id)
         search = self.request.query_params.get('search')
         if search:
             queryset = queryset.filter(title__icontains=search)

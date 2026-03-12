@@ -88,6 +88,28 @@
               </el-tag>
             </div>
           </div>
+
+          <div class="sidebar-card">
+            <h3>热门作者</h3>
+            <div class="author-list">
+              <div
+                v-for="author in authors"
+                :key="author.id"
+                class="author-item"
+                :class="{ active: currentAuthor === author.id }"
+                @click="filterByAuthor(author.id)"
+              >
+                <div class="author-avatar">
+                  <img v-if="author.avatar" :src="getCoverUrl(author.avatar)" :alt="author.username" />
+                  <el-icon v-else><User /></el-icon>
+                </div>
+                <div class="author-info">
+                  <span class="author-name">{{ author.username }}</span>
+                  <span class="article-count">{{ author.article_count || 0 }} 篇文章</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </el-col>
       </el-row>
     </div>
@@ -99,6 +121,7 @@ import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { User, Folder, View, Calendar } from '@element-plus/icons-vue'
 import { getContents, getCategories, getTags } from '@/api/content'
+import { getPopularAuthors } from '@/api/user'
 
 const route = useRoute()
 
@@ -106,10 +129,12 @@ const loading = ref(false)
 const articles = ref([])
 const categories = ref([])
 const tags = ref([])
+const authors = ref([])
 const page = ref(1)
 const pageSize = ref(4)
 const total = ref(0)
 const currentCategory = ref(null)
+const currentAuthor = ref(null)
 
 const getCoverUrl = (coverImage) => {
   if (!coverImage) return ''
@@ -135,6 +160,9 @@ const fetchArticles = async () => {
     }
     if (currentCategory.value) {
       params.category = currentCategory.value
+    }
+    if (currentAuthor.value) {
+      params.author = currentAuthor.value
     }
     const { data } = await getContents(params)
     articles.value = data.results || data
@@ -164,8 +192,23 @@ const fetchTags = async () => {
   }
 }
 
+const fetchAuthors = async () => {
+  try {
+    const { data } = await getPopularAuthors()
+    authors.value = data.results || data
+  } catch (e) {
+    console.error(e)
+  }
+}
+
 const filterByCategory = (categoryId) => {
   currentCategory.value = currentCategory.value === categoryId ? null : categoryId
+  page.value = 1
+  fetchArticles()
+}
+
+const filterByAuthor = (authorId) => {
+  currentAuthor.value = currentAuthor.value === authorId ? null : authorId
   page.value = 1
   fetchArticles()
 }
@@ -180,6 +223,7 @@ watch(() => route.query, () => {
 onMounted(() => {
   fetchCategories()
   fetchTags()
+  fetchAuthors()
 })
 </script>
 
@@ -333,6 +377,63 @@ onMounted(() => {
   background: #409eff;
   color: #fff;
   border-color: #409eff;
+}
+
+.author-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.author-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.author-item:hover,
+.author-item.active {
+  background: #ecf5ff;
+}
+
+.author-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #f0f2f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #909399;
+}
+
+.author-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.author-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.author-name {
+  font-size: 14px;
+  color: #303133;
+  font-weight: 500;
+}
+
+.article-count {
+  font-size: 12px;
+  color: #909399;
 }
 
 .el-pagination {
