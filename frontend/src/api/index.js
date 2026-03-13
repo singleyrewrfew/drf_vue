@@ -25,13 +25,6 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => {
-    // 每次成功响应后都检查用户权限
-    const userStore = useUserStore()
-    if (userStore.isLoggedIn() && !userStore.canAccessBackend()) {
-      // 用户失去了后台权限，清除登录状态并跳转
-      userStore.logout()
-      router.push({ name: 'Login', query: { error: 'no_permission' } })
-    }
     return response
   },
   async (error) => {
@@ -42,18 +35,29 @@ api.interceptors.response.use(
       userStore.logout()
       router.push('/login')
     } else if (error.response?.status === 403) {
-      // 权限不足，检查是否是因为失去了后台访问权限
-      if (userStore.isLoggedIn()) {
-        try {
-          // 重新获取用户信息
-          await userStore.fetchProfile()
-          // 如果确实没有后台权限，清除登录状态并跳转
-          if (!userStore.canAccessBackend()) {
-            userStore.logout()
-            router.push({ name: 'Login', query: { error: 'no_permission' } })
+      // 权限不足
+      const errorData = error.response?.data
+      
+      // 检查是否是因为失去了后台访问权限
+      if (errorData?.error === 'no_backend_access') {
+        // 立即清除登录状态并跳转
+        userStore.logout()
+        router.push({ 
+          name: 'Login', 
+          query: { error: 'no_permission', message: errorData.message }
+        })
+      } else {
+        // 其他 403 错误，尝试刷新用户信息
+        if (userStore.isLoggedIn()) {
+          try {
+            await userStore.fetchProfile(true)
+            if (!userStore.canAccessBackend()) {
+              userStore.logout()
+              router.push({ name: 'Login', query: { error: 'no_permission' } })
+            }
+          } catch (e) {
+            console.error('Failed to fetch user profile:', e)
           }
-        } catch (e) {
-          console.error('Failed to fetch user profile:', e)
         }
       }
     }

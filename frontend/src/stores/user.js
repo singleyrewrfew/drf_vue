@@ -39,7 +39,12 @@ export const useUserStore = defineStore('user', () => {
     localStorage.removeItem('refresh')
   }
 
-  const fetchProfile = async () => {
+  const fetchProfile = async (force = false) => {
+    // 如果不需要强制刷新且有缓存的用户信息，直接返回
+    if (!force && user.value) {
+      return user.value
+    }
+    
     const { data } = await getProfile()
     setUser(data)
     return data

@@ -8,7 +8,7 @@
         v-if="route.query.error === 'no_permission'"
         title="权限不足"
         type="error"
-        description="您没有访问后台管理系统的权限，请联系管理员"
+        :description="route.query.message || '您没有访问后台管理系统的权限，请联系管理员'"
         :closable="false"
         show-icon
         style="margin-bottom: 20px"

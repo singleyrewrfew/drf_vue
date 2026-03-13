@@ -108,15 +108,6 @@ router.beforeEach(async (to, from, next) => {
     return next({ name: 'Login', query: { redirect: to.fullPath } })
   }
 
-  // 如果已登录，确保用户信息是最新的（每次都检查）
-  if (userStore.isLoggedIn()) {
-    try {
-      await userStore.fetchProfile()
-    } catch (error) {
-      console.error('Failed to fetch user profile:', error)
-    }
-  }
-
   // 如果已登录但没有后台访问权限，且访问的是需要认证的页面
   if (to.meta.requiresAuth && userStore.isLoggedIn() && !userStore.canAccessBackend()) {
     // 先清除登录状态
@@ -144,15 +135,6 @@ router.beforeEach(async (to, from, next) => {
   }
 
   next()
-})
-
-// 添加全局后置守卫，在每次路由切换后检查权限
-router.afterEach((to, from) => {
-  const userStore = useUserStore()
-  // 如果已登录但没有后台权限，在下一个路由切换时检查
-  if (userStore.isLoggedIn() && !userStore.canAccessBackend() && to.meta.requiresAuth) {
-    console.log('User lost backend access, will redirect on next navigation')
-  }
 })
 
 export default router
