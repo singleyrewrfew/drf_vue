@@ -65,7 +65,16 @@ const handleLogin = async () => {
   await formRef.value.validate()
   loading.value = true
   try {
-    await userStore.login(form.value)
+    const data = await userStore.login(form.value)
+    
+    // 检查用户是否有后台访问权限
+    if (!data.user?.is_staff) {
+      // 没有权限，立即清除登录状态
+      await userStore.logout()
+      ElMessage.error('您没有访问后台管理系统的权限，请联系管理员')
+      return
+    }
+    
     ElMessage.success('登录成功')
     const redirect = route.query.redirect || '/dashboard'
     router.push(redirect)

@@ -154,9 +154,6 @@ const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 
-console.log('User data:', userStore.user)
-console.log('Is admin:', userStore.user?.role_code === 'admin' || userStore.user?.is_superuser)
-
 const isEdit = computed(() => !!route.params.id)
 const isAdmin = computed(() => userStore.user?.role_code === 'admin' || userStore.user?.is_superuser)
 const formRef = ref()

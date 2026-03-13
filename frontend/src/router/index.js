@@ -103,23 +103,13 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const userStore = useUserStore()
 
-  // 调试信息
-  console.log('Router guard:', {
-    to: to.path,
-    isLoggedIn: userStore.isLoggedIn(),
-    user: userStore.user,
-    canAccessBackend: userStore.canAccessBackend(),
-    is_staff: userStore.user?.is_staff,
-  })
-
   // 如果需要认证但未登录
   if (to.meta.requiresAuth && !userStore.isLoggedIn()) {
     return next({ name: 'Login', query: { redirect: to.fullPath } })
   }
 
-  // 如果已登录但没有后台访问权限
+  // 如果已登录但没有后台访问权限，且访问的是需要认证的页面
   if (to.meta.requiresAuth && userStore.isLoggedIn() && !userStore.canAccessBackend()) {
-    console.log('No backend access, clearing and redirecting to login')
     // 先清除登录状态
     userStore.token = ''
     userStore.user = null
@@ -130,9 +120,13 @@ router.beforeEach(async (to, from, next) => {
     return next({ name: 'Login', query: { error: 'no_permission' } })
   }
 
-  // 如果是访客页面但已登录且有后台权限
-  if (to.meta.guest && userStore.isLoggedIn() && userStore.canAccessBackend()) {
-    return next({ name: 'Dashboard' })
+  // 如果是访客页面（如登录/注册页）且已登录
+  if (to.meta.guest && userStore.isLoggedIn()) {
+    // 如果有后台权限，跳转到后台
+    if (userStore.canAccessBackend()) {
+      return next({ name: 'Dashboard' })
+    }
+    // 如果没有后台权限，停留在登录页（让用户重新登录）
   }
 
   // 如果需要管理员权限但不是管理员
