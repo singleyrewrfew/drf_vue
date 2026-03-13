@@ -2,7 +2,7 @@
   <div class="comments-page">
     <el-card>
       <template #header>
-        <span>评论管理</span>
+        <span>{{ isAdmin ? '评论管理' : '我的评论' }}</span>
       </template>
       <el-table :data="commentList" v-loading="loading" stripe>
         <el-table-column prop="content" label="评论内容" min-width="250" show-overflow-tooltip />
@@ -14,7 +14,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="user_name" label="评论者" width="120" />
+        <el-table-column prop="user_name" label="评论者" width="120" v-if="!isAdmin" />
         <el-table-column label="回复对象" width="120">
           <template #default="{ row }">
             <span v-if="row.reply_to_name">@{{ row.reply_to_name }}</span>
@@ -34,7 +34,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="created_at" label="创建时间" width="180" />
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column label="操作" width="150" fixed="right" v-if="isAdmin">
           <template #default="{ row }">
             <el-button
               v-if="!row.is_approved"
@@ -44,6 +44,11 @@
             >
               审核
             </el-button>
+            <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="100" fixed="right" v-else>
+          <template #default="{ row }">
             <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
@@ -61,19 +66,30 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import api from '@/api'
+import { useUserStore } from '@/stores/user'
 
+const userStore = useUserStore()
 const loading = ref(false)
 const commentList = ref([])
 const page = ref(1)
 const total = ref(0)
 
+const isAdmin = computed(() => userStore.user?.role_code === 'admin' || userStore.user?.is_superuser)
+
 const fetchComments = async () => {
   loading.value = true
   try {
-    const { data } = await api.get('/comments/', { params: { page: page.value, all: true } })
+    const params = { page: page.value }
+    // 非管理员只显示自己的评论
+    if (!isAdmin.value) {
+      params.my = true
+    } else {
+      params.all = true
+    }
+    const { data } = await api.get('/comments/', { params })
     commentList.value = data.results || data
     total.value = data.count || commentList.value.length
   } catch (error) {

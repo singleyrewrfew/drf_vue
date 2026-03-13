@@ -1,85 +1,145 @@
 <template>
   <div class="dashboard">
-    <el-row :gutter="20" class="stat-row">
-      <el-col :xs="12" :sm="6">
-        <el-card shadow="hover" class="stat-card stat-card-primary">
-          <div class="stat-content">
-            <div class="stat-icon">
-              <el-icon :size="32"><Document /></el-icon>
+    <!-- 管理员显示全部统计卡片 -->
+    <template v-if="isAdmin">
+      <el-row :gutter="20" class="stat-row">
+        <el-col :xs="12" :sm="6">
+          <el-card shadow="hover" class="stat-card stat-card-primary">
+            <div class="stat-content">
+              <div class="stat-icon">
+                <el-icon :size="32"><Document /></el-icon>
+              </div>
+              <div class="stat-info">
+                <div class="stat-value">{{ stats.contents }}</div>
+                <div class="stat-label">内容总数</div>
+              </div>
             </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ stats.contents }}</div>
-              <div class="stat-label">内容总数</div>
+            <div class="stat-footer">
+              <span>已发布 {{ stats.published }}</span>
+              <span>草稿 {{ stats.drafts }}</span>
             </div>
-          </div>
-          <div class="stat-footer">
-            <span>已发布 {{ stats.published }}</span>
-            <span>草稿 {{ stats.drafts }}</span>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :xs="12" :sm="6">
-        <el-card shadow="hover" class="stat-card stat-card-success">
-          <div class="stat-content">
-            <div class="stat-icon">
-              <el-icon :size="32"><ChatDotRound /></el-icon>
+          </el-card>
+        </el-col>
+        <el-col :xs="12" :sm="6">
+          <el-card shadow="hover" class="stat-card stat-card-success">
+            <div class="stat-content">
+              <div class="stat-icon">
+                <el-icon :size="32"><ChatDotRound /></el-icon>
+              </div>
+              <div class="stat-info">
+                <div class="stat-value">{{ stats.comments }}</div>
+                <div class="stat-label">评论总数</div>
+              </div>
             </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ stats.comments }}</div>
-              <div class="stat-label">评论总数</div>
+            <div class="stat-footer">
+              <span>用户互动数据</span>
             </div>
-          </div>
-          <div class="stat-footer">
-            <span>用户互动数据</span>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :xs="12" :sm="6">
-        <el-card shadow="hover" class="stat-card stat-card-warning">
-          <div class="stat-content">
-            <div class="stat-icon">
-              <el-icon :size="32"><User /></el-icon>
+          </el-card>
+        </el-col>
+        <el-col :xs="12" :sm="6">
+          <el-card shadow="hover" class="stat-card stat-card-warning">
+            <div class="stat-content">
+              <div class="stat-icon">
+                <el-icon :size="32"><User /></el-icon>
+              </div>
+              <div class="stat-info">
+                <div class="stat-value">{{ stats.users }}</div>
+                <div class="stat-label">用户总数</div>
+              </div>
             </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ stats.users }}</div>
-              <div class="stat-label">用户总数</div>
+            <div class="stat-footer">
+              <span>注册用户</span>
             </div>
-          </div>
-          <div class="stat-footer">
-            <span>注册用户</span>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :xs="12" :sm="6">
-        <el-card shadow="hover" class="stat-card stat-card-danger">
-          <div class="stat-content">
-            <div class="stat-icon">
-              <el-icon :size="32"><View /></el-icon>
+          </el-card>
+        </el-col>
+        <el-col :xs="12" :sm="6">
+          <el-card shadow="hover" class="stat-card stat-card-danger">
+            <div class="stat-content">
+              <div class="stat-icon">
+                <el-icon :size="32"><View /></el-icon>
+              </div>
+              <div class="stat-info">
+                <div class="stat-value">{{ formatNumber(stats.views) }}</div>
+                <div class="stat-label">总浏览量</div>
+              </div>
             </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ formatNumber(stats.views) }}</div>
-              <div class="stat-label">总浏览量</div>
+            <div class="stat-footer">
+              <span>累计访问</span>
             </div>
-          </div>
-          <div class="stat-footer">
-            <span>累计访问</span>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+          </el-card>
+        </el-col>
+      </el-row>
+    </template>
+
+    <!-- 非管理员只显示个人统计 -->
+    <template v-else>
+      <el-row :gutter="20" class="stat-row">
+        <el-col :xs="12" :sm="8">
+          <el-card shadow="hover" class="stat-card stat-card-primary">
+            <div class="stat-content">
+              <div class="stat-icon">
+                <el-icon :size="32"><Document /></el-icon>
+              </div>
+              <div class="stat-info">
+                <div class="stat-value">{{ stats.my_contents || 0 }}</div>
+                <div class="stat-label">我的内容</div>
+              </div>
+            </div>
+            <div class="stat-footer">
+              <span>已发布 {{ stats.my_published || 0 }}</span>
+              <span>草稿 {{ stats.my_drafts || 0 }}</span>
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :xs="12" :sm="8">
+          <el-card shadow="hover" class="stat-card stat-card-success">
+            <div class="stat-content">
+              <div class="stat-icon">
+                <el-icon :size="32"><View /></el-icon>
+              </div>
+              <div class="stat-info">
+                <div class="stat-value">{{ formatNumber(stats.my_views || 0) }}</div>
+                <div class="stat-label">我的浏览量</div>
+              </div>
+            </div>
+            <div class="stat-footer">
+              <span>累计访问</span>
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :xs="12" :sm="8">
+          <el-card shadow="hover" class="stat-card stat-card-warning">
+            <div class="stat-content">
+              <div class="stat-icon">
+                <el-icon :size="32"><ChatDotRound /></el-icon>
+              </div>
+              <div class="stat-info">
+                <div class="stat-value">{{ stats.my_comments || 0 }}</div>
+                <div class="stat-label">我的评论</div>
+              </div>
+            </div>
+            <div class="stat-footer">
+              <span>互动数据</span>
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
+    </template>
 
     <el-row :gutter="20" style="margin-top: 20px">
       <el-col :xs="24" :lg="16">
         <el-card shadow="hover">
           <template #header>
             <div class="card-header">
-              <span>最新发布内容</span>
-              <el-button type="primary" link @click="$router.push('/contents')">查看全部</el-button>
+              <span>{{ isAdmin ? '最新发布内容' : '我的最新发布' }}</span>
+              <el-button type="primary" link @click="$router.push('/contents')">
+                {{ isAdmin ? '查看全部' : '查看我的' }}
+              </el-button>
             </div>
           </template>
           <el-table :data="stats.recent_contents" v-loading="loading" stripe>
             <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip />
-            <el-table-column prop="author_name" label="作者" width="120" />
+            <el-table-column prop="author_name" label="作者" width="120" v-if="isAdmin" />
             <el-table-column prop="view_count" label="浏览量" width="100">
               <template #default="{ row }">
                 <el-tag type="info" size="small">{{ row.view_count }}</el-tag>
@@ -104,26 +164,34 @@
               <el-icon :size="24" class="action-icon"><Upload /></el-icon>
               <span>上传媒体</span>
             </div>
-            <div class="action-item" @click="$router.push('/categories')">
-              <el-icon :size="24" class="action-icon"><Folder /></el-icon>
-              <span>分类管理</span>
-            </div>
-            <div class="action-item" @click="$router.push('/tags')">
-              <el-icon :size="24" class="action-icon"><PriceTag /></el-icon>
-              <span>标签管理</span>
-            </div>
-            <div class="action-item" @click="$router.push('/comments')">
-              <el-icon :size="24" class="action-icon"><ChatDotRound /></el-icon>
-              <span>评论管理</span>
-            </div>
             <div class="action-item" @click="$router.push('/profile')">
               <el-icon :size="24" class="action-icon"><Setting /></el-icon>
               <span>个人设置</span>
             </div>
+            <template v-if="isAdmin">
+              <div class="action-item" @click="$router.push('/categories')">
+                <el-icon :size="24" class="action-icon"><Folder /></el-icon>
+                <span>分类管理</span>
+              </div>
+              <div class="action-item" @click="$router.push('/tags')">
+                <el-icon :size="24" class="action-icon"><PriceTag /></el-icon>
+                <span>标签管理</span>
+              </div>
+              <div class="action-item" @click="$router.push('/comments')">
+                <el-icon :size="24" class="action-icon"><ChatDotRound /></el-icon>
+                <span>评论管理</span>
+              </div>
+            </template>
+            <template v-else-if="isEditor">
+              <div class="action-item" @click="$router.push('/contents')">
+                <el-icon :size="24" class="action-icon"><Document /></el-icon>
+                <span>内容管理</span>
+              </div>
+            </template>
           </div>
         </el-card>
 
-        <el-card shadow="hover" style="margin-top: 20px">
+        <el-card shadow="hover" style="margin-top: 20px" v-if="isAdmin">
           <template #header>
             <span>系统信息</span>
           </template>
@@ -148,10 +216,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Document, ChatDotRound, User, View, EditPen, Upload, Folder, PriceTag, Setting } from '@element-plus/icons-vue'
 import api from '@/api'
+import { useUserStore } from '@/stores/user'
 
+const userStore = useUserStore()
 const loading = ref(false)
 const stats = ref({
   contents: 0,
@@ -161,8 +231,16 @@ const stats = ref({
   users: 0,
   media: 0,
   views: 0,
+  my_contents: 0,
+  my_published: 0,
+  my_drafts: 0,
+  my_comments: 0,
+  my_views: 0,
   recent_contents: [],
 })
+
+const isAdmin = computed(() => userStore.user?.role_code === 'admin' || userStore.user?.is_superuser)
+const isEditor = computed(() => ['admin', 'editor'].includes(userStore.user?.role_code))
 
 const formatNumber = (num) => {
   if (num >= 10000) {
@@ -178,7 +256,10 @@ const fetchStats = async () => {
   loading.value = true
   try {
     const { data } = await api.get('/auth/stats/')
-    stats.value = data
+    stats.value = {
+      ...stats.value,
+      ...data,
+    }
   } catch (error) {
     console.error('获取统计数据失败', error)
   } finally {

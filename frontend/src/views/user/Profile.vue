@@ -8,16 +8,19 @@
           </template>
           <div class="avatar-section">
             <el-avatar :size="100" :src="getAvatarUrl(userStore.user?.avatar)" />
-            <el-upload
-              class="avatar-upload"
-              :action="uploadUrl"
-              :headers="headers"
-              :show-file-list="false"
-              :on-success="handleAvatarSuccess"
-              :on-error="handleAvatarError"
-            >
-              <el-button type="primary" link>更换头像</el-button>
-            </el-upload>
+            <div class="avatar-actions">
+              <el-upload
+                class="avatar-upload"
+                :action="uploadUrl"
+                :headers="headers"
+                :show-file-list="false"
+                :on-success="handleAvatarSuccess"
+                :on-error="handleAvatarError"
+              >
+                <el-button type="primary" link>上传头像</el-button>
+              </el-upload>
+              <el-button type="primary" link @click="showMediaDialog = true">从媒体库选择</el-button>
+            </div>
           </div>
           <el-descriptions :column="1" border style="margin-top: 20px">
             <el-descriptions-item label="用户名">{{ userStore.user?.username }}</el-descriptions-item>
@@ -70,6 +73,26 @@
         </el-card>
       </el-col>
     </el-row>
+
+    <!-- 媒体库选择对话框 -->
+    <el-dialog v-model="showMediaDialog" title="从媒体库选择头像" width="800px">
+      <el-input v-model="mediaSearch" placeholder="搜索媒体文件" style="margin-bottom: 16px" clearable />
+      <el-row :gutter="16" v-loading="mediaLoading">
+        <el-col :span="6" v-for="media in filteredMedia" :key="media.id">
+          <el-card shadow="hover" :class="{'media-card-selected': selectedMedia?.id === media.id}" @click="selectedMedia = media">
+            <img :src="getMediaUrl(media.url)" class="media-image" />
+            <div class="media-info">
+              <span class="media-name">{{ media.filename }}</span>
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
+      <el-empty v-if="!mediaLoading && filteredMedia.length === 0" description="暂无媒体文件" />
+      <template #footer>
+        <el-button @click="showMediaDialog = false">取消</el-button>
+        <el-button type="primary" @click="handleMediaSelect" :disabled="!selectedMedia">确定</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -79,6 +102,7 @@ import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { updateProfile, changePassword } from '@/api/user'
 import { getAvatarUrl } from '@/utils'
+import api from '@/api'
 
 const userStore = useUserStore()
 const formRef = ref()
@@ -135,6 +159,70 @@ const getRoleType = (roleCode) => {
 const uploadUrl = computed(() => `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'}/media/`)
 const headers = computed(() => ({ Authorization: `Bearer ${userStore.token}` }))
 
+// 媒体库相关
+const showMediaDialog = ref(false)
+const mediaLoading = ref(false)
+const mediaList = ref([])
+const mediaSearch = ref('')
+const selectedMedia = ref(null)
+
+const getMediaUrl = (file) => {
+  if (!file) return ''
+  if (file.startsWith('http')) return file
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'
+  return `${baseUrl.replace('/api', '')}${file}`
+}
+
+const fetchMedia = async () => {
+  mediaLoading.value = true
+  try {
+    const { data } = await api.get('/media/', { params: { limit: 50 } })
+    mediaList.value = data.results || data
+    console.log('媒体列表:', mediaList.value)
+  } catch (error) {
+    console.error('获取媒体列表失败:', error)
+  } finally {
+    mediaLoading.value = false
+  }
+}
+
+const filteredMedia = computed(() => {
+  if (!mediaSearch.value) return mediaList.value
+  return mediaList.value.filter(media => 
+    (media.filename || media.name || '')?.toLowerCase().includes(mediaSearch.value.toLowerCase())
+  )
+})
+
+const handleMediaSelect = async () => {
+  if (!selectedMedia.value) return
+  
+  try {
+    // 媒体序列化器返回的 url 是相对路径，需要转换为完整 URL
+    let mediaUrl = selectedMedia.value.url
+    if (mediaUrl && !mediaUrl.startsWith('http')) {
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'
+      mediaUrl = `${baseUrl.replace('/api', '')}${mediaUrl}`
+    }
+    console.log('选择的媒体:', selectedMedia.value)
+    console.log('媒体 URL:', mediaUrl)
+    
+    if (!mediaUrl) {
+      ElMessage.error('未找到媒体 URL')
+      return
+    }
+    
+    await updateProfile({ avatar_url: mediaUrl })
+    await userStore.fetchProfile()
+    ElMessage.success('头像更新成功')
+    showMediaDialog.value = false
+    selectedMedia.value = null
+    mediaSearch.value = ''
+  } catch (error) {
+    console.error('头像更新失败:', error)
+    ElMessage.error('头像更新失败')
+  }
+}
+
 const handleAvatarSuccess = async (response) => {
   const avatarUrl = response.url || response.file
   if (avatarUrl) {
@@ -186,6 +274,7 @@ const handleChangePassword = async () => {
 
 onMounted(() => {
   form.email = userStore.user?.email || ''
+  fetchMedia()
 })
 </script>
 
@@ -198,9 +287,50 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
+  padding: 20px 0;
+}
+
+.avatar-actions {
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+  justify-content: center;
+  align-items: center;
 }
 
 .avatar-upload {
-  margin-top: 12px;
+  display: inline-flex;
+}
+
+.avatar-upload :deep(.el-button) {
+  white-space: nowrap;
+}
+
+.media-card-selected {
+  border: 2px solid #409eff;
+}
+
+.media-image {
+  width: 100%;
+  height: 120px;
+  object-fit: contain;
+  cursor: pointer;
+  background-color: #f5f7fa;
+}
+
+.media-info {
+  padding: 8px 0;
+  text-align: center;
+  overflow: hidden;
+}
+
+.media-name {
+  font-size: 12px;
+  color: #606266;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
 }
 </style>

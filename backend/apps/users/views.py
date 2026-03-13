@@ -121,32 +121,64 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def stats(self, request):
         """获取仪表盘统计数据"""
-        content_count = Content.objects.count()
-        published_count = Content.objects.filter(status='published').count()
-        draft_count = Content.objects.filter(status='draft').count()
-        comment_count = Comment.objects.count()
-        user_count = User.objects.count()
-        media_count = Media.objects.count()
-        total_views = sum(Content.objects.values_list('view_count', flat=True))
+        # 判断用户角色
+        is_admin = request.user.is_admin or request.user.is_superuser
+        is_editor = request.user.is_admin or request.user.is_superuser or (request.user.role and request.user.role.code == 'editor')
         
-        recent_contents = Content.objects.filter(status='published').order_by('-created_at')[:5]
-        recent_contents_data = []
-        for content in recent_contents:
-            recent_contents_data.append({
-                'id': str(content.id),
-                'title': content.title,
-                'author_name': content.author.username,
-                'view_count': content.view_count,
-                'created_at': content.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+        if is_admin:
+            # 管理员显示全部数据
+            content_count = Content.objects.count()
+            published_count = Content.objects.filter(status='published').count()
+            draft_count = Content.objects.filter(status='draft').count()
+            comment_count = Comment.objects.count()
+            user_count = User.objects.count()
+            media_count = Media.objects.count()
+            total_views = sum(Content.objects.values_list('view_count', flat=True))
+            
+            recent_contents = Content.objects.filter(status='published').select_related('author').order_by('-created_at')[:5]
+            
+            return Response({
+                'contents': content_count,
+                'published': published_count,
+                'drafts': draft_count,
+                'comments': comment_count,
+                'users': user_count,
+                'media': media_count,
+                'views': total_views,
+                'recent_contents': [
+                    {
+                        'id': str(content.id),
+                        'title': content.title,
+                        'author_name': content.author.username,
+                        'view_count': content.view_count,
+                        'created_at': content.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    }
+                    for content in recent_contents
+                ],
             })
-        
-        return Response({
-            'contents': content_count,
-            'published': published_count,
-            'drafts': draft_count,
-            'comments': comment_count,
-            'users': user_count,
-            'media': media_count,
-            'views': total_views,
-            'recent_contents': recent_contents_data,
-        })
+        else:
+            # 非管理员只显示个人数据
+            my_contents = Content.objects.filter(author=request.user).count()
+            my_published = Content.objects.filter(author=request.user, status='published').count()
+            my_drafts = Content.objects.filter(author=request.user, status='draft').count()
+            my_comments = Comment.objects.filter(user=request.user).count()
+            my_views = sum(Content.objects.filter(author=request.user).values_list('view_count', flat=True))
+            
+            recent_contents = Content.objects.filter(author=request.user, status='published').order_by('-created_at')[:5]
+            
+            return Response({
+                'my_contents': my_contents,
+                'my_published': my_published,
+                'my_drafts': my_drafts,
+                'my_comments': my_comments,
+                'my_views': my_views,
+                'recent_contents': [
+                    {
+                        'id': str(content.id),
+                        'title': content.title,
+                        'view_count': content.view_count,
+                        'created_at': content.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    }
+                    for content in recent_contents
+                ],
+            })

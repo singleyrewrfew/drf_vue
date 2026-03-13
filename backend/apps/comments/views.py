@@ -37,9 +37,18 @@ class CommentViewSet(viewsets.ModelViewSet):
         queryset = super().get_queryset()
         if self.action == 'list':
             show_all = self.request.query_params.get('all')
-            if show_all and self.request.user.is_authenticated and self.request.user.is_editor:
+            show_my = self.request.query_params.get('my')
+            
+            # 如果请求的是自己的评论
+            if show_my and self.request.user.is_authenticated:
+                queryset = queryset.filter(user=self.request.user)
+            # 如果是编辑或管理员请求所有评论
+            elif show_all and self.request.user.is_authenticated and self.request.user.is_editor:
                 return queryset
-            queryset = queryset.filter(is_approved=True, parent__isnull=True)
+            # 默认只显示已审核的主评论
+            else:
+                queryset = queryset.filter(is_approved=True, parent__isnull=True)
+        
         article_id = self.request.query_params.get('article')
         if article_id:
             # 支持通过 slug 或 UUID 查找文章
