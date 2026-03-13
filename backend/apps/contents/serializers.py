@@ -69,12 +69,13 @@ class ContentCreateUpdateSerializer(serializers.ModelSerializer):
     cover_image = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     status = serializers.CharField(required=False, default='draft')
     is_top = serializers.BooleanField(required=False, default=False)
+    author = serializers.PrimaryKeyRelatedField(required=False, allow_null=True, queryset=Content._meta.get_field('author').related_model.objects.all())
 
     class Meta:
         model = Content
         fields = [
             'title', 'slug', 'summary', 'content', 'cover_image',
-            'category', 'tags', 'status', 'is_top'
+            'category', 'tags', 'status', 'is_top', 'author'
         ]
 
     def validate_cover_image(self, value):
@@ -98,6 +99,11 @@ class ContentCreateUpdateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         tags_data = validated_data.pop('tags', [])
         cover_image_url = validated_data.pop('cover_image', None)
+        
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            if 'author' not in validated_data or not validated_data.get('author'):
+                validated_data['author'] = request.user
         
         content = Content.objects.create(**validated_data)
         

@@ -4,6 +4,15 @@
       <template #header>
         <h2>CMS 管理系统</h2>
       </template>
+      <el-alert
+        v-if="route.query.error === 'no_permission'"
+        title="权限不足"
+        type="error"
+        description="您没有访问后台管理系统的权限，请联系管理员"
+        :closable="false"
+        show-icon
+        style="margin-bottom: 20px"
+      />
       <el-form ref="formRef" :model="form" :rules="rules" @submit.prevent="handleLogin">
         <el-form-item prop="username">
           <el-input v-model="form.username" placeholder="用户名" prefix-icon="User" />

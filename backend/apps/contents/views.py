@@ -30,6 +30,16 @@ class ContentViewSet(viewsets.ModelViewSet):
         return super().get_permissions()
 
     def perform_create(self, serializer):
+        author_id = self.request.data.get('author')
+        if author_id and (self.request.user.is_admin or self.request.user.is_superuser):
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            try:
+                author = User.objects.get(id=author_id)
+                serializer.save(author=author)
+                return
+            except User.DoesNotExist:
+                pass
         serializer.save(author=self.request.user)
 
     def retrieve(self, request, *args, **kwargs):

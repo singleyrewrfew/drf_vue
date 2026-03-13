@@ -100,18 +100,47 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const userStore = useUserStore()
 
+  // 调试信息
+  console.log('Router guard:', {
+    to: to.path,
+    isLoggedIn: userStore.isLoggedIn(),
+    user: userStore.user,
+    canAccessBackend: userStore.canAccessBackend(),
+    is_staff: userStore.user?.is_staff,
+  })
+
+  // 如果需要认证但未登录
   if (to.meta.requiresAuth && !userStore.isLoggedIn()) {
-    next({ name: 'Login', query: { redirect: to.fullPath } })
-  } else if (to.meta.guest && userStore.isLoggedIn()) {
-    next({ name: 'Dashboard' })
-  } else if (to.meta.requiresAdmin && !userStore.isAdmin()) {
-    next({ name: 'Dashboard' })
-  } else {
-    next()
+    return next({ name: 'Login', query: { redirect: to.fullPath } })
   }
+
+  // 如果已登录但没有后台访问权限
+  if (to.meta.requiresAuth && userStore.isLoggedIn() && !userStore.canAccessBackend()) {
+    console.log('No backend access, clearing and redirecting to login')
+    // 先清除登录状态
+    userStore.token = ''
+    userStore.user = null
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    localStorage.removeItem('refresh')
+    // 然后跳转到登录页
+    return next({ name: 'Login', query: { error: 'no_permission' } })
+  }
+
+  // 如果是访客页面但已登录且有后台权限
+  if (to.meta.guest && userStore.isLoggedIn() && userStore.canAccessBackend()) {
+    return next({ name: 'Dashboard' })
+  }
+
+  // 如果需要管理员权限但不是管理员
+  if (to.meta.requiresAdmin && !userStore.isAdmin()) {
+    return next({ name: 'Dashboard' })
+  }
+
+  next()
 })
 
 export default router

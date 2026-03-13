@@ -77,6 +77,16 @@
             </el-form-item>
           </el-col>
         </el-row>
+
+        <el-row :gutter="20" v-if="isAdmin">
+          <el-col :span="12">
+            <el-form-item label="作者" prop="author">
+              <el-select v-model="form.author" placeholder="请选择作者" style="width: 100%">
+                <el-option v-for="user in users" :key="user.id" :label="user.username" :value="user.id" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
         
         <el-divider content-position="left">封面与设置</el-divider>
         
@@ -130,7 +140,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted, defineAsyncComponent, shallowRef } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Plus, Loading } from '@element-plus/icons-vue'
@@ -144,11 +154,16 @@ const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 
+console.log('User data:', userStore.user)
+console.log('Is admin:', userStore.user?.role_code === 'admin' || userStore.user?.is_superuser)
+
 const isEdit = computed(() => !!route.params.id)
+const isAdmin = computed(() => userStore.user?.role_code === 'admin' || userStore.user?.is_superuser)
 const formRef = ref()
 const loading = ref(false)
 const categories = ref([])
 const tags = ref([])
+const users = ref([])
 
 const editorLoaded = ref(false)
 const showPreview = ref(false)
@@ -169,6 +184,7 @@ const form = reactive({
   cover_image: '',
   status: 'draft',
   is_top: false,
+  author: null,
 })
 
 const rules = {
@@ -285,6 +301,16 @@ const fetchTags = async () => {
   }
 }
 
+const fetchUsers = async () => {
+  if (!isAdmin.value) return
+  try {
+    const { data } = await api.get('/auth/')
+    users.value = data.results || data
+  } catch (error) {
+    console.error(error)
+  }
+}
+
 const fetchContent = async () => {
   if (!route.params.id) return
   loading.value = true
@@ -300,6 +326,7 @@ const fetchContent = async () => {
       cover_image: data.cover_image,
       status: data.status,
       is_top: data.is_top,
+      author: data.author?.id || data.author,
     })
     lastSaveContent.value = data.content
   } catch (error) {
@@ -310,6 +337,7 @@ const fetchContent = async () => {
 }
 
 const handleSubmit = async () => {
+  if (!formRef.value) return
   await formRef.value.validate()
   loading.value = true
   try {
@@ -317,6 +345,7 @@ const handleSubmit = async () => {
     if (!submitData.category) delete submitData.category
     if (!submitData.cover_image) delete submitData.cover_image
     if (submitData.tags.length === 0) delete submitData.tags
+    if (!isAdmin.value || !submitData.author) delete submitData.author
     
     if (isEdit.value) {
       await updateContent(route.params.id, submitData)
@@ -344,6 +373,7 @@ const handleSaveDraft = async () => {
     if (!submitData.category) delete submitData.category
     if (!submitData.cover_image) delete submitData.cover_image
     if (submitData.tags.length === 0) delete submitData.tags
+    if (!isAdmin.value || !submitData.author) delete submitData.author
     
     if (isEdit.value) {
       await updateContent(route.params.id, submitData)
@@ -364,6 +394,7 @@ onMounted(async () => {
   await Promise.all([
     fetchCategories(),
     fetchTags(),
+    fetchUsers(),
     fetchContent(),
   ])
   
