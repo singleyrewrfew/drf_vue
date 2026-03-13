@@ -34,37 +34,63 @@
                   查看更多 <el-icon><ArrowRight /></el-icon>
                 </el-button>
               </div>
-              <div class="article-grid">
-                <div
-                  v-for="article in latestArticles"
-                  :key="article.id"
-                  class="article-card"
-                  @click="$router.push(getArticleUrl(article))"
-                >
-                  <div class="article-cover">
-                    <img :src="getCoverUrl(article.cover_image)" :alt="article.title" />
-                    <div class="article-badges">
-                      <el-tag v-if="article.is_top" type="danger" size="small" effect="dark">置顶</el-tag>
-                      <div class="article-category" v-if="article.category_name">
-                        {{ article.category_name }}
+              <div class="article-grid" v-loading="loading">
+                <template v-if="loading">
+                  <div v-for="i in 4" :key="i" class="article-card">
+                    <div class="article-cover">
+                      <el-skeleton animated>
+                        <template #template>
+                          <el-skeleton-item variant="image" style="width: 100%; height: 200px;" />
+                        </template>
+                      </el-skeleton>
+                    </div>
+                    <div class="article-info">
+                      <el-skeleton animated>
+                        <template #template>
+                          <el-skeleton-item variant="h3" style="width: 80%; margin-bottom: 12px;" />
+                          <el-skeleton-item variant="text" style="width: 100%; margin-bottom: 8px;" />
+                          <el-skeleton-item variant="text" style="width: 60%; margin-bottom: 16px;" />
+                          <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <el-skeleton-item variant="text" style="width: 30%;" />
+                            <el-skeleton-item variant="text" style="width: 40%;" />
+                          </div>
+                        </template>
+                      </el-skeleton>
+                    </div>
+                  </div>
+                </template>
+                <template v-else>
+                  <div
+                    v-for="article in latestArticles"
+                    :key="article.id"
+                    class="article-card"
+                    @click="$router.push(getArticleUrl(article))"
+                  >
+                    <div class="article-cover">
+                      <img :src="getCoverUrl(article.cover_image)" :alt="article.title" />
+                      <div class="article-badges">
+                        <el-tag v-if="article.is_top" type="danger" size="small" effect="dark">置顶</el-tag>
+                        <div class="article-category" v-if="article.category_name">
+                          {{ article.category_name }}
+                        </div>
+                      </div>
+                    </div>
+                    <div class="article-info">
+                      <h3>{{ article.title }}</h3>
+                      <p class="article-summary">{{ article.summary || '暂无摘要' }}</p>
+                      <div class="article-footer">
+                        <div class="article-author">
+                          <el-avatar :size="24" :src="getAvatarUrl(article.author_avatar)">{{ article.author_name?.charAt(0)?.toUpperCase() }}</el-avatar>
+                          <span>{{ article.author_name }}</span>
+                        </div>
+                        <div class="article-stats">
+                          <span><el-icon><View /></el-icon> {{ article.view_count }}</span>
+                          <span><el-icon><Calendar /></el-icon> {{ formatDate(article.created_at) }}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                  <div class="article-info">
-                    <h3>{{ article.title }}</h3>
-                    <p class="article-summary">{{ article.summary || '暂无摘要' }}</p>
-                    <div class="article-footer">
-                      <div class="article-author">
-                        <el-avatar :size="24" :src="getAvatarUrl(article.author_avatar)">{{ article.author_name?.charAt(0)?.toUpperCase() }}</el-avatar>
-                        <span>{{ article.author_name }}</span>
-                      </div>
-                      <div class="article-stats">
-                        <span><el-icon><View /></el-icon> {{ article.view_count }}</span>
-                        <span><el-icon><Calendar /></el-icon> {{ formatDate(article.created_at) }}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                </template>
               </div>
               <div class="pagination-container">
                 <el-pagination
@@ -164,6 +190,7 @@ const tags = ref([])
 const currentPage = ref(1)
 const pageSize = ref(4)
 const total = ref(0)
+const loading = ref(true)
 
 const getCoverUrl = (coverImage) => {
   if (!coverImage) return 'https://picsum.photos/800/400?random=' + Math.random()
@@ -188,6 +215,7 @@ const formatDate = (dateStr) => {
 }
 
 const fetchData = async () => {
+  loading.value = true
   try {
     const offset = (currentPage.value - 1) * pageSize.value
     const [featuredRes, latestRes, hotRes, catRes, tagRes] = await Promise.all([
@@ -209,6 +237,8 @@ const fetchData = async () => {
     if (e.response?.status !== 401) {
       ElMessage.error('加载数据失败，请刷新页面重试')
     }
+  } finally {
+    loading.value = false
   }
 }
 

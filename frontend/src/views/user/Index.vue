@@ -17,6 +17,13 @@
             </el-tag>
           </template>
         </el-table-column>
+        <el-table-column prop="is_staff" label="后台权限" width="100">
+          <template #default="{ row }">
+            <el-tag :type="row.is_staff ? 'success' : 'info'">
+              {{ row.is_staff ? '允许' : '禁止' }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="is_active" label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="row.is_active ? 'success' : 'danger'">
@@ -62,6 +69,10 @@
           </el-select>
           <div v-if="isEditingSelf" class="form-tip">不能修改自己的角色</div>
         </el-form-item>
+        <el-form-item label="后台权限">
+          <el-switch v-model="form.is_staff" active-text="允许" inactive-text="禁止" />
+          <div class="form-tip">允许访问后台管理系统</div>
+        </el-form-item>
         <el-form-item label="状态">
           <el-switch v-model="form.is_active" active-text="启用" inactive-text="禁用" :disabled="isEditingSelf" />
           <div v-if="isEditingSelf" class="form-tip">不能禁用自己的账号</div>
@@ -101,6 +112,7 @@ const form = reactive({
   password_confirm: '',
   email: '',
   role: null,
+  is_staff: false,
   is_active: true,
 })
 
@@ -182,6 +194,7 @@ const resetForm = () => {
   form.password_confirm = ''
   form.email = ''
   form.role = null
+  form.is_staff = false
   form.is_active = true
   editingId.value = null
 }
@@ -199,6 +212,7 @@ const handleEdit = (row) => {
     password_confirm: '',
     email: row.email,
     role: row.role,
+    is_staff: row.is_staff,
     is_active: row.is_active,
   })
   dialogVisible.value = true
@@ -212,9 +226,22 @@ const handleSubmit = async () => {
       await updateUser(editingId.value, {
         email: form.email,
         role: form.role,
+        is_staff: form.is_staff,
         is_active: form.is_active,
       })
       ElMessage.success('更新成功')
+      
+      // 如果修改的是当前用户，强制刷新用户信息并可能跳转
+      if (editingId.value === userStore.user?.id) {
+        await userStore.fetchProfile()
+        if (!userStore.canAccessBackend()) {
+          // 如果当前用户失去了后台权限，清除登录状态并跳转
+          userStore.logout()
+          ElMessage.error('您的后台访问权限已被移除')
+          router.push({ name: 'Login', query: { error: 'no_permission' } })
+          return
+        }
+      }
     } else {
       await register({
         username: form.username,
@@ -222,6 +249,7 @@ const handleSubmit = async () => {
         password_confirm: form.password_confirm,
         email: form.email,
         role: form.role,
+        is_staff: form.is_staff,
         is_active: form.is_active,
       })
       ElMessage.success('创建成功')
