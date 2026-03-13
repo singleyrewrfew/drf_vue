@@ -34,10 +34,29 @@ class CommentSerializer(serializers.ModelSerializer):
 
 class CommentCreateSerializer(serializers.ModelSerializer):
     reply_to_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
+    article = serializers.CharField(write_only=True)
 
     class Meta:
         model = Comment
         fields = ['content', 'article', 'parent', 'reply_to_id']
+
+    def validate_article(self, value):
+        from apps.contents.models import Content
+        import uuid
+        
+        # 尝试通过 UUID 查找
+        try:
+            uuid.UUID(value)
+            try:
+                return Content.objects.get(id=value)
+            except Content.DoesNotExist:
+                raise serializers.ValidationError('文章不存在')
+        except (ValueError, AttributeError):
+            # 如果不是有效的 UUID，尝试通过 slug 查找
+            try:
+                return Content.objects.get(slug=value)
+            except Content.DoesNotExist:
+                raise serializers.ValidationError('文章不存在')
 
     def create(self, validated_data):
         validated_data['user'] = self.context['request'].user

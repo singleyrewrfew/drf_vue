@@ -3,7 +3,7 @@
     <section class="hero-section" v-if="featuredContents.length">
       <el-carousel height="480px" :interval="6000">
         <el-carousel-item v-for="item in featuredContents" :key="item.id">
-          <div class="hero-item" @click="$router.push(`/article/${item.id}`)">
+          <div class="hero-item" @click="$router.push(getArticleUrl(item))">
             <img :src="getCoverUrl(item.cover_image)" :alt="item.title" />
             <div class="hero-overlay"></div>
             <div class="hero-content">
@@ -39,7 +39,7 @@
                   v-for="article in latestArticles"
                   :key="article.id"
                   class="article-card"
-                  @click="$router.push(`/article/${article.id}`)"
+                  @click="$router.push(getArticleUrl(article))"
                 >
                   <div class="article-cover">
                     <img :src="getCoverUrl(article.cover_image)" :alt="article.title" />
@@ -93,7 +93,7 @@
                     v-for="(article, index) in hotArticles"
                     :key="article.id"
                     class="hot-item"
-                    @click="$router.push(`/article/${article.id}`)"
+                    @click="$router.push(getArticleUrl(article))"
                   >
                     <span class="hot-rank" :class="{ top: index < 3 }">{{ index + 1 }}</span>
                     <div class="hot-info">
@@ -136,7 +136,7 @@
                     class="tag-item"
                     type="info"
                     effect="plain"
-                    @click="$router.push(`/tag/${tag.id}`)"
+                    @click="$router.push(`/tag/${tag.slug || tag.id}`)"
                   >
                     #{{ tag.name }}
                   </el-tag>
@@ -171,6 +171,10 @@ const getCoverUrl = (coverImage) => {
   return `http://localhost:8001${coverImage}`
 }
 
+const getArticleUrl = (article) => {
+  return `/article/${article.slug || article.id}`
+}
+
 const getAvatarUrl = (avatar) => {
   if (!avatar) return ''
   if (avatar.startsWith('http')) return avatar
@@ -188,7 +192,7 @@ const fetchData = async () => {
     const offset = (currentPage.value - 1) * pageSize.value
     const [featuredRes, latestRes, hotRes, catRes, tagRes] = await Promise.all([
       getContents({ status: 'published', is_top: true, limit: 5 }),
-      getContents({ status: 'published', ordering: '-created_at', offset: offset, limit: pageSize.value }),
+      getContents({ status: 'published', offset: offset, limit: pageSize.value }),
       getContents({ status: 'published', ordering: '-view_count', limit: 8 }),
       getCategories(),
       getTags(),

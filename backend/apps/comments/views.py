@@ -42,7 +42,19 @@ class CommentViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(is_approved=True, parent__isnull=True)
         article_id = self.request.query_params.get('article')
         if article_id:
-            queryset = queryset.filter(article_id=article_id)
+            # 支持通过 slug 或 UUID 查找文章
+            try:
+                import uuid
+                uuid.UUID(article_id)
+                queryset = queryset.filter(article_id=article_id)
+            except (ValueError, AttributeError):
+                # 如果不是有效的 UUID，尝试通过 slug 查找
+                from apps.contents.models import Content
+                try:
+                    article = Content.objects.get(slug=article_id)
+                    queryset = queryset.filter(article_id=article.id)
+                except Content.DoesNotExist:
+                    queryset = queryset.none()
         is_approved = self.request.query_params.get('is_approved')
         if is_approved is not None and self.request.user.is_authenticated:
             if self.request.user.is_editor:

@@ -27,7 +27,7 @@
             </div>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item v-for="cat in categories" :key="cat.id" @click="$router.push(`/category/${cat.id}`)">
+                <el-dropdown-item v-for="cat in categories" :key="cat.id" @click="$router.push(`/category/${cat.slug || cat.id}`)">
                   {{ cat.name }}
                 </el-dropdown-item>
               </el-dropdown-menu>

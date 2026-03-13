@@ -8,11 +8,11 @@
 
       <div class="article-list">
         <div
-          v-for="article in articles"
-          :key="article.id"
-          class="article-item"
-          @click="$router.push(`/article/${article.id}`)"
-        >
+            v-for="article in articles"
+            :key="article.id"
+            class="article-item"
+            @click="$router.push(getArticleUrl(article))"
+          >
           <div v-if="article.cover_image" class="article-cover">
             <img :src="getCoverUrl(article.cover_image)" :alt="article.title" />
           </div>
@@ -51,6 +51,10 @@ const getCoverUrl = (coverImage) => {
   if (!coverImage) return ''
   if (coverImage.startsWith('http')) return coverImage
   return `http://localhost:8001${coverImage}`
+}
+
+const getArticleUrl = (article) => {
+  return `/article/${article.slug || article.id}`
 }
 
 const formatDate = (dateStr) => {

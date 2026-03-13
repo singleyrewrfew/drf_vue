@@ -7,7 +7,7 @@
             <article class="article">
               <header class="article-header">
                 <div class="article-category" v-if="article.category_name">
-                  <el-tag type="success" effect="plain">{{ article.category_name }}</el-tag>
+                  <el-tag type="success" effect="plain" @click="$router.push(`/category/${article.category_slug || article.category_id}`)">{{ article.category_name }}</el-tag>
                 </div>
                 <h1>{{ article.title }}</h1>
                 <div class="article-meta">
@@ -47,10 +47,10 @@
             </article>
 
             <div class="article-nav">
-              <el-button v-if="prevArticle" text @click="$router.push(`/article/${prevArticle.id}`)">
+              <el-button v-if="prevArticle" text @click="$router.push(getArticleUrl(prevArticle))">
                 <el-icon><ArrowLeft /></el-icon> 上一篇
               </el-button>
-              <el-button v-if="nextArticle" text @click="$router.push(`/article/${nextArticle.id}`)">
+              <el-button v-if="nextArticle" text @click="$router.push(getArticleUrl(nextArticle))">
                 下一篇 <el-icon><ArrowRight /></el-icon>
               </el-button>
             </div>
@@ -321,7 +321,7 @@
                   v-for="item in relatedArticles"
                   :key="item.id"
                   class="related-item"
-                  @click="$router.push(`/article/${item.id}`)"
+                  @click="$router.push(getArticleUrl(item))"
                 >
                   <div class="related-cover" v-if="item.cover_image">
                     <img :src="getCoverUrl(item.cover_image)" />
@@ -413,6 +413,10 @@ const getAvatarUrl = (avatar) => {
   if (!avatar) return ''
   if (avatar.startsWith('http')) return avatar
   return `http://localhost:8001${avatar}`
+}
+
+const getArticleUrl = (article) => {
+  return `/article/${article.slug || article.id}`
 }
 
 const scrollToHeading = (id) => {
@@ -554,7 +558,9 @@ const fetchArticle = async () => {
   loading.value = true
   fullContentLoaded.value = false
   try {
-    const { data } = await getContent(route.params.id)
+    // 支持通过 slug 或 ID 获取文章
+    const articleId = route.params.slug || route.params.id
+    const { data } = await getContent(articleId)
     article.value = data
     
     // 如果有 preview 字段且内容超过 preview，先使用 preview
@@ -582,7 +588,8 @@ const fetchArticle = async () => {
 
 const fetchComments = async () => {
   try {
-    const { data } = await getComments({ article: route.params.id })
+    const articleId = route.params.slug || route.params.id
+    const { data } = await getComments({ article: articleId })
     comments.value = data.results || data
   } catch (e) {
     console.error(e)

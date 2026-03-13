@@ -7,11 +7,11 @@
 
       <div class="article-list">
         <div
-          v-for="article in articles"
-          :key="article.id"
-          class="article-item"
-          @click="$router.push(`/article/${article.id}`)"
-        >
+            v-for="article in articles"
+            :key="article.id"
+            class="article-item"
+            @click="$router.push(getArticleUrl(article))"
+          >
           <div v-if="article.cover_image" class="article-cover">
             <img :src="getCoverUrl(article.cover_image)" :alt="article.title" />
           </div>
@@ -65,6 +65,10 @@ const getCoverUrl = (coverImage) => {
   return `http://localhost:8001${coverImage}`
 }
 
+const getArticleUrl = (article) => {
+  return `/article/${article.slug || article.id}`
+}
+
 const formatDate = (dateStr) => {
   if (!dateStr) return ''
   return new Date(dateStr).toLocaleDateString('zh-CN')
@@ -74,14 +78,14 @@ const fetchData = async () => {
   loading.value = true
   try {
     const offset = (page.value - 1) * pageSize.value
+    const tagId = route.params.slug || route.params.id
     const [tagRes, contentRes] = await Promise.all([
-      getTag(route.params.id),
+      getTag(tagId),
       getContents({ 
         status: 'published', 
-        tags: route.params.id,
+        tag: tagId,
         offset: offset,
         limit: pageSize.value,
-        ordering: '-created_at',
       }),
     ])
     tag.value = tagRes.data
@@ -89,12 +93,15 @@ const fetchData = async () => {
     total.value = contentRes.data.count || articles.value.length
   } catch (e) {
     console.error(e)
+    if (e.response?.status !== 401) {
+      ElMessage.error('加载标签失败')
+      }
   } finally {
     loading.value = false
   }
 }
 
-watch(() => route.params.id, fetchData, { immediate: true })
+watch(() => [route.params.id, route.params.slug], fetchData, { immediate: true })
 </script>
 
 <style scoped>

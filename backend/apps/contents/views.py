@@ -14,6 +14,8 @@ from .serializers import ContentCreateUpdateSerializer, ContentListSerializer, C
 class ContentViewSet(viewsets.ModelViewSet):
     queryset = Content.objects.select_related('author', 'category').prefetch_related('tags')
     permission_classes = [IsAuthenticatedOrReadOnly]
+    lookup_field = 'pk'
+    lookup_url_kwarg = 'pk'
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -21,6 +23,26 @@ class ContentViewSet(viewsets.ModelViewSet):
         elif self.action in ['create', 'update', 'partial_update']:
             return ContentCreateUpdateSerializer
         return ContentSerializer
+
+    def get_object(self):
+        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+        lookup_value = self.kwargs.get(lookup_url_kwarg)
+        
+        # 尝试通过 slug 或 UUID 查找
+        try:
+            # 首先尝试通过 UUID 查找
+            import uuid
+            uuid.UUID(lookup_value)
+            return super().get_object()
+        except (ValueError, AttributeError):
+            # 如果不是有效的 UUID，尝试通过 slug 查找
+            try:
+                obj = Content.objects.get(slug=lookup_value)
+                self.check_object_permissions(self.request, obj)
+                return obj
+            except Content.DoesNotExist:
+                from django.http import Http404
+                raise Http404('No Content matches the given query.')
 
     def get_permissions(self):
         if self.action in ['create']:
@@ -87,14 +109,40 @@ class ContentViewSet(viewsets.ModelViewSet):
         
         category_id = self.request.query_params.get('category')
         if category_id:
-            queryset = queryset.filter(category_id=category_id)
+            # 支持通过 slug 或 UUID 查找分类
+            try:
+                import uuid
+                uuid.UUID(category_id)
+                queryset = queryset.filter(category_id=category_id)
+            except (ValueError, AttributeError):
+                from apps.categories.models import Category
+                try:
+                    category = Category.objects.get(slug=category_id)
+                    queryset = queryset.filter(category_id=category.id)
+                except Category.DoesNotExist:
+                    queryset = queryset.none()
         tag_id = self.request.query_params.get('tag')
         if tag_id:
-            queryset = queryset.filter(tags__id=tag_id)
+            # 支持通过 slug 或 UUID 查找标签
+            try:
+                import uuid
+                uuid.UUID(tag_id)
+                queryset = queryset.filter(tags__id=tag_id)
+            except (ValueError, AttributeError):
+                from apps.tags.models import Tag
+                try:
+                    tag = Tag.objects.get(slug=tag_id)
+                    queryset = queryset.filter(tags__id=tag.id)
+                except Tag.DoesNotExist:
+                    queryset = queryset.none()
         author_id = self.request.query_params.get('author')
         if author_id:
             queryset = queryset.filter(author_id=author_id)
         search = self.request.query_params.get('search')
         if search:
             queryset = queryset.filter(title__icontains=search)
+        
+        # 确保置顶文章排在前面
+        queryset = queryset.order_by('-is_top', '-created_at')
+        
         return queryset

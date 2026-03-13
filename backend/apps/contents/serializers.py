@@ -105,6 +105,20 @@ class ContentCreateUpdateSerializer(serializers.ModelSerializer):
             if 'author' not in validated_data or not validated_data.get('author'):
                 validated_data['author'] = request.user
         
+        # 自动生成 slug
+        if not validated_data.get('slug'):
+            from django.utils.text import slugify
+            import uuid
+            base_slug = slugify(validated_data['title'])
+            if not base_slug:
+                base_slug = str(uuid.uuid4())[:8]
+            slug = base_slug
+            counter = 1
+            while Content.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            validated_data['slug'] = slug
+        
         content = Content.objects.create(**validated_data)
         
         if cover_image_url:
