@@ -153,6 +153,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { User, View, Calendar, Document, ArrowRight, TrendCharts, Folder, PriceTag } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import { getContents, getCategories, getTags } from '@/api/content'
 
 const featuredContents = ref([])
@@ -200,7 +201,10 @@ const fetchData = async () => {
     categories.value = catRes.data.results || catRes.data
     tags.value = tagRes.data.results || tagRes.data
   } catch (e) {
-    console.error(e)
+    console.error('Failed to fetch data:', e)
+    if (e.response?.status !== 401) {
+      ElMessage.error('加载数据失败，请刷新页面重试')
+    }
   }
 }
 

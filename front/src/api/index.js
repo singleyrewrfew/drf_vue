@@ -32,9 +32,20 @@ api.interceptors.response.use(
       localStorage.removeItem('front_token')
       localStorage.removeItem('front_user')
       localStorage.removeItem('front_refresh')
+      
       if (router.currentRoute.value.meta.requiresAuth) {
+        ElMessage.warning('登录已过期，请重新登录')
         router.push('/login')
       }
+      return Promise.reject(error)
+    } else if (error.response?.status === 403) {
+      ElMessage.error('没有权限访问')
+    } else if (error.response?.status === 404) {
+      ElMessage.error('请求的资源不存在')
+    } else if (error.response?.status === 500) {
+      ElMessage.error('服务器错误，请稍后重试')
+    } else if (error.code === 'ECONNABORTED') {
+      ElMessage.error('请求超时，请稍后重试')
     }
     return Promise.reject(error)
   }

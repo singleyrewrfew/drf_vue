@@ -120,6 +120,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { User, Folder, View, Calendar } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import { getContents, getCategories, getTags } from '@/api/content'
 import { getPopularAuthors } from '@/api/user'
 
@@ -168,7 +169,10 @@ const fetchArticles = async () => {
     articles.value = data.results || data
     total.value = data.count || articles.value.length
   } catch (e) {
-    console.error(e)
+    console.error('Failed to fetch articles:', e)
+    if (e.response?.status !== 401) {
+      ElMessage.error('加载文章失败')
+    }
   } finally {
     loading.value = false
   }
@@ -179,7 +183,7 @@ const fetchCategories = async () => {
     const { data } = await getCategories()
     categories.value = data.results || data
   } catch (e) {
-    console.error(e)
+    console.error('Failed to fetch categories:', e)
   }
 }
 
@@ -188,7 +192,7 @@ const fetchTags = async () => {
     const { data } = await getTags()
     tags.value = data.results || data
   } catch (e) {
-    console.error(e)
+    console.error('Failed to fetch tags:', e)
   }
 }
 
@@ -197,7 +201,7 @@ const fetchAuthors = async () => {
     const { data } = await getPopularAuthors()
     authors.value = data.results || data
   } catch (e) {
-    console.error(e)
+    console.error('Failed to fetch authors:', e)
   }
 }
 
