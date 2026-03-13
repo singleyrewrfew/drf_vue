@@ -7,6 +7,7 @@
           <el-upload
             :action="uploadUrl"
             :headers="headers"
+            :before-upload="beforeUpload"
             :on-success="handleUploadSuccess"
             :on-error="handleUploadError"
             :on-progress="handleUploadProgress"
@@ -203,6 +204,48 @@ const handleUploadProgress = (event) => {
   uploadProgress.value = Math.round(event.percent)
 }
 
+const beforeUpload = (file) => {
+  // 验证文件大小（视频除外）
+  const isVideo = file.type.startsWith('video/')
+  if (!isVideo) {
+    const maxSize = 10 * 1024 * 1024
+    if (file.size > maxSize) {
+      ElMessage.error('文件大小不能超过 10MB（视频文件不限大小）')
+      return false
+    }
+  }
+
+  // 验证文件类型
+  const allowedTypes = [
+    'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
+    'video/mp4', 'video/webm', 'video/ogg', 'video/quicktime',
+    'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  ]
+  
+  if (!allowedTypes.includes(file.type)) {
+    ElMessage.error(
+      `不支持的文件类型：${file.type}。支持的类型：图片（jpg, png, gif, webp, svg）、视频（mp4, webm, ogg）、文档（pdf, doc, docx）`
+    )
+    return false
+  }
+
+  // 验证文件扩展名
+  const allowedExtensions = [
+    '.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg',
+    '.mp4', '.webm', '.ogg', '.mov',
+    '.pdf', '.doc', '.docx'
+  ]
+  const ext = '.' + file.name.split('.').pop().toLowerCase()
+  if (!allowedExtensions.includes(ext)) {
+    ElMessage.error(
+      `不支持的文件扩展名：${ext}。支持的扩展名：${allowedExtensions.join(', ')}`
+    )
+    return false
+  }
+
+  return true
+}
+
 const handleUploadSuccess = () => {
   uploading.value = false
   uploadProgress.value = 0
@@ -210,10 +253,11 @@ const handleUploadSuccess = () => {
   fetchMedia()
 }
 
-const handleUploadError = () => {
+const handleUploadError = (error) => {
   uploading.value = false
   uploadProgress.value = 0
-  ElMessage.error('上传失败')
+  const errorMsg = error?.response?.data?.file?.[0] || error?.response?.data?.error || '上传失败'
+  ElMessage.error(errorMsg)
 }
 
 const handlePreview = (row) => {
