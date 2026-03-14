@@ -1452,7 +1452,8 @@ onUnmounted(() => {
 
 /* 对话框评论样式 */
 .dialog-comment-list {
-  max-height: 600px;
+  height: 100%;
+  max-height: calc(80vh - 120px);
   overflow-y: auto;
   padding-right: 8px;
 }
@@ -1831,5 +1832,28 @@ textarea::-webkit-scrollbar {
 .reply-form .el-textarea__inner::-webkit-scrollbar,
 .dialog-reply-form .el-textarea__inner::-webkit-scrollbar {
   display: none; /* Chrome/Safari */
+}
+
+/* 评论对话框固定位置样式 */
+.article-page .el-dialog {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  margin: 0 !important;
+  max-height: 80vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.article-page .el-dialog .el-dialog__header {
+  flex-shrink: 0;
+}
+
+.article-page .el-dialog .el-dialog__body {
+  overflow: hidden !important;
+  flex: 1;
+  min-height: 0;
+  padding: 10px 20px 20px !important;
 }
 </style>
