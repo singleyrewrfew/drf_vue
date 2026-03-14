@@ -109,6 +109,35 @@ const handleLogout = async () => {
   background-color: #304156;
 }
 
+.aside :deep(.el-menu) {
+  border-right: none;
+}
+
+.aside :deep(.el-menu-item) {
+  height: 50px;
+  line-height: 50px;
+}
+
+.aside :deep(.el-sub-menu__title) {
+  height: 50px;
+  line-height: 50px;
+}
+
+.aside :deep(.el-sub-menu .el-menu) {
+  background-color: #1f2d3d;
+}
+
+.aside :deep(.el-sub-menu .el-menu-item) {
+  min-width: auto;
+  width: 100%;
+  padding-left: 50px !important;
+  background-color: #1f2d3d;
+}
+
+.aside :deep(.el-sub-menu .el-menu-item:hover) {
+  background-color: #001528;
+}
+
 .logo {
   height: 60px;
   display: flex;
