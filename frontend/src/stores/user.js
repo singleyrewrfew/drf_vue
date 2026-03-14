@@ -98,11 +98,25 @@ export const useUserStore = defineStore('user', () => {
 
   const isLoggedIn = () => !!token.value
 
-  const isAdmin = () => user.value?.role_code === 'admin' || user.value?.is_superuser
+  const isAdmin = () => user.value?.is_admin || user.value?.is_superuser || false
 
-  const isEditor = () => ['admin', 'editor'].includes(user.value?.role_code)
+  const isEditor = () => user.value?.is_editor || user.value?.is_superuser || false
 
   const canAccessBackend = () => !!user.value?.is_staff
+
+  const hasPermission = (permissionCode) => {
+    if (user.value?.is_superuser) return true
+    if (!user.value?.permissions) return false
+    if (user.value.permissions.includes('*')) return true
+    return user.value.permissions.includes(permissionCode)
+  }
+
+  const hasAnyPermission = (permissionCodes) => {
+    if (user.value?.is_superuser) return true
+    if (!user.value?.permissions) return false
+    if (user.value.permissions.includes('*')) return true
+    return permissionCodes.some(code => user.value.permissions.includes(code))
+  }
 
   if (token.value) {
     startProfileCheck()
@@ -122,5 +136,7 @@ export const useUserStore = defineStore('user', () => {
     isAdmin,
     isEditor,
     canAccessBackend,
+    hasPermission,
+    hasAnyPermission,
   }
 })

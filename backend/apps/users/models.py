@@ -22,13 +22,41 @@ class User(AbstractUser):
 
     @property
     def is_admin(self):
-        return self.role and self.role.code == 'admin'
+        if self.is_superuser:
+            return True
+        if self.role and self.role.code == 'admin':
+            return True
+        if self.role and self.role.permissions.filter(code='role_manage').exists():
+            return True
+        return False
 
     @property
     def is_editor(self):
-        return self.role and self.role.code in ['admin', 'editor']
+        if self.is_superuser:
+            return True
+        if self.role and self.role.code in ['admin', 'editor']:
+            return True
+        if self.role and self.role.permissions.filter(code__in=['content_create', 'content_update']).exists():
+            return True
+        return False
 
     def has_permission(self, permission_code):
+        if self.is_superuser:
+            return True
         if not self.role:
             return False
         return self.role.permissions.filter(code=permission_code).exists()
+
+    def has_any_permission(self, permission_codes):
+        if self.is_superuser:
+            return True
+        if not self.role:
+            return False
+        return self.role.permissions.filter(code__in=permission_codes).exists()
+
+    def get_permission_codes(self):
+        if self.is_superuser:
+            return ['*']
+        if not self.role:
+            return []
+        return list(self.role.permissions.values_list('code', flat=True))

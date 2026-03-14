@@ -8,17 +8,24 @@ class UserSerializer(serializers.ModelSerializer):
     role_name = serializers.CharField(source='role.name', read_only=True)
     role_code = serializers.CharField(source='role.code', read_only=True)
     avatar_url = serializers.SerializerMethodField()
+    permissions = serializers.SerializerMethodField()
+    is_admin = serializers.BooleanField(read_only=True)
+    is_editor = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'avatar', 'avatar_url', 'role', 'role_name', 'role_code', 'is_staff', 'is_active', 'is_superuser', 'created_at', 'updated_at']
-        read_only_fields = ['id', 'is_staff', 'is_superuser', 'created_at', 'updated_at']
+        fields = ['id', 'username', 'email', 'avatar', 'avatar_url', 'role', 'role_name', 'role_code', 'is_staff', 'is_active', 'is_superuser', 'is_admin', 'is_editor', 'permissions', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'is_staff', 'is_superuser', 'is_admin', 'is_editor', 'created_at', 'updated_at']
     
     def get_avatar_url(self, obj):
         """返回完整的头像 URL"""
         if obj.avatar:
             return obj.avatar.url
         return None
+    
+    def get_permissions(self, obj):
+        """返回用户权限列表"""
+        return obj.get_permission_codes()
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
@@ -55,9 +62,11 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             if default_role:
                 user.role = default_role
         
-        # 根据角色设置 is_staff
-        if user.role and user.role.code in ['admin', 'editor']:
-            user.is_staff = True
+        # 根据角色权限设置 is_staff（有后台管理权限的用户需要 is_staff=True）
+        if user.role:
+            admin_permissions = ['role_manage', 'user_view', 'user_create', 'user_update', 'user_delete']
+            if user.role.permissions.filter(code__in=admin_permissions).exists():
+                user.is_staff = True
         
         user.save()
         return user
@@ -111,7 +120,8 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             instance.role = role
             # 如果手动设置了 is_staff，则使用手动设置的值
             if 'is_staff' not in validated_data:
-                if role.code in ['admin', 'editor']:
+                admin_permissions = ['role_manage', 'user_view', 'user_create', 'user_update', 'user_delete']
+                if role.permissions.filter(code__in=admin_permissions).exists():
                     instance.is_staff = True
                 else:
                     instance.is_staff = False

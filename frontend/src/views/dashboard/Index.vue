@@ -239,8 +239,8 @@ const stats = ref({
   recent_contents: [],
 })
 
-const isAdmin = computed(() => userStore.user?.role_code === 'admin' || userStore.user?.is_superuser)
-const isEditor = computed(() => ['admin', 'editor'].includes(userStore.user?.role_code))
+const isAdmin = computed(() => userStore.isAdmin())
+const isEditor = computed(() => userStore.isEditor())
 
 const formatNumber = (num) => {
   if (num >= 10000) {
