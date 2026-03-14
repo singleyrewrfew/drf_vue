@@ -7,7 +7,7 @@
             <span>个人信息</span>
           </template>
           <div class="avatar-section">
-            <el-avatar :size="100" :src="getAvatarUrl(userStore.user?.avatar)" />
+            <el-avatar :size="100" :src="getAvatarUrl(userStore.user?.avatar_url || userStore.user?.avatar)" />
             <div class="avatar-actions">
               <el-upload
                 class="avatar-upload"
@@ -16,6 +16,7 @@
                 :show-file-list="false"
                 :on-success="handleAvatarSuccess"
                 :on-error="handleAvatarError"
+                name="file"
               >
                 <el-button type="primary" link>上传头像</el-button>
               </el-upload>
@@ -75,19 +76,27 @@
     </el-row>
 
     <!-- 媒体库选择对话框 -->
-    <el-dialog v-model="showMediaDialog" title="从媒体库选择头像" width="800px">
+    <el-dialog 
+      v-model="showMediaDialog" 
+      title="从媒体库选择头像" 
+      width="800px"
+      center
+      :close-on-click-modal="false"
+    >
       <el-input v-model="mediaSearch" placeholder="搜索媒体文件" style="margin-bottom: 16px" clearable />
-      <el-row :gutter="16" v-loading="mediaLoading">
-        <el-col :span="6" v-for="media in filteredMedia" :key="media.id">
-          <el-card shadow="hover" :class="{'media-card-selected': selectedMedia?.id === media.id}" @click="selectedMedia = media">
-            <img :src="getMediaUrl(media.url)" class="media-image" />
-            <div class="media-info">
-              <span class="media-name">{{ media.filename }}</span>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
-      <el-empty v-if="!mediaLoading && filteredMedia.length === 0" description="暂无媒体文件" />
+      <div class="media-list-container">
+        <el-row :gutter="16" v-loading="mediaLoading">
+          <el-col :span="6" v-for="media in filteredMedia" :key="media.id">
+            <el-card shadow="hover" :class="{'media-card-selected': selectedMedia?.id === media.id}" @click="selectedMedia = media">
+              <img :src="getMediaUrl(media.url)" class="media-image" />
+              <div class="media-info">
+                <span class="media-name">{{ media.filename }}</span>
+              </div>
+            </el-card>
+          </el-col>
+        </el-row>
+        <el-empty v-if="!mediaLoading && filteredMedia.length === 0" description="暂无媒体文件" />
+      </div>
       <template #footer>
         <el-button @click="showMediaDialog = false">取消</el-button>
         <el-button type="primary" @click="handleMediaSelect" :disabled="!selectedMedia">确定</el-button>
@@ -187,52 +196,101 @@ const fetchMedia = async () => {
 }
 
 const filteredMedia = computed(() => {
-  if (!mediaSearch.value) return mediaList.value
-  return mediaList.value.filter(media => 
-    (media.filename || media.name || '')?.toLowerCase().includes(mediaSearch.value.toLowerCase())
-  )
+  // 只显示图片类型的媒体
+  let images = mediaList.value.filter(media => {
+    // 检查 is_image 字段或 file_type 以 image/ 开头
+    return media.is_image || (media.file_type && media.file_type.startsWith('image/'))
+  })
+  
+  // 如果有搜索关键字，进一步过滤
+  if (mediaSearch.value) {
+    images = images.filter(media => 
+      (media.filename || media.name || '')?.toLowerCase().includes(mediaSearch.value.toLowerCase())
+    )
+  }
+  
+  return images
 })
 
 const handleMediaSelect = async () => {
   if (!selectedMedia.value) return
   
   try {
-    // 媒体序列化器返回的 url 是相对路径，需要转换为完整 URL
-    let mediaUrl = selectedMedia.value.url
-    if (mediaUrl && !mediaUrl.startsWith('http')) {
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'
-      mediaUrl = `${baseUrl.replace('/api', '')}${mediaUrl}`
-    }
-    console.log('选择的媒体:', selectedMedia.value)
-    console.log('媒体 URL:', mediaUrl)
+    // 获取媒体的 URL
+    let avatarPath = selectedMedia.value.url
     
-    if (!mediaUrl) {
-      ElMessage.error('未找到媒体 URL')
+    console.log('原始媒体 URL:', avatarPath)
+    
+    // 如果是完整 URL，提取相对路径
+    if (avatarPath && avatarPath.startsWith('http')) {
+      // 从完整 URL 中提取 /media/ 部分
+      const mediaIndex = avatarPath.indexOf('/media/')
+      if (mediaIndex !== -1) {
+        avatarPath = avatarPath.substring(mediaIndex)
+        console.log('提取的相对路径:', avatarPath)
+      }
+    }
+    
+    // 确保路径以 /media/ 开头
+    if (!avatarPath.startsWith('/media/') && !avatarPath.startsWith('media/')) {
+      avatarPath = '/media/' + avatarPath
+    }
+    
+    console.log('最终头像路径:', avatarPath)
+    
+    if (!avatarPath) {
+      ElMessage.error('未找到媒体路径')
       return
     }
     
-    await updateProfile({ avatar_url: mediaUrl })
-    await userStore.fetchProfile()
+    // 传递相对路径给后端
+    const response = await updateProfile({ avatar_url: avatarPath })
+    console.log('更新响应:', response)
+    
+    // 强制刷新用户信息
+    await userStore.fetchProfile(true)
     ElMessage.success('头像更新成功')
     showMediaDialog.value = false
     selectedMedia.value = null
     mediaSearch.value = ''
   } catch (error) {
     console.error('头像更新失败:', error)
-    ElMessage.error('头像更新失败')
+    ElMessage.error(error.response?.data?.message || '头像更新失败')
   }
 }
 
 const handleAvatarSuccess = async (response) => {
-  const avatarUrl = response.url || response.file
-  if (avatarUrl) {
+  console.log('上传响应:', response)
+  
+  // 上传到媒体库成功，获取返回的 URL
+  if (response && response.url) {
     try {
-      await updateProfile({ avatar_url: avatarUrl })
-      await userStore.fetchProfile()
+      // 处理路径格式
+      let avatarPath = response.url
+      if (avatarPath && avatarPath.startsWith('http')) {
+        const mediaIndex = avatarPath.indexOf('/media/')
+        if (mediaIndex !== -1) {
+          avatarPath = avatarPath.substring(mediaIndex)
+        }
+      }
+      
+      // 确保路径以 /media/ 开头
+      if (!avatarPath.startsWith('/media/') && !avatarPath.startsWith('media/')) {
+        avatarPath = '/media/' + avatarPath
+      }
+      
+      console.log('上传后头像路径:', avatarPath)
+      
+      // 更新用户头像
+      await updateProfile({ avatar_url: avatarPath })
+      await userStore.fetchProfile(true)
       ElMessage.success('头像更新成功')
     } catch (error) {
-      ElMessage.error('头像更新失败')
+      console.error('头像更新失败:', error)
+      ElMessage.error(error.response?.data?.message || '头像更新失败')
     }
+  } else {
+    ElMessage.error('头像上传失败：未返回媒体信息')
   }
 }
 
@@ -306,6 +364,22 @@ onMounted(() => {
   white-space: nowrap;
 }
 
+.media-list-container {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px 8px 24px 8px;
+}
+
+.media-list-container :deep(.el-col) {
+  margin-bottom: 16px;
+}
+
+.media-list-container :deep(.el-row) {
+  margin-bottom: 0 !important;
+}
+
 .media-card-selected {
   border: 2px solid #409eff;
 }
@@ -332,5 +406,37 @@ onMounted(() => {
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 100%;
+}
+</style>
+
+<style>
+/* 全局样式：确保对话框固定不动且内容完整显示 */
+.el-dialog {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  margin: 0 !important;
+  height: 80vh !important;
+  max-height: 80vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.el-dialog__header {
+  flex-shrink: 0 !important;
+}
+
+.el-dialog__body {
+  overflow: hidden !important;
+  padding: 20px !important;
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+}
+
+.el-dialog__footer {
+  flex-shrink: 0 !important;
 }
 </style>

@@ -60,7 +60,7 @@
         <div class="header-right">
           <el-dropdown>
             <span class="user-info">
-              <el-avatar :size="32" :src="getAvatarUrl(userStore.user?.avatar)">
+              <el-avatar :size="32" :src="getAvatarUrl(userStore.user?.avatar_url || userStore.user?.avatar)">
                 <el-icon><UserFilled /></el-icon>
               </el-avatar>
               <span class="username">{{ userStore.user?.username }}</span>

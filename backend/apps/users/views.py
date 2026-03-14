@@ -74,7 +74,7 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['put', 'patch'], permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=['put', 'patch', 'post'], permission_classes=[IsAuthenticated])
     def update_profile(self, request):
         serializer = UserUpdateSerializer(request.user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)

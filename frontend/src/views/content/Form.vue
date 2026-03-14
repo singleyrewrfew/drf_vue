@@ -31,16 +31,6 @@
         
         <el-form-item label="内容" prop="content">
           <div class="editor-wrapper">
-            <div class="editor-toolbar">
-              <el-button-group>
-                <el-button size="small" @click="togglePreview">
-                  {{ showPreview ? '隐藏预览' : '显示预览' }}
-                </el-button>
-                <el-button size="small" @click="handleSaveDraft" :loading="loading">
-                  保存草稿
-                </el-button>
-              </el-button-group>
-            </div>
             <MdEditor
               v-if="editorLoaded"
               v-model="form.content"
@@ -216,10 +206,6 @@ const toolbars = [
   'fullscreen',
   'preview',
 ]
-
-const togglePreview = () => {
-  showPreview.value = !showPreview.value
-}
 
 const handleContentChange = () => {
   if (form.content && form.content !== lastSaveContent.value && form.content.length > 100) {
@@ -426,12 +412,6 @@ onUnmounted(() => {
 
 .editor-wrapper {
   width: 100%;
-}
-
-.editor-toolbar {
-  margin-bottom: 12px;
-  display: flex;
-  justify-content: flex-end;
 }
 
 .editor-loading {

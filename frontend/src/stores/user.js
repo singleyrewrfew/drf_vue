@@ -5,6 +5,7 @@ import { getProfile, login as loginApi, logout as logoutApi } from '@/api/user'
 export const useUserStore = defineStore('user', () => {
   const token = ref(localStorage.getItem('token') || '')
   const user = ref(JSON.parse(localStorage.getItem('user') || 'null'))
+  let profileCheckTimer = null
 
   const setToken = (newToken) => {
     token.value = newToken
@@ -20,10 +21,12 @@ export const useUserStore = defineStore('user', () => {
     const { data } = await loginApi(credentials)
     setToken(data.access)
     setUser(data.user)
+    startProfileCheck()
     return data
   }
 
   const logout = async () => {
+    stopProfileCheck()
     try {
       const refreshToken = localStorage.getItem('refresh')
       if (refreshToken) {
@@ -40,7 +43,6 @@ export const useUserStore = defineStore('user', () => {
   }
 
   const fetchProfile = async (force = false) => {
-    // 如果不需要强制刷新且有缓存的用户信息，直接返回
     if (!force && user.value) {
       return user.value
     }
@@ -48,6 +50,50 @@ export const useUserStore = defineStore('user', () => {
     const { data } = await getProfile()
     setUser(data)
     return data
+  }
+
+  const startProfileCheck = () => {
+    if (profileCheckTimer) {
+      clearInterval(profileCheckTimer)
+    }
+    
+    console.log('Starting profile check timer')
+    
+    profileCheckTimer = setInterval(async () => {
+      if (token.value) {
+        try {
+          console.log('Checking profile for updates...')
+          const { data } = await getProfile()
+          
+          // 比较avatar_url字段
+          const oldAvatarUrl = user.value?.avatar_url
+          const newAvatarUrl = data.avatar_url
+          
+          console.log('Old avatar_url:', oldAvatarUrl)
+          console.log('New avatar_url:', newAvatarUrl)
+          console.log('Full old user:', user.value)
+          console.log('Full new user:', data)
+          
+          // 检查是否有任何变化
+          if (JSON.stringify(user.value) !== JSON.stringify(data)) {
+            console.log('User info changed, updating...')
+            setUser(data)
+          } else {
+            console.log('No changes detected')
+          }
+        } catch (error) {
+          console.error('Profile check error:', error)
+        }
+      }
+    }, 5000)
+    console.log('Profile check timer set to run every 5 seconds')
+  }
+
+  const stopProfileCheck = () => {
+    if (profileCheckTimer) {
+      clearInterval(profileCheckTimer)
+      profileCheckTimer = null
+    }
   }
 
   const isLoggedIn = () => !!token.value
@@ -58,6 +104,10 @@ export const useUserStore = defineStore('user', () => {
 
   const canAccessBackend = () => !!user.value?.is_staff
 
+  if (token.value) {
+    startProfileCheck()
+  }
+
   return {
     token,
     user,
@@ -66,6 +116,8 @@ export const useUserStore = defineStore('user', () => {
     login,
     logout,
     fetchProfile,
+    startProfileCheck,
+    stopProfileCheck,
     isLoggedIn,
     isAdmin,
     isEditor,
