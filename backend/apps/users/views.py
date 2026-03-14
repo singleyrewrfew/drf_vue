@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
-from django.db.models import Count
+from django.db import models
+from django.db.models import Count, Sum
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
@@ -126,14 +127,22 @@ class UserViewSet(viewsets.ModelViewSet):
         is_editor = request.user.is_admin or request.user.is_superuser or (request.user.role and request.user.role.code == 'editor')
         
         if is_admin:
-            # 管理员显示全部数据
-            content_count = Content.objects.count()
-            published_count = Content.objects.filter(status='published').count()
-            draft_count = Content.objects.filter(status='draft').count()
+            # 管理员显示全部数据 - 使用聚合减少查询次数
+            content_stats = Content.objects.aggregate(
+                total=Count('id'),
+                published=Count('id', filter=models.Q(status='published')),
+                drafts=Count('id', filter=models.Q(status='draft')),
+                total_views=Sum('view_count')
+            )
+            
+            content_count = content_stats['total']
+            published_count = content_stats['published']
+            draft_count = content_stats['drafts']
+            total_views = content_stats['total_views'] or 0
+            
             comment_count = Comment.objects.count()
             user_count = User.objects.count()
             media_count = Media.objects.count()
-            total_views = sum(Content.objects.values_list('view_count', flat=True))
             
             recent_contents = Content.objects.filter(status='published').select_related('author').order_by('-created_at')[:5]
             
@@ -157,12 +166,20 @@ class UserViewSet(viewsets.ModelViewSet):
                 ],
             })
         else:
-            # 非管理员只显示个人数据
-            my_contents = Content.objects.filter(author=request.user).count()
-            my_published = Content.objects.filter(author=request.user, status='published').count()
-            my_drafts = Content.objects.filter(author=request.user, status='draft').count()
+            # 非管理员只显示个人数据 - 使用聚合减少查询次数
+            my_content_stats = Content.objects.filter(author=request.user).aggregate(
+                total=Count('id'),
+                published=Count('id', filter=models.Q(status='published')),
+                drafts=Count('id', filter=models.Q(status='draft')),
+                total_views=Sum('view_count')
+            )
+            
+            my_contents = my_content_stats['total']
+            my_published = my_content_stats['published']
+            my_drafts = my_content_stats['drafts']
+            my_views = my_content_stats['total_views'] or 0
+            
             my_comments = Comment.objects.filter(user=request.user).count()
-            my_views = sum(Content.objects.filter(author=request.user).values_list('view_count', flat=True))
             
             recent_contents = Content.objects.filter(author=request.user, status='published').order_by('-created_at')[:5]
             

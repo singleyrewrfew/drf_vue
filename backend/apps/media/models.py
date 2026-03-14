@@ -149,6 +149,11 @@ class Media(models.Model):
         verbose_name = '媒体文件'
         verbose_name_plural = verbose_name
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['file_hash'], name='media_file_hash_idx'),
+            models.Index(fields=['uploader', '-created_at'], name='media_uploader_created_idx'),
+            models.Index(fields=['file_type'], name='media_file_type_idx'),
+        ]
 
     def __str__(self):
         return self.filename

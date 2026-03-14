@@ -24,6 +24,12 @@ class Comment(models.Model):
         verbose_name = '评论'
         verbose_name_plural = verbose_name
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['article', '-created_at'], name='comment_article_created_idx'),
+            models.Index(fields=['user', '-created_at'], name='comment_user_created_idx'),
+            models.Index(fields=['is_approved', '-created_at'], name='comment_approved_created_idx'),
+            models.Index(fields=['parent'], name='comment_parent_idx'),
+        ]
 
     def __str__(self):
         return f'{self.user.username}: {self.content[:50]}'
@@ -44,6 +50,9 @@ class CommentLike(models.Model):
         verbose_name = '评论点赞'
         verbose_name_plural = verbose_name
         unique_together = ['comment', 'user']
+        indexes = [
+            models.Index(fields=['user'], name='comment_like_user_idx'),
+        ]
 
     def __str__(self):
         return f'{self.user.username} liked {self.comment.id}'

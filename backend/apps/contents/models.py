@@ -37,6 +37,13 @@ class Content(models.Model):
         verbose_name = '内容'
         verbose_name_plural = verbose_name
         ordering = ['-is_top', '-created_at']
+        indexes = [
+            models.Index(fields=['status', '-created_at'], name='content_status_created_idx'),
+            models.Index(fields=['status', '-published_at'], name='content_status_published_idx'),
+            models.Index(fields=['-is_top', '-created_at'], name='content_top_created_idx'),
+            models.Index(fields=['slug'], name='content_slug_idx'),
+            models.Index(fields=['author', 'status'], name='content_author_status_idx'),
+        ]
 
     def __str__(self):
         return self.title
