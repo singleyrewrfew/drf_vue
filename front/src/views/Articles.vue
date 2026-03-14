@@ -8,44 +8,63 @@
 
       <el-row :gutter="20">
         <el-col :span="18">
-          <div class="article-list">
-            <div
-              v-for="article in articles"
-              :key="article.id"
-              class="article-item"
-              @click="$router.push(getArticleUrl(article))"
-            >
-              <div v-if="article.cover_image" class="article-cover">
-                <img :src="getCoverUrl(article.cover_image)" :alt="article.title" />
-              </div>
-              <div class="article-content">
-                <h2>{{ article.title }}</h2>
-                <p class="article-summary">{{ article.summary || '暂无摘要' }}</p>
-                <div class="article-meta">
-                  <span class="author">
-                    <el-icon><User /></el-icon>
-                    {{ article.author_name }}
-                  </span>
-                  <span v-if="article.category_name" class="category">
-                    <el-icon><Folder /></el-icon>
-                    {{ article.category_name }}
-                  </span>
-                  <span class="views">
-                    <el-icon><View /></el-icon>
-                    {{ article.view_count }}
-                  </span>
-                  <span class="date">
-                    <el-icon><Calendar /></el-icon>
-                    {{ formatDate(article.created_at) }}
-                  </span>
+          <div class="article-list" v-loading="loading">
+            <template v-if="loading">
+              <div v-for="i in pageSize" :key="'skeleton-' + i" class="article-item">
+                <div class="article-cover">
+                  <el-skeleton-item variant="image" style="width: 100%; height: 100%;" />
+                </div>
+                <div class="article-content">
+                  <el-skeleton-item variant="h3" style="width: 60%; margin-bottom: 12px;" />
+                  <el-skeleton :rows="2" animated />
+                  <div style="display: flex; gap: 16px; margin-top: 12px;">
+                    <el-skeleton-item variant="text" style="width: 80px;" />
+                    <el-skeleton-item variant="text" style="width: 80px;" />
+                    <el-skeleton-item variant="text" style="width: 60px;" />
+                  </div>
                 </div>
               </div>
-            </div>
+            </template>
+            <template v-else>
+              <div
+                v-for="article in articles"
+                :key="article.id"
+                class="article-item"
+                @click="$router.push(getArticleUrl(article))"
+              >
+                <div v-if="article.cover_image" class="article-cover">
+                  <img :src="getCoverUrl(article.cover_image)" :alt="article.title" />
+                </div>
+                <div class="article-content">
+                  <h2>{{ article.title }}</h2>
+                  <p class="article-summary">{{ article.summary || '暂无摘要' }}</p>
+                  <div class="article-meta">
+                    <span class="author">
+                      <el-icon><User /></el-icon>
+                      {{ article.author_name }}
+                    </span>
+                    <span v-if="article.category_name" class="category">
+                      <el-icon><Folder /></el-icon>
+                      {{ article.category_name }}
+                    </span>
+                    <span class="views">
+                      <el-icon><View /></el-icon>
+                      {{ article.view_count }}
+                    </span>
+                    <span class="date">
+                      <el-icon><Calendar /></el-icon>
+                      {{ formatDate(article.created_at) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </template>
           </div>
 
           <el-empty v-if="!loading && articles.length === 0" description="暂无文章" />
 
           <el-pagination
+            v-if="!loading && total > pageSize"
             v-model:current-page="page"
             :page-size="pageSize"
             :total="total"
