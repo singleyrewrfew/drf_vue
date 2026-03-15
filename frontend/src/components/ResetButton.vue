@@ -30,7 +30,7 @@ defineProps({
   gap: 6px;
   padding: 8px 16px;
   border: 1px solid #dcdfe6;
-  border-radius: 4px;
+  border-radius: 8px;
   background: #fff;
   color: #606266;
   font-size: 14px;

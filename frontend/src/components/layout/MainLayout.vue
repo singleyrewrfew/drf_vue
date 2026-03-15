@@ -2,7 +2,7 @@
   <el-container class="main-layout">
     <el-aside :width="isCollapsed ? '88px' : '240px'" class="aside">
       <div class="sidebar">
-        <div class="logo">
+        <div class="logo" :class="{ collapsed: isCollapsed }">
           <div class="logo-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 2L2 7l10 5 10-5-10-5z" />
@@ -10,7 +10,7 @@
               <path d="M2 12l10 5 10-5" />
             </svg>
           </div>
-          <h2 v-show="!isCollapsed">CMS 管理</h2>
+          <h2 class="logo-title" :class="{ collapsed: isCollapsed }">CMS 管理</h2>
         </div>
         <nav class="nav-menu">
           <div class="menu-section" v-show="!isCollapsed">
@@ -206,10 +206,13 @@ const handleLogout = async () => {
   height: 70px;
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 12px;
   padding: 0 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.logo.collapsed {
+  justify-content: center;
 }
 
 .logo-icon {
@@ -221,6 +224,7 @@ const handleLogout = async () => {
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  flex-shrink: 0;
 }
 
 .logo-icon svg {
@@ -235,6 +239,16 @@ const handleLogout = async () => {
   font-weight: 600;
   color: #fff;
   letter-spacing: 1px;
+  white-space: nowrap;
+  opacity: 1;
+  width: auto;
+  transition: opacity 0.2s ease, width 0.3s ease;
+  overflow: hidden;
+}
+
+.logo-title.collapsed {
+  opacity: 0;
+  width: 0;
 }
 
 .nav-menu {
@@ -400,12 +414,15 @@ const handleLogout = async () => {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 12px;
   transition: all 0.3s ease;
+  height: 64px;
+  box-sizing: border-box;
 }
 
 .user-card.collapsed {
   justify-content: center;
   padding: 8px;
   gap: 0;
+  height: 52px;
 }
 
 .user-card:hover {
@@ -423,13 +440,16 @@ const handleLogout = async () => {
   gap: 2px;
   min-width: 0;
   opacity: 1;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.2s ease, width 0.3s ease, margin 0.3s ease;
   overflow: hidden;
 }
 
 .user-card.collapsed .user-info {
   opacity: 0;
   width: 0;
+  margin: 0;
+  padding: 0;
+  height: 0;
   overflow: hidden;
 }
 
