@@ -4,7 +4,7 @@
       <template #header>
         <div class="card-header">
           <span>分类管理</span>
-          <el-button type="primary" @click="handleAdd">新建分类</el-button>
+          <CreateButton text="新建分类" @click="handleAdd" />
         </div>
       </template>
       <el-table :data="categoryList" v-loading="loading" stripe row-key="id">
@@ -13,7 +13,7 @@
         <el-table-column prop="parent_name" label="父分类" />
         <el-table-column prop="sort_order" label="排序" width="80" />
         <el-table-column prop="created_at" label="创建时间" width="180" />
-        <el-table-column label="操作" width="150">
+        <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <div class="action-buttons">
               <EditButton @click="handleEdit(row)" />
@@ -58,6 +58,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { getCategories, createCategory, updateCategory, deleteCategory } from '@/api/category'
 import EditButton from '@/components/EditButton.vue'
 import DeleteButton from '@/components/DeleteButton.vue'
+import CreateButton from '@/components/CreateButton.vue'
 
 const loading = ref(false)
 const submitLoading = ref(false)

@@ -19,7 +19,7 @@
         </div>
       </template>
       <el-table :data="mediaList" v-loading="loading" stripe>
-        <el-table-column prop="filename" label="文件名" />
+        <el-table-column prop="filename" label="文件名" min-width="200" show-overflow-tooltip />
         <el-table-column prop="file_type" label="类型" width="150" />
         <el-table-column prop="file_size" label="大小" width="100">
           <template #default="{ row }">
@@ -49,7 +49,7 @@
         </el-table-column>
         <el-table-column prop="uploader_name" label="上传者" width="120" />
         <el-table-column prop="created_at" label="上传时间" width="180" />
-        <el-table-column label="操作" width="150">
+        <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <div class="action-buttons">
               <PreviewButton @click="handlePreview(row)" />

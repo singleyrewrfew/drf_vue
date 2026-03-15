@@ -4,7 +4,7 @@
       <template #header>
         <div class="card-header">
           <span>角色管理</span>
-          <el-button type="primary" @click="handleCreate">新建角色</el-button>
+          <CreateButton text="新建角色" @click="handleCreate" />
         </div>
       </template>
       <el-table :data="roleList" v-loading="loading" stripe>
@@ -23,7 +23,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="created_at" label="创建时间" width="180" />
-        <el-table-column label="操作" width="150">
+        <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <div class="action-buttons">
               <EditButton @click="handleEdit(row)" />
@@ -68,6 +68,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { getRoles, getRole, createRole, updateRole, deleteRole, getPermissions } from '@/api/role'
 import EditButton from '@/components/EditButton.vue'
 import DeleteButton from '@/components/DeleteButton.vue'
+import CreateButton from '@/components/CreateButton.vue'
 
 const loading = ref(false)
 const submitting = ref(false)

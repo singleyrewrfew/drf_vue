@@ -4,7 +4,7 @@
       <template #header>
         <div class="card-header">
           <span>内容管理</span>
-          <el-button type="primary" @click="$router.push('/contents/create')">新建内容</el-button>
+          <CreateButton text="新建内容" @click="$router.push('/contents/create')" />
         </div>
       </template>
       <el-form :inline="true" :model="searchForm" class="search-form">
@@ -21,10 +21,11 @@
           </el-select>
         </el-form-item>
         <el-form-item label="搜索">
-          <el-input v-model="searchForm.search" placeholder="标题搜索" clearable style="width: 200px" />
+          <el-input v-model="searchForm.search" placeholder="标题搜索" clearable style="width: 200px" @keyup.enter="handleSearch" />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleSearch">搜索</el-button>
+          <ResetButton @click="handleReset" />
+          <SearchButton @click="handleSearch" style="margin-left: 12px" />
         </el-form-item>
       </el-form>
       <el-table :data="contentList" v-loading="loading" stripe>
@@ -40,7 +41,7 @@
         </el-table-column>
         <el-table-column prop="view_count" label="浏览量" width="100" />
         <el-table-column prop="created_at" label="创建时间" width="180" />
-        <el-table-column label="操作" width="240">
+        <el-table-column label="操作" width="240" fixed="right">
           <template #default="{ row }">
             <div class="action-buttons">
               <ViewButton
@@ -79,6 +80,9 @@ import EditButton from '@/components/EditButton.vue'
 import ViewButton from '@/components/ViewButton.vue'
 import DeleteButton from '@/components/DeleteButton.vue'
 import PublishButton from '@/components/PublishButton.vue'
+import CreateButton from '@/components/CreateButton.vue'
+import SearchButton from '@/components/SearchButton.vue'
+import ResetButton from '@/components/ResetButton.vue'
 
 const router = useRouter()
 const loading = ref(false)
@@ -102,10 +106,10 @@ const statusMap = {
 const fetchContents = async () => {
   loading.value = true
   try {
-    const params = { page: page.value, ...searchForm }
-    Object.keys(params).forEach((key) => {
-      if (!params[key]) delete params[key]
-    })
+    const params = { page: page.value }
+    if (searchForm.status) params.status = searchForm.status
+    if (searchForm.category) params.category = searchForm.category
+    if (searchForm.search) params.search = searchForm.search.trim()
     const { data } = await getContents(params)
     contentList.value = data.results || data
     total.value = data.count || contentList.value.length
@@ -127,6 +131,14 @@ const fetchCategories = async () => {
 }
 
 const handleSearch = () => {
+  page.value = 1
+  fetchContents()
+}
+
+const handleReset = () => {
+  searchForm.status = null
+  searchForm.category = null
+  searchForm.search = ''
   page.value = 1
   fetchContents()
 }

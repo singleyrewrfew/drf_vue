@@ -132,9 +132,7 @@
           <template #header>
             <div class="card-header">
               <span>{{ isAdmin ? '最新发布内容' : '我的最新发布' }}</span>
-              <el-button type="primary" link @click="$router.push('/contents')">
-                {{ isAdmin ? '查看全部' : '查看我的' }}
-              </el-button>
+              <ViewAllButton :text="isAdmin ? '查看全部' : '查看我的'" @click="$router.push('/contents')" />
             </div>
           </template>
           <el-table :data="stats.recent_contents" v-loading="loading" stripe>
@@ -220,6 +218,7 @@ import { ref, computed, onMounted } from 'vue'
 import { Document, ChatDotRound, User, View, EditPen, Upload, Folder, PriceTag, Setting } from '@element-plus/icons-vue'
 import api from '@/api'
 import { useUserStore } from '@/stores/user'
+import ViewAllButton from '@/components/ViewAllButton.vue'
 
 const userStore = useUserStore()
 const loading = ref(false)

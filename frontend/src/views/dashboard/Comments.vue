@@ -36,20 +36,20 @@
         <el-table-column prop="created_at" label="创建时间" width="180" />
         <el-table-column label="操作" width="150" fixed="right" v-if="isAdmin">
           <template #default="{ row }">
-            <el-button
-              v-if="!row.is_approved"
-              type="success"
-              link
-              @click="handleApprove(row)"
-            >
-              审核
-            </el-button>
-            <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
+            <div class="action-buttons">
+              <ApproveButton
+                v-if="!row.is_approved"
+                @click="handleApprove(row)"
+              />
+              <DeleteButton @click="handleDelete(row)" />
+            </div>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="100" fixed="right" v-else>
           <template #default="{ row }">
-            <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
+            <div class="action-buttons">
+              <DeleteButton @click="handleDelete(row)" />
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -70,6 +70,8 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import api from '@/api'
 import { useUserStore } from '@/stores/user'
+import ApproveButton from '@/components/ApproveButton.vue'
+import DeleteButton from '@/components/DeleteButton.vue'
 
 const userStore = useUserStore()
 const loading = ref(false)
@@ -128,5 +130,12 @@ onMounted(() => {
 <style scoped>
 .comments-page {
   padding: 20px;
+}
+
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
 }
 </style>

@@ -4,7 +4,7 @@
       <template #header>
         <div class="card-header">
           <span>用户管理</span>
-          <el-button type="primary" @click="handleCreate">新建用户</el-button>
+          <CreateButton text="新建用户" @click="handleCreate" />
         </div>
       </template>
       <el-table :data="userList" v-loading="loading" stripe>
@@ -32,7 +32,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="created_at" label="注册时间" width="180" />
-        <el-table-column label="操作" width="150">
+        <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <div class="action-buttons">
               <EditButton @click="handleEdit(row)" :disabled="isCurrentUser(row)" />
@@ -96,6 +96,7 @@ import { useUserStore } from '@/stores/user'
 import api from '@/api'
 import EditButton from '@/components/EditButton.vue'
 import DeleteButton from '@/components/DeleteButton.vue'
+import CreateButton from '@/components/CreateButton.vue'
 
 const userStore = useUserStore()
 const loading = ref(false)

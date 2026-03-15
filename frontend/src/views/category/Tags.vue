@@ -4,14 +4,14 @@
       <template #header>
         <div class="card-header">
           <span>标签管理</span>
-          <el-button type="primary" @click="handleAdd">新建标签</el-button>
+          <CreateButton text="新建标签" @click="handleAdd" />
         </div>
       </template>
       <el-table :data="tagList" v-loading="loading" stripe>
         <el-table-column prop="name" label="标签名称" />
         <el-table-column prop="slug" label="URL别名" />
         <el-table-column prop="created_at" label="创建时间" width="180" />
-        <el-table-column label="操作" width="150">
+        <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <div class="action-buttons">
               <EditButton @click="handleEdit(row)" />
@@ -45,6 +45,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { getTags, createTag, updateTag, deleteTag } from '@/api/category'
 import EditButton from '@/components/EditButton.vue'
 import DeleteButton from '@/components/DeleteButton.vue'
+import CreateButton from '@/components/CreateButton.vue'
 
 const loading = ref(false)
 const submitLoading = ref(false)
