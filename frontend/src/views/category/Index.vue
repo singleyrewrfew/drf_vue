@@ -15,8 +15,10 @@
         <el-table-column prop="created_at" label="创建时间" width="180" />
         <el-table-column label="操作" width="150">
           <template #default="{ row }">
-            <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
-            <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
+            <div class="action-buttons">
+              <EditButton @click="handleEdit(row)" />
+              <DeleteButton @click="handleDelete(row)" />
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -54,6 +56,8 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getCategories, createCategory, updateCategory, deleteCategory } from '@/api/category'
+import EditButton from '@/components/EditButton.vue'
+import DeleteButton from '@/components/DeleteButton.vue'
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -171,6 +175,13 @@ onMounted(() => {
 .card-header {
   display: flex;
   justify-content: space-between;
+  align-items: center;
+}
+
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
   align-items: center;
 }
 </style>

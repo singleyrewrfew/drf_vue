@@ -14,17 +14,9 @@
             :show-file-list="false"
             multiple
           >
-            <el-button type="primary" :loading="uploading">
-              {{ uploading ? `上传中 ${uploadProgress}%` : '上传文件' }}
-            </el-button>
+            <UploadButton :loading="uploading" :progress="uploadProgress" />
           </el-upload>
         </div>
-        <el-progress
-          v-if="uploading"
-          :percentage="uploadProgress"
-          :stroke-width="6"
-          style="margin-top: 10px"
-        />
       </template>
       <el-table :data="mediaList" v-loading="loading" stripe>
         <el-table-column prop="filename" label="文件名" />
@@ -34,18 +26,23 @@
             {{ formatSize(row.file_size) }}
           </template>
         </el-table-column>
-        <el-table-column label="缩略图" width="120">
+        <el-table-column label="缩略图" width="150">
           <template #default="{ row }">
             <template v-if="row.is_video">
-              <el-tag v-if="row.thumbnail_status === 'pending'" type="info" size="small">等待中</el-tag>
-              <el-tag v-else-if="row.thumbnail_status === 'processing'" type="warning" size="small">
-                <span style="display: inline-flex; align-items: center; gap: 4px;">
-                  <el-icon class="is-loading"><Loading /></el-icon>
-                  <span>生成中</span>
-                </span>
-              </el-tag>
-              <el-tag v-else-if="row.thumbnail_status === 'completed'" type="success" size="small">已完成</el-tag>
-              <el-tag v-else-if="row.thumbnail_status === 'failed'" type="danger" size="small">失败</el-tag>
+              <div class="thumbnail-status">
+                <el-tag v-if="row.thumbnail_status === 'pending'" type="info" size="small">等待中</el-tag>
+                <el-tag v-else-if="row.thumbnail_status === 'processing'" type="warning" size="small">
+                  <span style="display: inline-flex; align-items: center; gap: 4px;">
+                    <el-icon class="is-loading"><Loading /></el-icon>
+                    <span>生成中</span>
+                  </span>
+                </el-tag>
+                <el-tag v-else-if="row.thumbnail_status === 'completed'" type="success" size="small">已完成</el-tag>
+                <div v-else-if="row.thumbnail_status === 'failed'" class="failed-status">
+                  <el-tag type="danger" size="small">失败</el-tag>
+                  <RetryButton @click="handleRegenerateThumbnails(row)" />
+                </div>
+              </div>
             </template>
             <span v-else>-</span>
           </template>
@@ -54,8 +51,10 @@
         <el-table-column prop="created_at" label="上传时间" width="180" />
         <el-table-column label="操作" width="150">
           <template #default="{ row }">
-            <el-button type="primary" link @click="handlePreview(row)">预览</el-button>
-            <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
+            <div class="action-buttons">
+              <PreviewButton @click="handlePreview(row)" />
+              <DeleteButton @click="handleDelete(row)" />
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -114,6 +113,10 @@ import { Document, Loading } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { getMediaUrl } from '@/utils'
 import VideoPlayer from '@/components/VideoPlayer.vue'
+import PreviewButton from '@/components/PreviewButton.vue'
+import DeleteButton from '@/components/DeleteButton.vue'
+import UploadButton from '@/components/UploadButton.vue'
+import RetryButton from '@/components/RetryButton.vue'
 import api from '@/api'
 
 const userStore = useUserStore()
@@ -297,6 +300,16 @@ const handleDelete = async (row) => {
   }
 }
 
+const handleRegenerateThumbnails = async (row) => {
+  try {
+    await api.post(`/media/${row.id}/regenerate_thumbnails/`)
+    ElMessage.success('缩略图生成任务已启动')
+    fetchMedia()
+  } catch (error) {
+    ElMessage.error('启动缩略图生成失败')
+  }
+}
+
 onMounted(() => {
   fetchMedia()
 })
@@ -348,5 +361,12 @@ onUnmounted(() => {
 
 .preview-unsupported p {
   margin: 0;
+}
+
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
 }
 </style>

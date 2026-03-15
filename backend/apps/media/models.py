@@ -1,5 +1,6 @@
 import hashlib
 import os
+import shutil
 import subprocess
 import threading
 import uuid
@@ -10,9 +11,19 @@ from django.conf import settings
 
 User = get_user_model()
 
-FFMPEG_PATH = r'D:\ffmpeg-2025-12-18-git-78c75d546a-essentials_build\bin'
-FFMPEG = os.path.join(FFMPEG_PATH, 'ffmpeg.exe')
-FFPROBE = os.path.join(FFMPEG_PATH, 'ffprobe.exe')
+
+def get_ffmpeg_executable(name):
+    ffmpeg_path = shutil.which(name)
+    if ffmpeg_path:
+        return ffmpeg_path
+    default_path = os.path.join(r'D:\ffmpeg\bin', f'{name}.exe')
+    if os.path.exists(default_path):
+        return default_path
+    return name
+
+
+FFMPEG = get_ffmpeg_executable('ffmpeg')
+FFPROBE = get_ffmpeg_executable('ffprobe')
 
 THUMBNAIL_STATUS_CHOICES = [
     ('pending', '等待中'),

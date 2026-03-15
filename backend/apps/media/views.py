@@ -9,6 +9,7 @@ from rest_framework import status, viewsets
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
+from rest_framework.decorators import action
 
 from apps.users.permissions import IsOwnerOrAdmin
 
@@ -78,9 +79,26 @@ class MediaViewSet(viewsets.ModelViewSet):
     @extend_schema(exclude=True)
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        # 如果有引用，使用引用文件的路径
         file_path = instance.actual_file.path if instance.actual_file else instance.file.path
         return stream_media_file(request, file_path, instance.file_type, instance.filename)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsOwnerOrAdmin])
+    def regenerate_thumbnails(self, request, pk=None):
+        """重新生成视频缩略图"""
+        media = self.get_object()
+        
+        if not media.is_video:
+            return Response({'error': '只能为视频文件生成缩略图'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        media.thumbnail_status = 'pending'
+        media.save(update_fields=['thumbnail_status'])
+        
+        media.generate_thumbnails_async()
+        
+        return Response({
+            'message': '缩略图生成任务已启动',
+            'thumbnail_status': 'pending'
+        })
 
 
 def stream_media_file(request, file_path, content_type, filename):

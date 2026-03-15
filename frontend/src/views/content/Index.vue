@@ -42,24 +42,18 @@
         <el-table-column prop="created_at" label="创建时间" width="180" />
         <el-table-column label="操作" width="240">
           <template #default="{ row }">
-            <el-button
-              v-if="row.status === 'published'"
-              type="primary"
-              link
-              @click="handleView(row)"
-            >
-              查看
-            </el-button>
-            <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
-            <el-button
-              v-if="row.status === 'draft'"
-              type="success"
-              link
-              @click="handlePublish(row)"
-            >
-              发布
-            </el-button>
-            <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
+            <div class="action-buttons">
+              <ViewButton
+                v-if="row.status === 'published'"
+                @click="handleView(row)"
+              />
+              <EditButton @click="handleEdit(row)" />
+              <PublishButton
+                v-if="row.status === 'draft'"
+                @click="handlePublish(row)"
+              />
+              <DeleteButton @click="handleDelete(row)" />
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -81,6 +75,10 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getContents, deleteContent, publishContent } from '@/api/content'
 import api from '@/api'
+import EditButton from '@/components/EditButton.vue'
+import ViewButton from '@/components/ViewButton.vue'
+import DeleteButton from '@/components/DeleteButton.vue'
+import PublishButton from '@/components/PublishButton.vue'
 
 const router = useRouter()
 const loading = ref(false)
@@ -181,6 +179,13 @@ onMounted(() => {
 
 .search-form {
   margin-bottom: 16px;
+}
+
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
 }
 </style>
 

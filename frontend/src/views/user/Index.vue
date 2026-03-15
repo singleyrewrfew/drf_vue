@@ -34,8 +34,10 @@
         <el-table-column prop="created_at" label="注册时间" width="180" />
         <el-table-column label="操作" width="150">
           <template #default="{ row }">
-            <el-button type="primary" link @click="handleEdit(row)" :disabled="isCurrentUser(row)">编辑</el-button>
-            <el-button type="danger" link @click="handleDelete(row)" :disabled="isCurrentUser(row)">删除</el-button>
+            <div class="action-buttons">
+              <EditButton @click="handleEdit(row)" :disabled="isCurrentUser(row)" />
+              <DeleteButton @click="handleDelete(row)" :disabled="isCurrentUser(row)" />
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -92,6 +94,8 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { getUsers, updateUser, deleteUser, register } from '@/api/user'
 import { useUserStore } from '@/stores/user'
 import api from '@/api'
+import EditButton from '@/components/EditButton.vue'
+import DeleteButton from '@/components/DeleteButton.vue'
 
 const userStore = useUserStore()
 const loading = ref(false)
@@ -296,5 +300,12 @@ onMounted(() => {
   font-size: 12px;
   color: #909399;
   margin-top: 4px;
+}
+
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
 }
 </style>
