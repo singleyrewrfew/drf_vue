@@ -1,18 +1,22 @@
 <template>
   <div class="home-page">
     <section class="hero-section" v-if="featuredContents.length">
-      <el-carousel height="480px" :interval="6000">
+      <el-carousel height="500px" :interval="6000">
         <el-carousel-item v-for="item in featuredContents" :key="item.id">
           <div class="hero-item" @click="$router.push(getArticleUrl(item))">
             <img :src="getCoverUrl(item.cover_image)" :alt="item.title" />
             <div class="hero-overlay"></div>
             <div class="hero-content">
-              <el-tag type="primary" effect="dark" size="small">推荐</el-tag>
+              <el-tag type="primary" effect="dark" size="small" class="recommend-tag">
+                <el-icon><Star /></el-icon>
+                推荐
+              </el-tag>
               <h2>{{ item.title }}</h2>
               <p>{{ item.summary || '暂无摘要' }}</p>
               <div class="hero-meta">
                 <span><el-icon><User /></el-icon> {{ item.author_name }}</span>
                 <span><el-icon><View /></el-icon> {{ item.view_count }} 阅读</span>
+                <span><el-icon><Calendar /></el-icon> {{ formatDate(item.created_at) }}</span>
               </div>
             </div>
           </div>
@@ -36,7 +40,7 @@
               </div>
               <div class="article-grid" v-loading="loading">
                 <template v-if="loading">
-                  <div v-for="i in 4" :key="i" class="article-card">
+                  <div v-for="i in 4" :key="i" class="article-card skeleton-card">
                     <div class="article-cover">
                       <el-skeleton animated>
                         <template #template>
@@ -69,23 +73,27 @@
                     <div class="article-cover">
                       <img :src="getCoverUrl(article.cover_image)" :alt="article.title" />
                       <div class="article-badges">
-                        <el-tag v-if="article.is_top" type="danger" size="small" effect="dark">置顶</el-tag>
+                        <el-tag v-if="article.is_top" type="danger" size="small" effect="dark" class="top-tag">
+                          <el-icon><Top /></el-icon>
+                          置顶
+                        </el-tag>
                         <div class="article-category" v-if="article.category_name">
                           {{ article.category_name }}
                         </div>
                       </div>
+                      <div class="cover-overlay"></div>
                     </div>
                     <div class="article-info">
                       <h3>{{ article.title }}</h3>
                       <p class="article-summary">{{ article.summary || '暂无摘要' }}</p>
                       <div class="article-footer">
                         <div class="article-author">
-                          <el-avatar :size="24" :src="getAvatarUrl(article.author_avatar)">{{ article.author_name?.charAt(0)?.toUpperCase() }}</el-avatar>
+                          <el-avatar :size="28" :src="getAvatarUrl(article.author_avatar)">{{ article.author_name?.charAt(0)?.toUpperCase() }}</el-avatar>
                           <span>{{ article.author_name }}</span>
                         </div>
                         <div class="article-stats">
                           <span><el-icon><View /></el-icon> {{ article.view_count }}</span>
-                          <span><el-icon><Calendar /></el-icon> {{ formatDate(article.created_at) }}</span>
+                          <span><el-icon><Clock /></el-icon> {{ formatDate(article.created_at) }}</span>
                         </div>
                       </div>
                     </div>
@@ -109,7 +117,7 @@
 
           <el-col :span="7">
             <div class="sidebar">
-              <div class="sidebar-card">
+              <div class="sidebar-card hot-card">
                 <div class="sidebar-title">
                   <el-icon><TrendCharts /></el-icon>
                   <span>热门文章</span>
@@ -125,14 +133,14 @@
                     <div class="hot-info">
                       <h4>{{ article.title }}</h4>
                       <div class="hot-meta">
-                        <span>{{ article.view_count }} 阅读</span>
+                        <span><el-icon><View /></el-icon> {{ article.view_count }}</span>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div class="sidebar-card">
+              <div class="sidebar-card category-card">
                 <div class="sidebar-title">
                   <el-icon><Folder /></el-icon>
                   <span>分类导航</span>
@@ -144,13 +152,16 @@
                     class="category-item"
                     @click="$router.push(`/category/${cat.id}`)"
                   >
-                    <span>{{ cat.name }}</span>
-                    <el-tag size="small" type="success" round>{{ cat.content_count || 0 }}</el-tag>
+                    <div class="category-left">
+                      <el-icon class="category-icon"><FolderOpened /></el-icon>
+                      <span>{{ cat.name }}</span>
+                    </div>
+                    <el-tag size="small" type="primary" round>{{ cat.content_count || 0 }}</el-tag>
                   </div>
                 </div>
               </div>
 
-              <div class="sidebar-card">
+              <div class="sidebar-card tag-card">
                 <div class="sidebar-title">
                   <el-icon><PriceTag /></el-icon>
                   <span>热门标签</span>
@@ -178,7 +189,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { User, View, Calendar, Document, ArrowRight, TrendCharts, Folder, PriceTag } from '@element-plus/icons-vue'
+import { User, View, Calendar, Clock, Document, ArrowRight, TrendCharts, Folder, FolderOpened, PriceTag, Star, Top } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { getContents, getCategories, getTags } from '@/api/content'
 
@@ -265,7 +276,31 @@ onMounted(() => {
 
 .hero-section {
   background: #fff;
-  margin-bottom: 24px;
+  margin-bottom: 32px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.hero-section :deep(.el-carousel__indicators) {
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.hero-section :deep(.el-carousel__indicator--horizontal .el-carousel__button) {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  transition: all var(--transition-normal);
+  border: 2px solid transparent;
+}
+
+.hero-section :deep(.el-carousel__indicator--horizontal.is-active .el-carousel__button) {
+  width: 32px;
+  border-radius: 5px;
+  background: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .hero-item {
@@ -278,6 +313,11 @@ onMounted(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 8s ease;
+}
+
+.hero-item:hover img {
+  transform: scale(1.05);
 }
 
 .hero-overlay {
@@ -285,8 +325,8 @@ onMounted(() => {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 60%;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  height: 70%;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
 }
 
 .hero-content {
@@ -294,21 +334,49 @@ onMounted(() => {
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 40px 60px;
+  padding: 48px 80px;
   color: #fff;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.recommend-tag {
+  border-radius: var(--radius-full) !important;
+  background: var(--primary-gradient) !important;
+  border: none !important;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  padding: 6px 14px !important;
+  height: auto !important;
+}
+
+.recommend-tag :deep(.el-tag__content) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.recommend-tag :deep(.el-icon) {
+  font-size: 14px;
+  margin: 0;
+  line-height: 1;
+  vertical-align: middle;
 }
 
 .hero-content h2 {
-  font-size: 32px;
-  font-weight: 600;
+  font-size: 42px;
+  font-weight: 800;
   margin: 16px 0 12px;
-  line-height: 1.3;
+  line-height: 1.2;
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  letter-spacing: 1px;
+  color: #fff;
 }
 
 .hero-content p {
-  font-size: 15px;
+  font-size: 16px;
   opacity: 0.9;
-  line-height: 1.6;
+  line-height: 1.7;
   max-width: 600px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -318,10 +386,10 @@ onMounted(() => {
 
 .hero-meta {
   display: flex;
-  gap: 20px;
-  margin-top: 16px;
+  gap: 24px;
+  margin-top: 20px;
   font-size: 14px;
-  opacity: 0.8;
+  opacity: 0.85;
 }
 
 .hero-meta span {
@@ -331,11 +399,11 @@ onMounted(() => {
 }
 
 .main-content {
-  padding: 0 0 40px;
+  padding: 0 0 48px;
 }
 
 .container {
-  max-width: 1400px;
+  max-width: var(--container-max);
   margin: 0 auto;
   padding: 0 24px;
 }
@@ -349,43 +417,90 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--border-light);
 }
 
 .section-header h2 {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 20px;
-  font-weight: 600;
-  color: #303133;
+  gap: 10px;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
 .section-header h2 .el-icon {
-  color: #409eff;
+  color: var(--primary-color);
+  font-size: 24px;
+}
+
+.section-header .el-button {
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  border-radius: var(--radius-full);
+  background: var(--primary-gradient);
+  border: none;
+  color: #fff;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-primary);
+}
+
+.section-header .el-button:hover {
+  transform: translateX(4px);
+  box-shadow: var(--shadow-primary-lg);
+}
+
+.section-header .el-button .el-icon {
+  transition: transform var(--transition-fast);
+}
+
+.section-header .el-button:hover .el-icon {
+  transform: translateX(4px);
 }
 
 .article-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
+  gap: 24px;
 }
 
 .article-card {
   background: #fff;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   cursor: pointer;
-  transition: all 0.3s;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-sm);
+  position: relative;
+}
+
+.article-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--primary-gradient);
+  opacity: 0;
+  transition: opacity var(--transition-fast);
 }
 
 .article-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-lg);
+}
+
+.article-card:hover::before {
+  opacity: 1;
 }
 
 .article-cover {
-  height: 180px;
+  height: 200px;
   position: relative;
   overflow: hidden;
 }
@@ -394,11 +509,26 @@ onMounted(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.5s;
+  transition: transform 0.6s ease;
 }
 
 .article-card:hover .article-cover img {
-  transform: scale(1.05);
+  transform: scale(1.08);
+}
+
+.cover-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.3));
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+
+.article-card:hover .cover-overlay {
+  opacity: 1;
 }
 
 .article-badges {
@@ -411,29 +541,30 @@ onMounted(() => {
   z-index: 1;
 }
 
-.article-category {
-  padding: 4px 12px;
-  background: rgba(64, 158, 255, 0.9);
-  color: #fff;
-  font-size: 12px;
-  border-radius: 4px;
-  align-self: flex-start;
-  font-weight: 500;
-  height: 22px;
+.top-tag {
   display: flex;
   align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
+  gap: 4px;
+  font-weight: 500;
 }
 
-.el-tag.el-tag--danger.el-tag--small.el-tag--dark {
+.top-tag :deep(.el-tag__content) {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.article-category {
+  padding: 4px 14px;
+  background: var(--primary-gradient);
+  color: #fff;
   font-size: 12px;
+  border-radius: var(--radius-full);
   font-weight: 500;
-  height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-sizing: border-box;
+  box-shadow: var(--shadow-primary);
 }
 
 .article-info {
@@ -443,20 +574,25 @@ onMounted(() => {
 .article-info h3 {
   font-size: 17px;
   font-weight: 600;
-  color: #303133;
+  color: var(--text-primary);
   margin-bottom: 10px;
-  line-height: 1.4;
+  line-height: 1.5;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  transition: color var(--transition-fast);
+}
+
+.article-card:hover .article-info h3 {
+  color: var(--primary-color);
 }
 
 .article-summary {
   font-size: 14px;
-  color: #909399;
-  line-height: 1.6;
-  height: 44px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  height: 48px;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -468,21 +604,28 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-light);
 }
 
 .article-author {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   font-size: 13px;
-  color: #606266;
+  color: var(--text-secondary);
+}
+
+.article-author .el-avatar {
+  border-radius: var(--radius-sm) !important;
+  border: 2px solid var(--border-light);
 }
 
 .article-stats {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   font-size: 12px;
-  color: #909399;
+  color: var(--text-tertiary);
 }
 
 .article-stats span {
@@ -494,30 +637,36 @@ onMounted(() => {
 .sidebar {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
 }
 
 .sidebar-card {
   background: #fff;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-normal);
+}
+
+.sidebar-card:hover {
+  box-shadow: var(--shadow-md);
 }
 
 .sidebar-title {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 16px;
+  gap: 10px;
+  font-size: 17px;
   font-weight: 600;
-  color: #303133;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #ebeef5;
+  color: var(--text-primary);
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 2px solid var(--border-light);
 }
 
 .sidebar-title .el-icon {
-  color: #409eff;
+  color: var(--primary-color);
+  font-size: 20px;
 }
 
 .hot-list {
@@ -528,41 +677,49 @@ onMounted(() => {
 .hot-item {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 12px 0;
-  border-bottom: 1px solid #f5f7fa;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border-light);
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all var(--transition-fast);
 }
 
 .hot-item:last-child {
   border-bottom: none;
+  padding-bottom: 0;
+}
+
+.hot-item:first-child {
+  padding-top: 0;
 }
 
 .hot-item:hover {
-  background: #f5f7fa;
-  margin: 0 -20px;
-  padding-left: 20px;
-  padding-right: 20px;
+  transform: translateX(4px);
 }
 
 .hot-rank {
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  background: #e4e7ed;
-  color: #909399;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-tertiary);
+  color: var(--text-tertiary);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   flex-shrink: 0;
+  transition: all var(--transition-fast);
 }
 
 .hot-rank.top {
-  background: linear-gradient(135deg, #f56c6c 0%, #f78989 100%);
+  background: var(--primary-gradient);
   color: #fff;
+  box-shadow: var(--shadow-primary);
+}
+
+.hot-item:hover .hot-rank {
+  transform: scale(1.1);
 }
 
 .hot-info {
@@ -572,18 +729,26 @@ onMounted(() => {
 
 .hot-info h4 {
   font-size: 14px;
-  color: #303133;
-  line-height: 1.4;
-  margin-bottom: 4px;
+  color: var(--text-primary);
+  line-height: 1.5;
+  margin-bottom: 6px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  transition: color var(--transition-fast);
+}
+
+.hot-item:hover .hot-info h4 {
+  color: var(--primary-color);
 }
 
 .hot-meta {
   font-size: 12px;
-  color: #909399;
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .category-list {
@@ -596,34 +761,77 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 12px;
-  border-radius: 8px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all var(--transition-fast);
   font-size: 14px;
-  color: #606266;
+  color: var(--text-secondary);
 }
 
 .category-item:hover {
-  background: #ecf5ff;
-  color: #409eff;
+  background: var(--primary-bg);
+  color: var(--primary-color);
+  transform: translateX(4px);
+}
+
+.category-item:hover .el-tag {
+  background: var(--primary-gradient) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+}
+
+.category-item .el-tag {
+  font-weight: 600;
+  background: var(--primary-gradient);
+  color: #fff;
+  border: none;
+  min-width: 24px;
+  text-align: center;
+}
+
+.category-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.category-icon {
+  font-size: 18px;
+  opacity: 0.6;
+  transition: all var(--transition-fast);
+}
+
+.category-item:hover .category-icon {
+  opacity: 1;
+  color: var(--primary-color);
 }
 
 .tag-cloud {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
 }
 
 .tag-item {
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all var(--transition-fast);
+  border-radius: var(--radius-full);
+  padding: 6px 14px;
 }
 
 .tag-item:hover {
-  background: #409eff;
-  color: #fff;
-  border-color: #409eff;
+  background: var(--primary-gradient) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-primary);
+}
+
+.pagination-container {
+  margin-top: 40px;
+  display: flex;
+  justify-content: center;
 }
 
 @media (max-width: 1200px) {
@@ -632,19 +840,21 @@ onMounted(() => {
   }
 }
 
-.pagination-container {
-  margin-top: 32px;
-  display: flex;
-  justify-content: center;
-}
-
 @media (max-width: 768px) {
   .hero-content {
-    padding: 24px;
+    padding: 32px 24px;
   }
   
   .hero-content h2 {
-    font-size: 22px;
+    font-size: 24px;
+  }
+  
+  .hero-section {
+    margin-bottom: 24px;
+  }
+  
+  .container {
+    padding: 0 16px;
   }
 }
 </style>
