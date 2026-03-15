@@ -9,16 +9,10 @@
       </template>
       <el-form :inline="true" :model="searchForm" class="search-form">
         <el-form-item label="状态">
-          <el-select v-model="searchForm.status" placeholder="全部" clearable popper-class="content-select-popper" style="width: 120px">
-            <el-option label="草稿" value="draft" />
-            <el-option label="已发布" value="published" />
-            <el-option label="已归档" value="archived" />
-          </el-select>
+          <CustomSelect v-model="searchForm.status" :options="statusOptions" placeholder="全部" style="width: 120px" />
         </el-form-item>
         <el-form-item label="分类">
-          <el-select v-model="searchForm.category" placeholder="全部" clearable popper-class="content-select-popper" style="width: 150px">
-            <el-option v-for="cat in categories" :key="cat.id" :label="cat.name" :value="cat.id" />
-          </el-select>
+          <CustomSelect v-model="searchForm.category" :options="categories" label-key="name" value-key="id" placeholder="全部" style="width: 150px" />
         </el-form-item>
         <el-form-item label="搜索">
           <SearchInput v-model="searchForm.search" placeholder="标题搜索" @search="handleSearch" style="width: 220px" />
@@ -84,6 +78,7 @@ import CreateButton from '@/components/CreateButton.vue'
 import SearchButton from '@/components/SearchButton.vue'
 import ResetButton from '@/components/ResetButton.vue'
 import SearchInput from '@/components/SearchInput.vue'
+import CustomSelect from '@/components/CustomSelect.vue'
 
 const router = useRouter()
 const loading = ref(false)
@@ -103,6 +98,12 @@ const statusMap = {
   published: { label: '已发布', type: 'success' },
   archived: { label: '已归档', type: 'warning' },
 }
+
+const statusOptions = [
+  { label: '草稿', value: 'draft' },
+  { label: '已发布', value: 'published' },
+  { label: '已归档', value: 'archived' },
+]
 
 const fetchContents = async () => {
   loading.value = true
