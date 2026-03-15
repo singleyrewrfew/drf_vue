@@ -21,7 +21,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="搜索">
-          <el-input v-model="searchForm.search" placeholder="标题搜索" clearable style="width: 200px" @keyup.enter="handleSearch" />
+          <SearchInput v-model="searchForm.search" placeholder="标题搜索" @search="handleSearch" style="width: 220px" />
         </el-form-item>
         <el-form-item>
           <ResetButton @click="handleReset" />
@@ -83,6 +83,7 @@ import PublishButton from '@/components/PublishButton.vue'
 import CreateButton from '@/components/CreateButton.vue'
 import SearchButton from '@/components/SearchButton.vue'
 import ResetButton from '@/components/ResetButton.vue'
+import SearchInput from '@/components/SearchInput.vue'
 
 const router = useRouter()
 const loading = ref(false)
