@@ -25,67 +25,33 @@ defineProps({
   gap: 4px;
   padding: 4px 10px;
   border: none;
-  border-radius: 6px;
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  border-radius: var(--radius-xs);
+  background: var(--warning-color);
   color: #fff;
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 6px rgba(240, 147, 251, 0.35);
-  position: relative;
-  overflow: hidden;
+  transition: all 0.15s ease;
   vertical-align: middle;
-}
-
-.retry-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.2),
-    transparent
-  );
-  transition: left 0.5s ease;
-}
-
-.retry-btn:hover::before {
-  left: 100%;
+  position: relative;
+  z-index: 1;
 }
 
 .retry-btn:hover {
-  filter: brightness(1.1);
-  box-shadow: 0 4px 16px rgba(240, 147, 251, 0.5);
+  background: var(--warning-hover);
 }
 
 .retry-btn:active {
   filter: brightness(0.95);
-  box-shadow: 0 2px 6px rgba(240, 147, 251, 0.35);
 }
 
 .retry-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
-  box-shadow: none;
 }
 
 .retry-icon {
   width: 12px;
   height: 12px;
-  transition: transform 0.3s ease;
-}
-
-.retry-btn:hover .retry-icon {
-  transform: rotate(-30deg);
-}
-
-.retry-text {
-  position: relative;
-  z-index: 1;
 }
 </style>

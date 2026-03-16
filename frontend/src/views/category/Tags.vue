@@ -26,7 +26,6 @@
         :page-sizes="[10, 20, 50, 100]"
         :total="total"
         layout="total, sizes, prev, pager, next, jumper"
-        style="margin-top: 20px; justify-content: flex-end"
         @current-change="fetchTags"
         @size-change="handleSizeChange"
       />
@@ -42,8 +41,8 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="submitLoading">确定</el-button>
+        <ResetButton text="取消" @click="dialogVisible = false" />
+        <SearchButton text="确定" @click="handleSubmit" :disabled="submitLoading" />
       </template>
     </el-dialog>
   </div>
@@ -56,6 +55,8 @@ import { getTags, createTag, updateTag, deleteTag } from '@/api/category'
 import EditButton from '@/components/EditButton.vue'
 import DeleteButton from '@/components/DeleteButton.vue'
 import CreateButton from '@/components/CreateButton.vue'
+import ResetButton from '@/components/ResetButton.vue'
+import SearchButton from '@/components/SearchButton.vue'
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -158,7 +159,7 @@ onMounted(() => {
 
 <style scoped>
 .tags-page {
-  padding: 20px;
+  padding: 0;
 }
 
 .card-header {

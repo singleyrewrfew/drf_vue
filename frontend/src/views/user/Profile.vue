@@ -122,10 +122,7 @@
               </div>
             </el-form-item>
             <div class="form-actions">
-              <button type="button" class="save-btn" @click="handleUpdateProfile" :disabled="loading">
-                <span v-if="!loading">保存修改</span>
-                <span v-else class="loading-spinner"></span>
-              </button>
+              <SearchButton text="保存修改" @click="handleUpdateProfile" :disabled="loading" />
             </div>
           </el-form>
         </div>
@@ -230,31 +227,33 @@
       </div>
     </div>
 
-    <!-- 媒体库选择对话框 -->
     <el-dialog 
       v-model="showMediaDialog" 
       title="从媒体库选择头像" 
       width="800px"
-      center
       :close-on-click-modal="false"
     >
-      <el-input v-model="mediaSearch" placeholder="搜索媒体文件" style="margin-bottom: 16px" clearable />
+      <SearchInput v-model="mediaSearch" placeholder="搜索媒体文件" style="margin-bottom: 16px" />
       <div class="media-list-container">
-        <el-row :gutter="16" v-loading="mediaLoading">
-          <el-col :span="6" v-for="media in filteredMedia" :key="media.id">
-            <el-card shadow="hover" :class="{'media-card-selected': selectedMedia?.id === media.id}" @click="selectedMedia = media">
-              <img :src="getMediaUrl(media.url)" class="media-image" />
-              <div class="media-info">
-                <span class="media-name">{{ media.filename }}</span>
-              </div>
-            </el-card>
-          </el-col>
-        </el-row>
+        <div class="media-grid" v-loading="mediaLoading">
+          <div 
+            v-for="media in filteredMedia" 
+            :key="media.id"
+            class="media-card"
+            :class="{ selected: selectedMedia?.id === media.id }"
+            @click="selectedMedia = media"
+          >
+            <img :src="getMediaUrl(media.url)" class="media-image" />
+            <div class="media-info">
+              <span class="media-name">{{ media.filename }}</span>
+            </div>
+          </div>
+        </div>
         <el-empty v-if="!mediaLoading && filteredMedia.length === 0" description="暂无媒体文件" />
       </div>
       <template #footer>
-        <el-button @click="showMediaDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleMediaSelect" :disabled="!selectedMedia">确定</el-button>
+        <ResetButton text="取消" @click="showMediaDialog = false" />
+        <SearchButton text="确定" @click="handleMediaSelect" :disabled="!selectedMedia" />
       </template>
     </el-dialog>
   </div>
@@ -268,6 +267,9 @@ import { updateProfile, changePassword } from '@/api/user'
 import { getAvatarUrl } from '@/utils'
 import api from '@/api'
 import UploadButtonSmall from '@/components/UploadButtonSmall.vue'
+import SearchButton from '@/components/SearchButton.vue'
+import ResetButton from '@/components/ResetButton.vue'
+import SearchInput from '@/components/SearchInput.vue'
 
 const userStore = useUserStore()
 const formRef = ref()
@@ -318,7 +320,6 @@ const passwordRules = {
 const uploadUrl = computed(() => `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'}/media/`)
 const headers = computed(() => ({ Authorization: `Bearer ${userStore.token}` }))
 
-// 媒体库相关
 const showMediaDialog = ref(false)
 const mediaLoading = ref(false)
 const mediaList = ref([])
@@ -461,38 +462,38 @@ onMounted(() => {
 
 <style scoped>
 .profile-page {
-  padding: 24px;
+  padding: 0;
   max-width: 900px;
   margin: 0 auto;
 }
 
 .profile-header {
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
 .page-title {
   margin: 0;
-  font-size: 28px;
-  font-weight: 700;
-  color: #303133;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .page-subtitle {
-  margin: 8px 0 0;
+  margin: 4px 0 0;
   font-size: 14px;
-  color: #909399;
+  color: var(--text-secondary);
 }
 
 .profile-content {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
 }
 
 .profile-card {
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  background: var(--card-bg);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
   overflow: hidden;
 }
 
@@ -500,16 +501,16 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 20px 24px;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.03) 100%);
-  border-bottom: 1px solid #f0f0f0;
+  padding: 16px 20px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .card-icon {
-  width: 48px;
-  height: 48px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 12px;
+  width: 44px;
+  height: 44px;
+  background: var(--primary-color);
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -517,43 +518,43 @@ onMounted(() => {
 }
 
 .card-icon svg {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   color: #fff;
 }
 
 .card-icon.success {
-  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  background: var(--success-color);
 }
 
 .card-icon.warning {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  background: var(--warning-color);
 }
 
 .card-title h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
-  color: #303133;
+  color: var(--text-primary);
 }
 
 .card-title p {
-  margin: 4px 0 0;
+  margin: 2px 0 0;
   font-size: 13px;
-  color: #909399;
+  color: var(--text-secondary);
 }
 
 .card-body {
-  padding: 24px;
+  padding: 20px;
 }
 
 .avatar-section {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-bottom: 24px;
-  margin-bottom: 24px;
-  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border-light);
 }
 
 .avatar-wrapper {
@@ -562,8 +563,8 @@ onMounted(() => {
 }
 
 .avatar-wrapper :deep(.el-avatar) {
-  border: 3px solid #fff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 3px solid var(--card-bg);
+  box-shadow: var(--shadow-md);
 }
 
 .avatar-actions {
@@ -579,7 +580,7 @@ onMounted(() => {
 .info-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .info-item {
@@ -587,27 +588,27 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background: #f9fafb;
-  border-radius: 10px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
 }
 
 .info-label {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #606266;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
 .info-label svg {
-  width: 18px;
-  height: 18px;
-  color: #909399;
+  width: 16px;
+  height: 16px;
+  color: var(--text-tertiary);
 }
 
 .info-value {
   font-size: 14px;
-  color: #303133;
+  color: var(--text-primary);
   font-weight: 500;
 }
 
@@ -615,30 +616,30 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   padding: 4px 12px;
-  border-radius: 20px;
+  border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
 }
 
 .role-tag.admin {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
-  color: #667eea;
+  background: var(--primary-bg);
+  color: var(--primary-color);
 }
 
 .role-tag.editor {
-  background: linear-gradient(135deg, rgba(240, 147, 251, 0.15) 0%, rgba(245, 87, 108, 0.15) 100%);
-  color: #f5576c;
+  background: var(--warning-bg);
+  color: var(--warning-color);
 }
 
 .role-tag.user {
-  background: rgba(144, 147, 153, 0.15);
-  color: #909399;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
 }
 
 .profile-form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
 .form-group {
@@ -650,72 +651,72 @@ onMounted(() => {
 .form-label {
   font-size: 14px;
   font-weight: 500;
-  color: #303133;
+  color: var(--text-primary);
 }
 
 .input-wrapper {
   display: flex;
   align-items: center;
-  background: #f5f7fa;
-  border: 2px solid transparent;
-  border-radius: 10px;
-  transition: all 0.3s ease;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  transition: all 0.15s ease;
 }
 
 .input-wrapper:focus-within {
-  background: #fff;
-  border-color: #667eea;
-  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+  background: var(--bg-primary);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px var(--primary-bg);
 }
 
 .input-icon {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #909399;
+  color: var(--text-tertiary);
   flex-shrink: 0;
 }
 
 .input-icon svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
 
 .form-input {
   flex: 1;
-  height: 44px;
+  height: 40px;
   border: none;
   background: transparent;
   font-size: 14px;
-  color: #303133;
+  color: var(--text-primary);
   outline: none;
 }
 
 .form-input::placeholder {
-  color: #c0c4cc;
+  color: var(--text-tertiary);
 }
 
 .input-suffix {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #909399;
+  color: var(--text-tertiary);
   cursor: pointer;
-  transition: color 0.3s ease;
+  transition: color 0.15s ease;
   flex-shrink: 0;
 }
 
 .input-suffix:hover {
-  color: #667eea;
+  color: var(--primary-color);
 }
 
 .input-suffix svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
 
 .form-actions {
@@ -728,58 +729,37 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 10px 24px;
+  padding: 8px 20px;
   border: none;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: var(--radius-sm);
+  background: var(--primary-color);
   color: #fff;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.35);
-  position: relative;
-  overflow: hidden;
-}
-
-.save-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.6s ease;
-}
-
-.save-btn:hover::before {
-  left: 100%;
+  transition: all 0.15s ease;
 }
 
 .save-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.45);
+  background: var(--primary-hover);
 }
 
 .save-btn.warning {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  box-shadow: 0 4px 12px rgba(245, 87, 108, 0.35);
+  background: var(--warning-color);
 }
 
 .save-btn.warning:hover {
-  box-shadow: 0 6px 16px rgba(245, 87, 108, 0.45);
+  background: var(--warning-hover);
 }
 
 .save-btn:disabled {
-  opacity: 0.7;
+  opacity: 0.6;
   cursor: not-allowed;
-  transform: none;
 }
 
 .loading-spinner {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-top-color: #fff;
   border-radius: 50%;
@@ -799,77 +779,65 @@ onMounted(() => {
   padding-left: 12px;
 }
 
-/* 媒体库对话框样式 */
 .media-list-container {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 8px 8px 24px 8px;
   max-height: 400px;
+  overflow-y: auto;
 }
 
-.media-list-container :deep(.el-col) {
-  margin-bottom: 16px;
+.media-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
 }
 
-.media-card-selected {
-  border: 2px solid #667eea !important;
+.media-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.media-card:hover {
+  border-color: var(--primary-color);
+}
+
+.media-card.selected {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px var(--primary-bg);
 }
 
 .media-image {
   width: 100%;
-  height: 120px;
+  height: 100px;
   object-fit: contain;
-  cursor: pointer;
-  background-color: #f5f7fa;
+  background: var(--bg-secondary);
 }
 
 .media-info {
-  padding: 8px 0;
+  padding: 8px;
   text-align: center;
-  overflow: hidden;
 }
 
 .media-name {
   font-size: 12px;
-  color: #606266;
+  color: var(--text-secondary);
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 100%;
-}
-</style>
-
-<style>
-/* 全局样式：确保对话框固定不动且内容完整显示 */
-.el-dialog {
-  position: fixed !important;
-  top: 50% !important;
-  left: 50% !important;
-  transform: translate(-50%, -50%) !important;
-  margin: 0 !important;
-  height: 80vh !important;
-  max-height: 80vh !important;
-  display: flex !important;
-  flex-direction: column !important;
 }
 
-.el-dialog__header {
-  flex-shrink: 0 !important;
-}
-
-.el-dialog__body {
-  overflow: hidden !important;
-  padding: 20px !important;
-  flex: 1 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  min-height: 0 !important;
-}
-
-.el-dialog__footer {
-  flex-shrink: 0 !important;
+@media (max-width: 768px) {
+  .media-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .info-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
 }
 </style>

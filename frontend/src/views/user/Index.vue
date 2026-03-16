@@ -47,7 +47,6 @@
         :page-sizes="[10, 20, 50, 100]"
         :total="total"
         layout="total, sizes, prev, pager, next, jumper"
-        style="margin-top: 20px; justify-content: flex-end"
         @current-change="fetchUsers"
         @size-change="handleSizeChange"
       />
@@ -83,8 +82,8 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="submitLoading">确定</el-button>
+        <ResetButton text="取消" @click="dialogVisible = false" />
+        <SearchButton text="确定" @click="handleSubmit" :disabled="submitLoading" />
       </template>
     </el-dialog>
   </div>
@@ -99,6 +98,8 @@ import api from '@/api'
 import EditButton from '@/components/EditButton.vue'
 import DeleteButton from '@/components/DeleteButton.vue'
 import CreateButton from '@/components/CreateButton.vue'
+import ResetButton from '@/components/ResetButton.vue'
+import SearchButton from '@/components/SearchButton.vue'
 
 const userStore = useUserStore()
 const loading = ref(false)
@@ -300,7 +301,7 @@ onMounted(() => {
 
 <style scoped>
 .user-page {
-  padding: 20px;
+  padding: 0;
 }
 
 .card-header {
@@ -311,7 +312,7 @@ onMounted(() => {
 
 .form-tip {
   font-size: 12px;
-  color: #909399;
+  color: var(--text-tertiary);
   margin-top: 4px;
 }
 

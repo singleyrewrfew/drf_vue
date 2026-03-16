@@ -1,80 +1,76 @@
 <template>
-  <div class="role-page">
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>角色管理</span>
-          <el-button type="primary" @click="handleCreate">新建角色</el-button>
-        </div>
+  <TablePage
+    title="角色管理"
+    :data="roleList"
+    :loading="loading"
+    create-text="新建角色"
+    :page="pagination.page"
+    :page-size="pagination.page_size"
+    :total="pagination.total"
+    @create="handleCreate"
+    @edit="handleEdit"
+    @delete="handleDelete"
+    @page-change="handlePageChange"
+  >
+    <el-table-column prop="name" label="角色名称" width="150" />
+    <el-table-column prop="code" label="角色代码" width="150" />
+    <el-table-column prop="description" label="描述" show-overflow-tooltip />
+    <el-table-column label="权限数量" width="100">
+      <template #default="{ row }">
+        <el-tag type="info">{{ row.permission_count || row.permissions?.length || 0 }}</el-tag>
       </template>
-      <el-table :data="roleList" v-loading="loading" stripe>
-        <el-table-column prop="name" label="角色名称" width="150" />
-        <el-table-column prop="code" label="角色代码" width="150" />
-        <el-table-column prop="description" label="描述" show-overflow-tooltip />
-        <el-table-column label="权限数量" width="100">
-          <template #default="{ row }">
-            <el-tag type="info">{{ row.permission_count || row.permissions?.length || 0 }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="系统角色" width="100">
-          <template #default="{ row }">
-            <el-tag v-if="row.is_system" type="warning">系统</el-tag>
-            <span v-else>-</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="created_at" label="创建时间" width="180" />
-        <el-table-column label="操作" width="150">
-          <template #default="{ row }">
-            <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
-            <el-button type="danger" link @click="handleDelete(row)" :disabled="row.is_system">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-      <div class="pagination-wrapper">
-        <el-pagination
-          v-model:current-page="pagination.page"
-          v-model:page-size="pagination.page_size"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
-          :total="pagination.total"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-        />
-      </div>
-    </el-card>
+    </el-table-column>
+    <el-table-column label="系统角色" width="100">
+      <template #default="{ row }">
+        <el-tag v-if="row.is_system" type="warning">系统</el-tag>
+        <span v-else>-</span>
+      </template>
+    </el-table-column>
+    <el-table-column prop="created_at" label="创建时间" width="180" />
 
-    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑角色' : '新建角色'" width="600px" destroy-on-close>
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
-        <el-form-item label="角色名称" prop="name">
-          <el-input v-model="form.name" placeholder="请输入角色名称" maxlength="50" />
-        </el-form-item>
-        <el-form-item label="角色代码" prop="code">
-          <el-input v-model="form.code" placeholder="请输入角色代码（英文）" maxlength="50" :disabled="isEdit" />
-        </el-form-item>
-        <el-form-item label="描述" prop="description">
-          <el-input v-model="form.description" type="textarea" :rows="3" placeholder="请输入描述" />
-        </el-form-item>
-        <el-form-item label="权限" prop="permission_ids">
-          <el-select v-model="form.permission_ids" multiple placeholder="请选择权限" style="width: 100%">
-            <el-option v-for="perm in permissions" :key="perm.id" :label="perm.name" :value="perm.id">
-              <span>{{ perm.name }}</span>
-              <span style="color: #909399; font-size: 12px; margin-left: 8px;">{{ perm.code }}</span>
-            </el-option>
-          </el-select>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="submitting">确定</el-button>
-      </template>
-    </el-dialog>
-  </div>
+    <template #actions="{ row }">
+      <DeleteButton v-if="row.is_system" disabled />
+    </template>
+  </TablePage>
+
+  <FormDialog
+    v-model="form"
+    v-model:show="dialogVisible"
+    :is-edit="isEdit"
+    create-title="新建角色"
+    edit-title="编辑角色"
+    width="600px"
+    label-width="100px"
+    :rules="rules"
+    :loading="submitting"
+    @submit="handleSubmit"
+  >
+    <el-form-item label="角色名称" prop="name">
+      <el-input v-model="form.name" placeholder="请输入角色名称" maxlength="50" />
+    </el-form-item>
+    <el-form-item label="角色代码" prop="code">
+      <el-input v-model="form.code" placeholder="请输入角色代码（英文）" maxlength="50" :disabled="isEdit" />
+    </el-form-item>
+    <el-form-item label="描述" prop="description">
+      <el-input v-model="form.description" type="textarea" :rows="3" placeholder="请输入描述" />
+    </el-form-item>
+    <el-form-item label="权限" prop="permission_ids">
+      <el-select v-model="form.permission_ids" multiple placeholder="请选择权限" style="width: 100%">
+        <el-option v-for="perm in permissions" :key="perm.id" :label="perm.name" :value="perm.id">
+          <span>{{ perm.name }}</span>
+          <span style="color: var(--text-tertiary); font-size: 12px; margin-left: 8px;">{{ perm.code }}</span>
+        </el-option>
+      </el-select>
+    </el-form-item>
+  </FormDialog>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getRoles, getRole, createRole, updateRole, deleteRole, getPermissions } from '@/api/role'
+import TablePage from '@/components/TablePage.vue'
+import FormDialog from '@/components/FormDialog.vue'
 
 const loading = ref(false)
 const submitting = ref(false)
@@ -83,7 +79,6 @@ const permissions = ref([])
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const editId = ref(null)
-const formRef = ref()
 
 const pagination = reactive({
   page: 1,
@@ -138,6 +133,7 @@ const resetForm = () => {
 
 const handleCreate = () => {
   isEdit.value = false
+  editId.value = null
   resetForm()
   dialogVisible.value = true
 }
@@ -158,7 +154,6 @@ const handleEdit = async (row) => {
 }
 
 const handleSubmit = async () => {
-  await formRef.value.validate()
   submitting.value = true
   try {
     if (isEdit.value) {
@@ -178,6 +173,7 @@ const handleSubmit = async () => {
 }
 
 const handleDelete = async (row) => {
+  if (row.is_system) return
   await ElMessageBox.confirm('确定删除该角色？', '提示', { type: 'warning' })
   try {
     await deleteRole(row.id)
@@ -191,12 +187,9 @@ const handleDelete = async (row) => {
   }
 }
 
-const handleSizeChange = () => {
-  pagination.page = 1
-  fetchRoles()
-}
-
-const handleCurrentChange = () => {
+const handlePageChange = ({ page, pageSize }) => {
+  pagination.page = page
+  pagination.page_size = pageSize
   fetchRoles()
 }
 
@@ -205,21 +198,3 @@ onMounted(() => {
   fetchPermissions()
 })
 </script>
-
-<style scoped>
-.role-page {
-  padding: 20px;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.pagination-wrapper {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 20px;
-}
-</style>

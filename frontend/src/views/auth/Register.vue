@@ -205,7 +205,7 @@ const handleRegister = async () => {
 .bg-shape-1 {
   width: 600px;
   height: 600px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--primary-color) 0%, #60CDFF 100%);
   top: -200px;
   right: -200px;
   animation: float 20s ease-in-out infinite;
@@ -243,13 +243,14 @@ const handleRegister = async () => {
 .register-card {
   width: 100%;
   max-width: 420px;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--card-bg);
   border-radius: 20px;
   padding: 40px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   position: relative;
   z-index: 1;
   backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
 }
 
 .register-header {
@@ -268,12 +269,12 @@ const handleRegister = async () => {
 .logo-icon {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--primary-color) 0%, #60CDFF 100%);
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 15px rgba(0, 120, 212, 0.4);
 }
 
 .logo-icon svg {
@@ -286,7 +287,7 @@ const handleRegister = async () => {
   margin: 0;
   font-size: 28px;
   font-weight: 700;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--primary-color) 0%, #60CDFF 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -294,7 +295,7 @@ const handleRegister = async () => {
 
 .subtitle {
   margin: 0;
-  color: #909399;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
@@ -313,22 +314,22 @@ const handleRegister = async () => {
 .form-label {
   font-size: 14px;
   font-weight: 500;
-  color: #303133;
+  color: var(--text-primary);
 }
 
 .input-wrapper {
   display: flex;
   align-items: center;
-  background: #f5f7fa;
+  background: var(--bg-secondary);
   border: 2px solid transparent;
   border-radius: 12px;
   transition: all 0.3s ease;
 }
 
 .input-wrapper:focus-within {
-  background: #fff;
-  border-color: #667eea;
-  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+  background: var(--bg-primary);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 4px var(--primary-bg);
 }
 
 .input-icon {
@@ -337,7 +338,7 @@ const handleRegister = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #909399;
+  color: var(--text-tertiary);
   flex-shrink: 0;
 }
 
@@ -352,12 +353,12 @@ const handleRegister = async () => {
   border: none;
   background: transparent;
   font-size: 15px;
-  color: #303133;
+  color: var(--text-primary);
   outline: none;
 }
 
 .form-input::placeholder {
-  color: #c0c4cc;
+  color: var(--text-tertiary);
 }
 
 .input-suffix {
@@ -366,14 +367,14 @@ const handleRegister = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #909399;
+  color: var(--text-tertiary);
   cursor: pointer;
   transition: color 0.3s ease;
   flex-shrink: 0;
 }
 
 .input-suffix:hover {
-  color: #667eea;
+  color: var(--primary-color);
 }
 
 .input-suffix svg {
@@ -385,13 +386,13 @@ const handleRegister = async () => {
   height: 50px;
   border: none;
   border-radius: 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--primary-color) 0%, #60CDFF 100%);
   color: #fff;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 15px rgba(0, 120, 212, 0.4);
   position: relative;
   overflow: hidden;
   margin-top: 8px;
@@ -414,7 +415,7 @@ const handleRegister = async () => {
 
 .register-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+  box-shadow: 0 6px 20px rgba(0, 120, 212, 0.5);
 }
 
 .register-btn:active {
@@ -445,24 +446,24 @@ const handleRegister = async () => {
   text-align: center;
   margin-top: 24px;
   padding-top: 24px;
-  border-top: 1px solid #ebeef5;
+  border-top: 1px solid var(--border-color);
 }
 
 .register-footer p {
   margin: 0;
-  color: #909399;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
 .register-footer a {
-  color: #667eea;
+  color: var(--primary-color);
   text-decoration: none;
   font-weight: 500;
   transition: color 0.3s ease;
 }
 
 .register-footer a:hover {
-  color: #764ba2;
+  color: var(--primary-hover);
 }
 
 :deep(.el-form-item) {

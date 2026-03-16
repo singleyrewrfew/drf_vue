@@ -1,69 +1,57 @@
 <template>
-  <div class="permission-page">
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>权限管理</span>
-          <CreateButton text="新建权限" @click="handleCreate" />
-        </div>
+  <TablePage
+    title="权限管理"
+    :data="permissionList"
+    :loading="loading"
+    create-text="新建权限"
+    :page="page"
+    :page-size="pageSize"
+    :total="total"
+    @create="handleCreate"
+    @edit="handleEdit"
+    @delete="handleDelete"
+    @page-change="handlePageChange"
+  >
+    <el-table-column prop="name" label="权限名称" width="200" />
+    <el-table-column prop="code" label="权限代码" width="250">
+      <template #default="{ row }">
+        <el-tag type="info">{{ row.code }}</el-tag>
       </template>
-      <el-table :data="permissionList" v-loading="loading" stripe>
-        <el-table-column prop="name" label="权限名称" width="200" />
-        <el-table-column prop="code" label="权限代码" width="250">
-          <template #default="{ row }">
-            <el-tag type="info">{{ row.code }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="description" label="描述" show-overflow-tooltip />
-        <el-table-column prop="created_at" label="创建时间" width="180" />
-        <el-table-column label="操作" width="150" fixed="right">
-          <template #default="{ row }">
-            <div class="action-buttons">
-              <EditButton @click="handleEdit(row)" />
-              <DeleteButton @click="handleDelete(row)" />
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
-      <el-pagination
-        v-model:current-page="page"
-        v-model:page-size="pageSize"
-        :page-sizes="[10, 20, 50, 100]"
-        :total="total"
-        layout="total, sizes, prev, pager, next, jumper"
-        style="margin-top: 20px; justify-content: flex-end"
-        @current-change="fetchPermissions"
-        @size-change="handleSizeChange"
-      />
-    </el-card>
+    </el-table-column>
+    <el-table-column prop="description" label="描述" show-overflow-tooltip />
+    <el-table-column prop="created_at" label="创建时间" width="180" />
+  </TablePage>
 
-    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑权限' : '新建权限'" width="500px" destroy-on-close>
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
-        <el-form-item label="权限名称" prop="name">
-          <el-input v-model="form.name" placeholder="请输入权限名称" maxlength="100" />
-        </el-form-item>
-        <el-form-item label="权限代码" prop="code">
-          <el-input v-model="form.code" placeholder="如: content.create, user.delete" maxlength="100" />
-        </el-form-item>
-        <el-form-item label="描述" prop="description">
-          <el-input v-model="form.description" type="textarea" :rows="3" placeholder="请输入描述" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="submitting">确定</el-button>
-      </template>
-    </el-dialog>
-  </div>
+  <FormDialog
+    v-model="form"
+    v-model:show="dialogVisible"
+    :is-edit="isEdit"
+    create-title="新建权限"
+    edit-title="编辑权限"
+    width="500px"
+    label-width="100px"
+    :rules="rules"
+    :loading="submitting"
+    @submit="handleSubmit"
+  >
+    <el-form-item label="权限名称" prop="name">
+      <el-input v-model="form.name" placeholder="请输入权限名称" maxlength="100" />
+    </el-form-item>
+    <el-form-item label="权限代码" prop="code">
+      <el-input v-model="form.code" placeholder="如: content.create, user.delete" maxlength="100" />
+    </el-form-item>
+    <el-form-item label="描述" prop="description">
+      <el-input v-model="form.description" type="textarea" :rows="3" placeholder="请输入描述" />
+    </el-form-item>
+  </FormDialog>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getPermissions, createPermission, updatePermission, deletePermission } from '@/api/role'
-import EditButton from '@/components/EditButton.vue'
-import DeleteButton from '@/components/DeleteButton.vue'
-import CreateButton from '@/components/CreateButton.vue'
+import TablePage from '@/components/TablePage.vue'
+import FormDialog from '@/components/FormDialog.vue'
 
 const loading = ref(false)
 const submitting = ref(false)
@@ -73,7 +61,6 @@ const pageSize = ref(20)
 const total = ref(0)
 const dialogVisible = ref(false)
 const isEdit = ref(false)
-const formRef = ref()
 const editId = ref(null)
 
 const form = reactive({
@@ -117,7 +104,7 @@ const handleCreate = () => {
   dialogVisible.value = true
 }
 
-const handleEdit = async (row) => {
+const handleEdit = (row) => {
   isEdit.value = true
   editId.value = row.id
   form.name = row.name
@@ -127,7 +114,6 @@ const handleEdit = async (row) => {
 }
 
 const handleSubmit = async () => {
-  await formRef.value.validate()
   submitting.value = true
   try {
     if (isEdit.value) {
@@ -157,8 +143,9 @@ const handleDelete = async (row) => {
   }
 }
 
-const handleSizeChange = () => {
-  page.value = 1
+const handlePageChange = ({ page: p, pageSize: ps }) => {
+  page.value = p
+  pageSize.value = ps
   fetchPermissions()
 }
 
@@ -166,22 +153,3 @@ onMounted(() => {
   fetchPermissions()
 })
 </script>
-
-<style scoped>
-.permission-page {
-  padding: 20px;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.action-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  align-items: center;
-}
-</style>

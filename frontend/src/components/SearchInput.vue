@@ -18,7 +18,12 @@
         @blur="handleBlur"
         @keyup.enter="$emit('search')"
       />
-      <div class="search-border"></div>
+      <button v-if="modelValue" class="clear-btn" @click="handleClear">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
     </div>
   </div>
 </template>
@@ -26,8 +31,8 @@
 <script setup>
 import { ref } from 'vue'
 
-defineEmits(['update:modelValue', 'search'])
-defineProps({
+const emit = defineEmits(['update:modelValue', 'search'])
+const props = defineProps({
   modelValue: {
     type: String,
     default: ''
@@ -52,6 +57,11 @@ const handleFocus = () => {
 const handleBlur = () => {
   isFocused.value = false
 }
+
+const handleClear = () => {
+  emit('update:modelValue', '')
+  inputRef.value?.focus()
+}
 </script>
 
 <style scoped>
@@ -63,21 +73,20 @@ const handleBlur = () => {
   position: relative;
   display: flex;
   align-items: center;
-  background: #fff;
-  border-radius: 8px;
+  background: var(--bg-primary);
+  border-radius: var(--radius-sm);
   overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  border: 1px solid #dcdfe6;
+  transition: all 0.15s ease;
+  border: 1px solid var(--border-color);
 }
 
 .search-input-container:hover {
-  border-color: #c0c4cc;
+  border-color: var(--border-dark);
 }
 
 .search-input-container.focused {
-  border-color: #667eea;
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px var(--primary-bg);
 }
 
 .search-icon {
@@ -86,8 +95,8 @@ const handleBlur = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #909399;
-  transition: all 0.3s ease;
+  color: var(--text-tertiary);
+  transition: all 0.15s ease;
   flex-shrink: 0;
 }
 
@@ -97,7 +106,7 @@ const handleBlur = () => {
 }
 
 .search-input-container.focused .search-icon {
-  color: #667eea;
+  color: var(--primary-color);
 }
 
 .search-input {
@@ -106,27 +115,37 @@ const handleBlur = () => {
   border: none;
   outline: none;
   font-size: 14px;
-  color: #303133;
+  color: var(--text-primary);
   background: transparent;
-  padding-right: 12px;
+  padding-right: 8px;
 }
 
 .search-input::placeholder {
-  color: #c0c4cc;
+  color: var(--text-tertiary);
 }
 
-.search-border {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-  transform: scaleX(0);
-  transition: transform 0.3s ease;
+.clear-btn {
+  width: 24px;
+  height: 24px;
+  margin-right: 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-xs);
+  transition: all 0.15s ease;
 }
 
-.search-input-container.focused .search-border {
-  transform: scaleX(1);
+.clear-btn:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.clear-btn svg {
+  width: 12px;
+  height: 12px;
 }
 </style>

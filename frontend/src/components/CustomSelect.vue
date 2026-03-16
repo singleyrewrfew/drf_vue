@@ -108,39 +108,39 @@ onUnmounted(() => {
   align-items: center;
   height: 32px;
   padding: 0 12px;
-  background: #fff;
-  border: 1px solid #dcdfe6;
-  border-radius: 8px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.15s ease;
 }
 
 .select-trigger:hover {
-  border-color: #c0c4cc;
+  border-color: var(--border-dark);
 }
 
 .custom-select.focused .select-trigger {
-  border-color: #667eea;
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px var(--primary-bg);
 }
 
 .select-value {
   font-size: 14px;
-  color: #303133;
+  color: var(--text-primary);
   flex: 1;
 }
 
 .select-placeholder {
   font-size: 14px;
-  color: #a8abb2;
+  color: var(--text-tertiary);
   flex: 1;
 }
 
 .select-arrow {
   width: 14px;
   height: 14px;
-  color: #c0c4cc;
-  transition: all 0.3s ease;
+  color: var(--text-tertiary);
+  transition: all 0.15s ease;
   flex-shrink: 0;
   margin-left: 8px;
   display: flex;
@@ -150,7 +150,7 @@ onUnmounted(() => {
 
 .custom-select.focused .select-arrow {
   transform: rotate(180deg);
-  color: #667eea;
+  color: var(--primary-color);
 }
 
 .select-arrow svg {
@@ -163,9 +163,10 @@ onUnmounted(() => {
   top: calc(100% + 4px);
   left: 0;
   right: 0;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
   overflow: hidden;
   z-index: 1000;
   max-height: 200px;
@@ -175,30 +176,29 @@ onUnmounted(() => {
 .dropdown-item {
   padding: 8px 12px;
   font-size: 14px;
-  color: #606266;
+  color: var(--text-primary);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.1s ease;
 }
 
 .dropdown-item:hover {
-  background: linear-gradient(90deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%);
-  color: #667eea;
+  background: var(--bg-secondary);
 }
 
 .dropdown-item.selected {
-  background: linear-gradient(90deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.1) 100%);
-  color: #667eea;
+  background: var(--primary-bg);
+  color: var(--primary-color);
   font-weight: 500;
 }
 
 .dropdown-enter-active,
 .dropdown-leave-active {
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 
 .dropdown-enter-from,
 .dropdown-leave-to {
   opacity: 0;
-  transform: translateY(-8px);
+  transform: translateY(-4px);
 }
 </style>

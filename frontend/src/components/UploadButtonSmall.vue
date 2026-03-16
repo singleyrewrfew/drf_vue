@@ -29,58 +29,35 @@ defineProps({
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
-  border: 1px solid #667eea;
-  border-radius: 8px;
-  background: transparent;
-  color: #667eea;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--primary-color);
+  color: #fff;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.15s ease;
   position: relative;
   overflow: hidden;
-}
-
-.upload-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.upload-btn:hover::before {
-  opacity: 0.1;
+  z-index: 1;
 }
 
 .upload-btn:hover {
-  color: #fff;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-color: transparent;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  background: var(--primary-hover);
 }
 
 .upload-btn:active {
-  transform: scale(0.98);
+  background: var(--primary-active);
 }
 
 .upload-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .upload-icon {
-  width: 16px;
-  height: 16px;
-  transition: transform 0.3s ease;
-}
-
-.upload-btn:hover .upload-icon {
-  transform: translateY(-2px);
+  width: 14px;
+  height: 14px;
 }
 
 .upload-text {
