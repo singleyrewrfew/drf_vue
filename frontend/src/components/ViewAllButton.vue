@@ -28,68 +28,45 @@ defineProps({
   align-items: center;
   gap: 4px;
   padding: 4px 10px;
-  border: none;
-  border-radius: 6px;
-  background: linear-gradient(135deg, #00c6fb 0%, #005bea 100%);
-  color: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--card-bg);
+  color: var(--primary-color);
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 6px rgba(0, 198, 251, 0.35);
-  position: relative;
-  overflow: hidden;
+  transition: all 0.15s ease;
   vertical-align: middle;
-}
-
-.view-all-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.2),
-    transparent
-  );
-  transition: left 0.5s ease;
-}
-
-.view-all-btn:hover::before {
-  left: 100%;
+  position: relative;
+  z-index: 1;
 }
 
 .view-all-btn:hover {
-  filter: brightness(1.1);
-  box-shadow: 0 4px 16px rgba(0, 198, 251, 0.5);
+  background: var(--primary-bg);
+  border-color: var(--primary-color);
 }
 
 .view-all-btn:active {
-  filter: brightness(0.95);
-  box-shadow: 0 2px 6px rgba(0, 198, 251, 0.35);
+  background: var(--bg-secondary);
 }
 
 .view-all-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
-  box-shadow: none;
+}
+
+.view-all-btn:disabled:hover {
+  background: var(--card-bg);
+  border-color: var(--border-color);
 }
 
 .view-all-icon {
   width: 12px;
   height: 12px;
-  transition: transform 0.3s ease;
+  transition: transform 0.15s ease;
 }
 
 .view-all-btn:hover .view-all-icon {
-  transform: translateX(3px);
-}
-
-.view-all-text {
-  position: relative;
-  z-index: 1;
+  transform: translateX(2px);
 }
 </style>

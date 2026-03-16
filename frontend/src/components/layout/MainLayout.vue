@@ -1,6 +1,6 @@
 <template>
   <el-container class="main-layout">
-    <el-aside :width="isCollapsed ? '88px' : '240px'" class="aside">
+    <el-aside :width="isCollapsed ? '72px' : '240px'" class="aside">
       <div class="sidebar">
         <div class="logo" :class="{ collapsed: isCollapsed }">
           <div class="logo-icon">
@@ -12,56 +12,51 @@
           </div>
           <h2 class="logo-title" :class="{ collapsed: isCollapsed }">CMS 管理</h2>
         </div>
-        <nav class="nav-menu">
+        <nav class="nav-menu" ref="navMenuRef">
+          <div class="menu-indicator" :style="{
+            top: indicatorStyle.top,
+            height: indicatorStyle.height,
+            opacity: indicatorStyle.opacity,
+            transform: `scaleY(${indicatorStyle.scaleY})`,
+            transformOrigin: indicatorStyle.transformOrigin
+          }"></div>
           <div class="menu-section" v-show="!isCollapsed">
             <span class="menu-section-title">主菜单</span>
           </div>
-          <router-link to="/dashboard" class="menu-item" :class="{ active: activeMenu === '/dashboard', collapsed: isCollapsed }">
-            <el-tooltip :content="isCollapsed ? '仪表盘' : ''" placement="right" :disabled="!isCollapsed">
-              <div class="menu-item-icon">
-                <el-icon><Odometer /></el-icon>
-              </div>
-            </el-tooltip>
+          <router-link to="/dashboard" class="menu-item" :class="{ active: activeMenu === '/dashboard', collapsed: isCollapsed }" data-path="/dashboard" :title="isCollapsed ? '仪表盘' : ''">
+            <div class="menu-item-icon">
+              <el-icon><Odometer /></el-icon>
+            </div>
             <span class="menu-item-text">仪表盘</span>
           </router-link>
-          <router-link to="/contents" class="menu-item" :class="{ active: activeMenu === '/contents', collapsed: isCollapsed }">
-            <el-tooltip :content="isCollapsed ? '内容管理' : ''" placement="right" :disabled="!isCollapsed">
-              <div class="menu-item-icon">
-                <el-icon><Document /></el-icon>
-              </div>
-            </el-tooltip>
+          <router-link to="/contents" class="menu-item" :class="{ active: activeMenu === '/contents', collapsed: isCollapsed }" data-path="/contents" :title="isCollapsed ? '内容管理' : ''">
+            <div class="menu-item-icon">
+              <el-icon><Document /></el-icon>
+            </div>
             <span class="menu-item-text">内容管理</span>
           </router-link>
-          <router-link to="/categories" class="menu-item" :class="{ active: activeMenu === '/categories', collapsed: isCollapsed }">
-            <el-tooltip :content="isCollapsed ? '分类管理' : ''" placement="right" :disabled="!isCollapsed">
-              <div class="menu-item-icon">
-                <el-icon><Folder /></el-icon>
-              </div>
-            </el-tooltip>
+          <router-link to="/categories" class="menu-item" :class="{ active: activeMenu === '/categories', collapsed: isCollapsed }" data-path="/categories" :title="isCollapsed ? '分类管理' : ''">
+            <div class="menu-item-icon">
+              <el-icon><Folder /></el-icon>
+            </div>
             <span class="menu-item-text">分类管理</span>
           </router-link>
-          <router-link to="/tags" class="menu-item" :class="{ active: activeMenu === '/tags', collapsed: isCollapsed }">
-            <el-tooltip :content="isCollapsed ? '标签管理' : ''" placement="right" :disabled="!isCollapsed">
-              <div class="menu-item-icon">
-                <el-icon><PriceTag /></el-icon>
-              </div>
-            </el-tooltip>
+          <router-link to="/tags" class="menu-item" :class="{ active: activeMenu === '/tags', collapsed: isCollapsed }" data-path="/tags" :title="isCollapsed ? '标签管理' : ''">
+            <div class="menu-item-icon">
+              <el-icon><PriceTag /></el-icon>
+            </div>
             <span class="menu-item-text">标签管理</span>
           </router-link>
-          <router-link to="/media" class="menu-item" :class="{ active: activeMenu === '/media', collapsed: isCollapsed }">
-            <el-tooltip :content="isCollapsed ? '媒体管理' : ''" placement="right" :disabled="!isCollapsed">
-              <div class="menu-item-icon">
-                <el-icon><Picture /></el-icon>
-              </div>
-            </el-tooltip>
+          <router-link to="/media" class="menu-item" :class="{ active: activeMenu === '/media', collapsed: isCollapsed }" data-path="/media" :title="isCollapsed ? '媒体管理' : ''">
+            <div class="menu-item-icon">
+              <el-icon><Picture /></el-icon>
+            </div>
             <span class="menu-item-text">媒体管理</span>
           </router-link>
-          <router-link to="/comments" class="menu-item" :class="{ active: activeMenu === '/comments', collapsed: isCollapsed }">
-            <el-tooltip :content="isCollapsed ? '评论管理' : ''" placement="right" :disabled="!isCollapsed">
-              <div class="menu-item-icon">
-                <el-icon><ChatDotRound /></el-icon>
-              </div>
-            </el-tooltip>
+          <router-link to="/comments" class="menu-item" :class="{ active: activeMenu === '/comments', collapsed: isCollapsed }" data-path="/comments" :title="isCollapsed ? '评论管理' : ''">
+            <div class="menu-item-icon">
+              <el-icon><ChatDotRound /></el-icon>
+            </div>
             <span class="menu-item-text">评论管理</span>
           </router-link>
 
@@ -69,40 +64,32 @@
             <div class="menu-section" v-show="!isCollapsed">
               <span class="menu-section-title">系统管理</span>
             </div>
-            <router-link to="/users" class="menu-item" :class="{ active: activeMenu === '/users', collapsed: isCollapsed }">
-              <el-tooltip :content="isCollapsed ? '用户管理' : ''" placement="right" :disabled="!isCollapsed">
-                <div class="menu-item-icon">
-                  <el-icon><User /></el-icon>
-                </div>
-              </el-tooltip>
+            <router-link to="/users" class="menu-item" :class="{ active: activeMenu === '/users', collapsed: isCollapsed }" data-path="/users" :title="isCollapsed ? '用户管理' : ''">
+              <div class="menu-item-icon">
+                <el-icon><User /></el-icon>
+              </div>
               <span class="menu-item-text">用户管理</span>
             </router-link>
-            <router-link to="/roles" class="menu-item" :class="{ active: activeMenu === '/roles', collapsed: isCollapsed }">
-              <el-tooltip :content="isCollapsed ? '角色管理' : ''" placement="right" :disabled="!isCollapsed">
-                <div class="menu-item-icon">
-                  <el-icon><Key /></el-icon>
-                </div>
-              </el-tooltip>
+            <router-link to="/roles" class="menu-item" :class="{ active: activeMenu === '/roles', collapsed: isCollapsed }" data-path="/roles" :title="isCollapsed ? '角色管理' : ''">
+              <div class="menu-item-icon">
+                <el-icon><Key /></el-icon>
+              </div>
               <span class="menu-item-text">角色管理</span>
             </router-link>
-            <router-link to="/permissions" class="menu-item" :class="{ active: activeMenu === '/permissions', collapsed: isCollapsed }">
-              <el-tooltip :content="isCollapsed ? '权限管理' : ''" placement="right" :disabled="!isCollapsed">
-                <div class="menu-item-icon">
-                  <el-icon><Lock /></el-icon>
-                </div>
-              </el-tooltip>
+            <router-link to="/permissions" class="menu-item" :class="{ active: activeMenu === '/permissions', collapsed: isCollapsed }" data-path="/permissions" :title="isCollapsed ? '权限管理' : ''">
+              <div class="menu-item-icon">
+                <el-icon><Lock /></el-icon>
+              </div>
               <span class="menu-item-text">权限管理</span>
             </router-link>
           </template>
         </nav>
         <div class="sidebar-footer">
-          <div class="user-card" :class="{ collapsed: isCollapsed }" @click="toggleCollapse">
-            <div class="avatar-wrapper">
-              <el-tooltip :content="isCollapsed ? userStore.user?.username : ''" placement="right" :disabled="!isCollapsed">
-                <el-avatar :size="isCollapsed ? 36 : 40" :src="getAvatarUrl(userStore.user?.avatar_url || userStore.user?.avatar)">
-                  <el-icon><UserFilled /></el-icon>
-                </el-avatar>
-              </el-tooltip>
+          <div class="user-card" :class="{ collapsed: isCollapsed }">
+            <div class="avatar-wrapper" @click="toggleCollapse" :title="isCollapsed ? '展开侧边栏' : '收起侧边栏'">
+              <el-avatar :size="40" :src="getAvatarUrl(userStore.user?.avatar_url || userStore.user?.avatar)">
+                <el-icon><UserFilled /></el-icon>
+              </el-avatar>
               <div class="collapse-icon">
                 <el-icon>
                   <ArrowLeft v-if="!isCollapsed" />
@@ -110,12 +97,12 @@
                 </el-icon>
               </div>
             </div>
-            <div class="user-info">
+            <div class="user-info" v-show="!isCollapsed">
               <span class="user-name">{{ userStore.user?.username }}</span>
               <span class="user-role">{{ userStore.user?.role_name || '用户' }}</span>
             </div>
-            <el-dropdown trigger="click" placement="top" v-show="!isCollapsed" @click.stop>
-              <div class="user-actions">
+            <el-dropdown trigger="click" placement="top-start" v-show="!isCollapsed" @click.stop>
+              <div class="user-actions" @click.stop title="设置">
                 <el-icon><Setting /></el-icon>
               </div>
               <template #dropdown>
@@ -131,8 +118,14 @@
     </el-aside>
     <el-container>
       <el-header class="header">
-        <div class="header-breadcrumb">
+        <div class="header-left">
           <span class="current-page">{{ currentPageTitle }}</span>
+        </div>
+        <div class="header-right">
+          <button class="theme-toggle" @click="toggleTheme" :title="themeStore.theme === 'light' ? '切换到暗色模式' : '切换到亮色模式'">
+            <el-icon v-if="themeStore.theme === 'light'"><Moon /></el-icon>
+            <el-icon v-else><Sunny /></el-icon>
+          </button>
         </div>
       </el-header>
       <el-main class="main">
@@ -143,23 +136,149 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { Odometer, Document, Folder, PriceTag, Picture, ChatDotRound, User, UserFilled, Setting, Key, Lock, ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
+import { useThemeStore } from '@/stores/theme'
+import { Odometer, Document, Folder, PriceTag, Picture, ChatDotRound, User, UserFilled, Setting, Key, Lock, ArrowLeft, ArrowRight, Moon, Sunny } from '@element-plus/icons-vue'
 import { getAvatarUrl } from '@/utils'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const themeStore = useThemeStore()
 
 const isCollapsed = ref(false)
+const navMenuRef = ref(null)
+const indicatorStyle = ref({
+  top: '0px',
+  height: '0px',
+  scaleY: 1,
+  transformOrigin: 'top',
+  opacity: 0
+})
+
+const isAnimating = ref(false)
+const previousTop = ref(0)
 
 const toggleCollapse = () => {
   isCollapsed.value = !isCollapsed.value
 }
 
+const toggleTheme = () => {
+  themeStore.toggleTheme()
+}
+
 const activeMenu = computed(() => route.path)
+
+let animationTimeouts = []
+
+const clearAllTimeouts = () => {
+  animationTimeouts.forEach(id => clearTimeout(id))
+  animationTimeouts = []
+}
+
+const addTimeout = (callback, delay) => {
+  const id = setTimeout(() => {
+    const index = animationTimeouts.indexOf(id)
+    if (index > -1) animationTimeouts.splice(index, 1)
+    callback()
+  }, delay)
+  animationTimeouts.push(id)
+  return id
+}
+
+const animateIndicator = (fromTop, toTop, toHeight) => {
+  clearAllTimeouts()
+  isAnimating.value = true
+  
+  const goingDown = toTop > fromTop
+  
+  indicatorStyle.value = {
+    top: `${fromTop}px`,
+    height: `${toHeight}px`,
+    scaleY: 1,
+    transformOrigin: 'center',
+    opacity: 1
+  }
+  
+  addTimeout(() => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const stretchY = 1.25
+        indicatorStyle.value.scaleY = stretchY
+        indicatorStyle.value.transformOrigin = goingDown ? 'top' : 'bottom'
+        
+        addTimeout(() => {
+          indicatorStyle.value.opacity = 0
+          
+          addTimeout(() => {
+            indicatorStyle.value = {
+              top: `${toTop}px`,
+              height: `${toHeight}px`,
+              scaleY: stretchY,
+              transformOrigin: goingDown ? 'bottom' : 'top',
+              opacity: 1
+            }
+            
+            addTimeout(() => {
+              indicatorStyle.value.scaleY = 1
+              indicatorStyle.value.transformOrigin = 'center'
+              
+              addTimeout(() => {
+                isAnimating.value = false
+              }, 167)
+            }, 167)
+          }, 83)
+        }, 83)
+      })
+    })
+  }, 50)
+}
+
+const updateIndicator = (animate = true) => {
+  nextTick(() => {
+    if (!navMenuRef.value) return
+    
+    const activeItem = navMenuRef.value.querySelector('.menu-item.active')
+    if (activeItem) {
+      const menuRect = navMenuRef.value.getBoundingClientRect()
+      const itemRect = activeItem.getBoundingClientRect()
+      
+      const newTop = itemRect.top - menuRect.top + 8
+      const newHeight = itemRect.height - 16
+      
+      if (animate && indicatorStyle.value.opacity === 1) {
+        animateIndicator(previousTop.value, newTop, newHeight)
+      } else {
+        clearAllTimeouts()
+        isAnimating.value = false
+        indicatorStyle.value = {
+          top: `${newTop}px`,
+          height: `${newHeight}px`,
+          scaleY: 1,
+          opacity: 1
+        }
+      }
+      
+      previousTop.value = newTop
+    } else {
+      indicatorStyle.value.opacity = 0
+    }
+  })
+}
+
+watch(activeMenu, () => {
+  updateIndicator(true)
+})
+
+watch(isCollapsed, () => {
+  updateIndicator(false)
+})
+
+onMounted(() => {
+  updateIndicator(false)
+})
 
 const pageTitles = {
   '/dashboard': '仪表盘',
@@ -190,12 +309,14 @@ const handleLogout = async () => {
 <style scoped>
 .main-layout {
   height: 100vh;
+  background: var(--bg-color);
 }
 
 .aside {
-  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  background: var(--sidebar-bg);
   overflow: hidden;
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-right: 1px solid var(--sidebar-border);
 }
 
 .sidebar {
@@ -205,28 +326,33 @@ const handleLogout = async () => {
 }
 
 .logo {
-  height: 70px;
+  height: 40px;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 0 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 20px 12px 12px 12px;
 }
 
 .logo.collapsed {
   justify-content: center;
+  padding: 20px 16px 12px 16px;
 }
 
 .logo-icon {
   width: 36px;
   height: 36px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 10px;
+  background: var(--primary-color);
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
   flex-shrink: 0;
+}
+
+.logo.collapsed .logo-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
 }
 
 .logo-icon svg {
@@ -235,16 +361,21 @@ const handleLogout = async () => {
   color: #fff;
 }
 
+.logo.collapsed .logo-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
 .logo h2 {
   margin: 0;
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 600;
-  color: #fff;
-  letter-spacing: 1px;
+  color: var(--sidebar-text);
+  letter-spacing: 0;
   white-space: nowrap;
   opacity: 1;
   width: auto;
-  transition: opacity 0.2s ease, width 0.3s ease;
+  transition: opacity 0.15s ease;
   overflow: hidden;
 }
 
@@ -255,107 +386,91 @@ const handleLogout = async () => {
 
 .nav-menu {
   flex: 1;
-  padding: 16px 12px;
+  padding: 4px 8px;
   overflow-y: auto;
+  position: relative;
 }
 
 .nav-menu::-webkit-scrollbar {
-  width: 4px;
+  width: 0;
 }
 
-.nav-menu::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+.sidebar.collapsed .nav-menu {
+  padding: 4px 0;
+}
+
+.menu-indicator {
+  position: absolute;
+  left: 12px;
+  width: 3px;
+  background: var(--primary-color);
   border-radius: 2px;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1;
+  transition: top 0.15s cubic-bezier(0.4, 0, 0.2, 1), 
+              height 0.15s cubic-bezier(0.4, 0, 0.2, 1), 
+              opacity 0.1s ease,
+              transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .menu-section {
   margin-top: 16px;
-  margin-bottom: 8px;
-  padding: 0 12px;
+  margin-bottom: 4px;
+  padding: 0 16px;
+  height: 20px;
+  display: flex;
+  align-items: center;
 }
 
 .menu-section:first-child {
-  margin-top: 0;
+  margin-top: 8px;
 }
 
 .menu-section-title {
-  font-size: 11px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.4);
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--sidebar-text-secondary);
+  letter-spacing: 0;
 }
 
 .menu-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  margin: 4px 0;
-  border-radius: 10px;
-  color: rgba(255, 255, 255, 0.7);
+  gap: 16px;
+  height: 40px;
+  padding: 0 12px;
+  margin: 2px 0;
+  border-radius: var(--radius-sm);
+  color: var(--sidebar-text);
   text-decoration: none;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background 0.1s ease;
   position: relative;
   overflow: hidden;
 }
 
 .menu-item.collapsed {
   justify-content: center;
-  padding: 12px;
+  padding: 0 16px;
   gap: 0;
 }
 
-.menu-item.collapsed {
-  justify-content: center;
-  padding: 12px;
-}
-
-.menu-item::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
-  border-radius: 0 3px 3px 0;
-  transform: scaleY(0);
-  transition: transform 0.3s ease;
-}
-
 .menu-item:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  background: var(--sidebar-hover-bg);
 }
 
 .menu-item.active {
-  background: linear-gradient(90deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.1) 100%);
-  color: #fff;
-}
-
-.menu-item.active::before {
-  transform: scaleY(1);
+  background: var(--sidebar-active-bg);
+  color: var(--primary-color);
 }
 
 .menu-item-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.05);
-  transition: all 0.3s ease;
-}
-
-.menu-item:hover .menu-item-icon {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.menu-item.active .menu-item-icon {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  flex-shrink: 0;
 }
 
 .menu-item-icon .el-icon {
@@ -364,10 +479,10 @@ const handleLogout = async () => {
 
 .menu-item-text {
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 400;
   white-space: nowrap;
   opacity: 1;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.15s ease;
   overflow: hidden;
 }
 
@@ -378,23 +493,17 @@ const handleLogout = async () => {
 }
 
 .sidebar-footer {
-  padding: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  padding: 8px;
+  border-top: 1px solid var(--sidebar-border);
 }
 
 .user-card {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  transition: all 0.3s ease;
-  height: 64px;
-  box-sizing: border-box;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
   cursor: pointer;
   position: relative;
 }
@@ -403,11 +512,10 @@ const handleLogout = async () => {
   justify-content: center;
   padding: 8px;
   gap: 0;
-  height: 52px;
 }
 
 .user-card:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--sidebar-hover-bg);
 }
 
 .avatar-wrapper {
@@ -415,25 +523,20 @@ const handleLogout = async () => {
   flex-shrink: 0;
 }
 
-.user-card .el-avatar {
-  flex-shrink: 0;
-}
-
 .collapse-icon {
   position: absolute;
   top: -4px;
   right: -4px;
-  width: 20px;
-  height: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  width: 16px;
+  height: 16px;
+  background: var(--primary-color);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
   transform: scale(0.8);
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+  transition: all 0.15s ease;
 }
 
 .user-card:hover .collapse-icon {
@@ -442,7 +545,7 @@ const handleLogout = async () => {
 }
 
 .collapse-icon .el-icon {
-  font-size: 12px;
+  font-size: 10px;
   color: #fff;
 }
 
@@ -452,24 +555,14 @@ const handleLogout = async () => {
   flex-direction: column;
   gap: 2px;
   min-width: 0;
-  opacity: 1;
-  transition: opacity 0.2s ease, width 0.3s ease, margin 0.3s ease;
   overflow: hidden;
-}
-
-.user-card.collapsed .user-info {
-  opacity: 0;
-  width: 0;
-  margin: 0;
-  padding: 0;
-  height: 0;
-  overflow: hidden;
+  transition: opacity 0.15s ease, width 0.15s ease;
 }
 
 .user-name {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
-  color: #fff;
+  color: var(--sidebar-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -477,48 +570,76 @@ const handleLogout = async () => {
 
 .user-role {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--sidebar-text-secondary);
 }
 
 .user-actions {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-xs);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--sidebar-text-secondary);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background 0.1s ease;
 }
 
 .user-actions:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background: var(--sidebar-hover-bg);
+  color: var(--sidebar-text);
 }
 
 .header {
-  background-color: #fff;
-  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+  background: var(--card-bg);
+  box-shadow: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
+  border-bottom: 1px solid var(--border-color);
+  height: 48px;
 }
 
-.header-breadcrumb {
+.header-left {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
 .current-page {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
-  color: #303133;
+  color: var(--text-primary);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.theme-toggle {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.1s ease;
+  color: var(--text-secondary);
+}
+
+.theme-toggle:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
 }
 
 .main {
-  background-color: #f0f2f5;
+  background: var(--bg-color);
+  padding: 20px;
 }
 </style>

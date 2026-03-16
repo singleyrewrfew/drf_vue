@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.db import models
 from django.db.models import Count, Sum
 from rest_framework import status, viewsets
 from rest_framework.decorators import action

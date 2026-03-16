@@ -1,11 +1,8 @@
 <template>
   <div class="stat-card" :class="[`stat-card-${type}`]">
-    <div class="stat-card-glow"></div>
     <div class="stat-card-content">
-      <div class="stat-icon-wrapper">
-        <div class="stat-icon">
-          <slot name="icon"></slot>
-        </div>
+      <div class="stat-icon">
+        <slot name="icon"></slot>
       </div>
       <div class="stat-info">
         <span class="stat-value">{{ value }}</span>
@@ -43,148 +40,92 @@ defineProps({
 <style scoped>
 .stat-card {
   position: relative;
-  padding: 24px;
-  border-radius: 16px;
-  background: #fff;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
   overflow: hidden;
   cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-}
-
-.stat-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: var(--gradient);
-  border-radius: 16px 16px 0 0;
-}
-
-.stat-card-glow {
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, var(--glow-color) 0%, transparent 70%);
-  opacity: 0;
-  transition: opacity 0.4s ease;
-  pointer-events: none;
-}
-
-.stat-card:hover .stat-card-glow {
-  opacity: 0.15;
+  transition: all 0.15s ease;
+  border: 1px solid var(--border-color);
 }
 
 .stat-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  border-color: var(--primary-color);
+  box-shadow: var(--shadow-sm);
 }
 
 .stat-card-content {
   display: flex;
   align-items: center;
-  gap: 20px;
-  position: relative;
-  z-index: 1;
-}
-
-.stat-icon-wrapper {
-  position: relative;
+  gap: 16px;
 }
 
 .stat-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 16px;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--gradient);
-  color: #fff;
-  font-size: 28px;
-  transition: transform 0.3s ease;
-  box-shadow: 0 8px 20px var(--shadow-color);
+  background: var(--icon-bg);
+  color: var(--icon-color);
+  flex-shrink: 0;
 }
 
-.stat-card:hover .stat-icon {
-  transform: scale(1.1) rotate(5deg);
+.stat-icon :deep(.el-icon) {
+  font-size: 22px;
 }
 
 .stat-info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
+  min-width: 0;
 }
 
 .stat-value {
-  font-size: 32px;
-  font-weight: 700;
-  color: #1a1a2e;
-  line-height: 1;
-  transition: color 0.3s ease;
-}
-
-.stat-card:hover .stat-value {
-  color: var(--text-color);
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.2;
 }
 
 .stat-label {
-  font-size: 14px;
-  color: #6b7280;
-  font-weight: 500;
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 400;
 }
 
 .stat-footer {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid #f0f0f0;
-  font-size: 13px;
-  color: #9ca3af;
-  position: relative;
-  z-index: 1;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-light);
+  font-size: 12px;
+  color: var(--text-tertiary);
 }
 
-/* Primary - Blue */
 .stat-card-primary {
-  --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --glow-color: rgba(102, 126, 234, 0.4);
-  --shadow-color: rgba(102, 126, 234, 0.35);
-  --text-color: #667eea;
+  --icon-bg: var(--primary-bg);
+  --icon-color: var(--primary-color);
 }
 
-/* Success - Green */
 .stat-card-success {
-  --gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-  --glow-color: rgba(17, 153, 142, 0.4);
-  --shadow-color: rgba(17, 153, 142, 0.35);
-  --text-color: #11998e;
+  --icon-bg: var(--success-bg);
+  --icon-color: var(--success-color);
 }
 
-/* Warning - Orange */
 .stat-card-warning {
-  --gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  --glow-color: rgba(240, 147, 251, 0.4);
-  --shadow-color: rgba(240, 147, 251, 0.35);
-  --text-color: #f5576c;
+  --icon-bg: var(--warning-bg);
+  --icon-color: var(--warning-color);
 }
 
-/* Danger - Red */
 .stat-card-danger {
-  --gradient: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
-  --glow-color: rgba(255, 107, 107, 0.4);
-  --shadow-color: rgba(255, 107, 107, 0.35);
-  --text-color: #ff6b6b;
+  --icon-bg: var(--danger-bg);
+  --icon-color: var(--danger-color);
 }
 
-/* Info - Cyan */
 .stat-card-info {
-  --gradient: linear-gradient(135deg, #00c6fb 0%, #005bea 100%);
-  --glow-color: rgba(0, 198, 251, 0.4);
-  --shadow-color: rgba(0, 198, 251, 0.35);
-  --text-color: #005bea;
+  --icon-bg: var(--info-bg);
+  --icon-color: var(--info-color);
 }
 </style>

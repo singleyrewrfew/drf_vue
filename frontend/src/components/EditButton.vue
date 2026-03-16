@@ -25,68 +25,33 @@ defineProps({
   gap: 4px;
   padding: 4px 10px;
   border: none;
-  border-radius: 6px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: var(--radius-xs);
+  background: var(--primary-color);
   color: #fff;
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.35);
-  position: relative;
-  overflow: hidden;
+  transition: all 0.15s ease;
   vertical-align: middle;
-}
-
-.edit-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.2),
-    transparent
-  );
-  transition: left 0.5s ease;
-}
-
-.edit-btn:hover::before {
-  left: 100%;
+  position: relative;
+  z-index: 1;
 }
 
 .edit-btn:hover {
-  filter: brightness(1.1);
-  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.5);
+  background: var(--primary-hover);
 }
 
 .edit-btn:active {
-  filter: brightness(0.95);
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.35);
+  background: var(--primary-active);
 }
 
 .edit-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
 }
 
 .edit-icon {
   width: 12px;
   height: 12px;
-  transition: transform 0.3s ease;
-}
-
-.edit-btn:hover .edit-icon {
-  transform: rotate(-15deg) scale(1.1);
-}
-
-.edit-text {
-  position: relative;
-  z-index: 1;
 }
 </style>

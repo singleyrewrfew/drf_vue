@@ -30,67 +30,37 @@ defineProps({
   gap: 6px;
   padding: 8px 16px;
   border: none;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: var(--radius-sm);
+  background: var(--primary-color);
   color: #fff;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.35);
-  position: relative;
-  overflow: hidden;
+  transition: all 0.15s ease;
   user-select: none;
-}
-
-.search-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.2),
-    transparent
-  );
-  transition: left 0.6s ease;
-}
-
-.search-btn:hover::before {
-  left: 100%;
+  position: relative;
+  z-index: 1;
 }
 
 .search-btn:hover {
-  filter: brightness(1.1);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.45);
+  background: var(--primary-hover);
 }
 
 .search-btn:active {
-  filter: brightness(0.95);
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.35);
+  background: var(--primary-active);
 }
 
 .search-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
-  box-shadow: none;
+}
+
+.search-btn:disabled:hover {
+  background: var(--primary-color);
 }
 
 .search-icon {
   width: 14px;
   height: 14px;
-  transition: transform 0.3s ease;
-}
-
-.search-btn:hover .search-icon {
-  transform: scale(1.1);
-}
-
-.search-text {
-  position: relative;
-  z-index: 1;
 }
 </style>

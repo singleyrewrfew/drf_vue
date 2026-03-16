@@ -196,11 +196,11 @@ onMounted(() => {
 
 <style scoped>
 .dashboard {
-  padding: 20px;
+  padding: 0;
 }
 
 .stat-row {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .card-header {
@@ -211,22 +211,22 @@ onMounted(() => {
 
 .quick-actions {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
 }
 
 .system-info {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .info-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid #ebeef5;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-light);
 }
 
 .info-item:last-child {
@@ -234,13 +234,13 @@ onMounted(() => {
 }
 
 .info-label {
-  color: #909399;
-  font-size: 14px;
+  color: var(--text-secondary);
+  font-size: 13px;
 }
 
 .info-value {
-  color: #303133;
-  font-size: 14px;
+  color: var(--text-primary);
+  font-size: 13px;
   font-weight: 500;
 }
 

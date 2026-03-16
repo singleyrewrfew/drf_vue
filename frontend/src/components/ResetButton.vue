@@ -29,46 +29,35 @@ defineProps({
   justify-content: center;
   gap: 6px;
   padding: 8px 16px;
-  border: 1px solid #dcdfe6;
-  border-radius: 8px;
-  background: #fff;
-  color: #606266;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--card-bg);
+  color: var(--text-primary);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
+  transition: all 0.15s ease;
   user-select: none;
+  position: relative;
+  z-index: 1;
 }
 
 .reset-btn:hover {
-  color: #667eea;
-  border-color: #667eea;
-  background: #f5f7ff;
+  background: var(--bg-secondary);
+  border-color: var(--border-dark);
 }
 
 .reset-btn:active {
-  background: #eef0ff;
+  background: var(--bg-tertiary);
 }
 
 .reset-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .reset-icon {
   width: 14px;
   height: 14px;
-  transition: transform 0.3s ease;
-}
-
-.reset-btn:hover .reset-icon {
-  transform: rotate(-30deg);
-}
-
-.reset-text {
-  position: relative;
-  z-index: 1;
 }
 </style>
