@@ -38,51 +38,52 @@ const scrollToBottom = () => {
 <style scoped>
 .scroll-buttons {
   position: fixed;
-  right: 30px;
-  bottom: 30px;
+  right: 24px;
+  bottom: 24px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   z-index: 1000;
 }
 
 .scroll-btn {
-  width: 48px;
-  height: 48px;
-  font-size: 20px;
+  width: 40px;
+  height: 40px;
+  font-size: 16px;
   padding: 0;
   margin: 0;
-  border-radius: 50%;
-  background: var(--primary-gradient);
-  border: none;
-  color: #fff;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-  transition: all 0.3s ease;
+  border-radius: var(--radius-sm);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
 }
 
 .scroll-btn:hover {
-  transform: translateY(-4px) scale(1.1);
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
-  background: var(--primary-gradient);
-  color: #fff;
+  background: var(--primary-bg);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  box-shadow: var(--shadow-md);
 }
 
 .scroll-btn:active {
-  transform: translateY(-2px) scale(1.05);
+  transform: scale(0.95);
 }
 
 .scroll-btn .el-icon {
-  transition: transform 0.3s ease;
+  transition: transform var(--transition-fast);
 }
 
 .scroll-top:hover .el-icon {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
 }
 
 .scroll-bottom:hover .el-icon {
-  transform: translateY(3px);
+  transform: translateY(2px);
 }
 </style>

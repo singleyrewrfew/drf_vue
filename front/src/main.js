@@ -8,6 +8,9 @@ import App from './App.vue'
 import router from './router'
 import './assets/styles/main.css'
 
+const savedTheme = localStorage.getItem('theme') || 'light'
+document.documentElement.setAttribute('data-theme', savedTheme)
+
 const app = createApp(App)
 
 app.use(createPinia())

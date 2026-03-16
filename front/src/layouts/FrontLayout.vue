@@ -20,21 +20,19 @@
             <span>文章</span>
           </router-link>
           
-          <el-dropdown v-if="categories.length" trigger="hover" placement="bottom-start">
-            <div class="nav-item">
-              <el-icon><Folder /></el-icon>
-              <span>分类</span>
-              <el-icon class="arrow"><ArrowDown /></el-icon>
-            </div>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item v-for="cat in categories" :key="cat.id" @click="$router.push(`/category/${cat.slug || cat.id}`)">
-                  <el-icon><FolderOpened /></el-icon>
-                  {{ cat.name }}
-                </el-dropdown-item>
-              </el-dropdown-menu>
+          <WinDropdown 
+            v-if="categories.length" 
+            :items="categoryItems"
+            @select="handleCategorySelect"
+          >
+            <template #trigger>
+              <div class="nav-item">
+                <el-icon><Folder /></el-icon>
+                <span>分类</span>
+                <el-icon class="arrow"><ArrowDown /></el-icon>
+              </div>
             </template>
-          </el-dropdown>
+          </WinDropdown>
         </nav>
         
         <div class="search-box">
@@ -48,24 +46,25 @@
         </div>
         
         <div class="user-area">
+          <button class="theme-toggle" @click="themeStore.toggleTheme()" :title="themeStore.theme === 'light' ? '切换到深色模式' : '切换到浅色模式'">
+            <el-icon class="theme-icon" :class="{ 'rotate': themeStore.theme === 'dark' }">
+              <Sunny v-if="themeStore.theme === 'dark'" />
+              <Moon v-else />
+            </el-icon>
+          </button>
           <template v-if="userStore.isLoggedIn">
-            <el-dropdown trigger="click">
-              <div class="user-info">
-                <el-avatar :size="36" :src="getAvatarUrl(userStore.user?.avatar)">{{ userStore.user?.username?.charAt(0).toUpperCase() }}</el-avatar>
-                <span class="username">{{ userStore.user?.username }}</span>
-                <el-icon class="dropdown-arrow"><ArrowDown /></el-icon>
-              </div>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item @click="$router.push('/profile')">
-                    <el-icon><User /></el-icon>个人中心
-                  </el-dropdown-item>
-                  <el-dropdown-item divided @click="handleLogout">
-                    <el-icon><SwitchButton /></el-icon>退出登录
-                  </el-dropdown-item>
-                </el-dropdown-menu>
+            <WinDropdown 
+              :items="userMenuItems"
+              @select="handleUserMenuSelect"
+            >
+              <template #trigger>
+                <div class="user-info">
+                  <el-avatar :size="36" :src="getAvatarUrl(userStore.user?.avatar)">{{ userStore.user?.username?.charAt(0).toUpperCase() }}</el-avatar>
+                  <span class="username">{{ userStore.user?.username }}</span>
+                  <el-icon class="dropdown-arrow"><ArrowDown /></el-icon>
+                </div>
               </template>
-            </el-dropdown>
+            </WinDropdown>
           </template>
           <template v-else>
             <el-button type="default" @click="$router.push('/login')">登录</el-button>
@@ -146,17 +145,44 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { HomeFilled, Document, Folder, FolderOpened, Search, User, SwitchButton, ArrowDown } from '@element-plus/icons-vue'
+import { HomeFilled, Document, Folder, FolderOpened, Search, User, SwitchButton, ArrowDown, Sunny, Moon } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
+import { useThemeStore } from '@/stores/theme'
 import { getCategories } from '@/api/content'
+import WinDropdown from '@/components/WinDropdown.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
+const themeStore = useThemeStore()
 
 const searchKeyword = ref('')
 const categories = ref([])
+
+const categoryItems = computed(() => 
+  categories.value.map(cat => ({
+    label: cat.name,
+    value: cat.slug || cat.id
+  }))
+)
+
+const handleCategorySelect = (item) => {
+  router.push(`/category/${item.value}`)
+}
+
+const userMenuItems = [
+  { label: '个人中心', value: 'profile' },
+  { label: '退出登录', value: 'logout' }
+]
+
+const handleUserMenuSelect = (item) => {
+  if (item.value === 'profile') {
+    router.push('/profile')
+  } else if (item.value === 'logout') {
+    handleLogout()
+  }
+}
 
 const getAvatarUrl = (avatar) => {
   if (!avatar) return ''
@@ -198,10 +224,10 @@ onMounted(() => {
 }
 
 .header {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 1px 0 var(--border-light);
+  background: var(--bg-primary);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--border-light);
   position: sticky;
   top: 0;
   z-index: var(--z-sticky);
@@ -234,20 +260,19 @@ onMounted(() => {
 .logo-icon {
   width: 44px;
   height: 44px;
-  background: var(--primary-gradient);
-  border-radius: var(--radius-md);
+  background: var(--primary-color);
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
   font-size: 22px;
   font-weight: bold;
-  box-shadow: var(--shadow-primary);
-  transition: all var(--transition-normal);
+  transition: all var(--transition-fast);
 }
 
 .logo:hover .logo-icon {
-  transform: rotate(-5deg) scale(1.05);
+  transform: scale(1.02);
 }
 
 .logo-text {
@@ -258,10 +283,7 @@ onMounted(() => {
 .logo-title {
   font-size: 20px;
   font-weight: 700;
-  background: var(--primary-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--primary-color);
   line-height: 1.2;
 }
 
@@ -280,28 +302,14 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 10px 16px;
+  padding: 8px 12px;
   color: var(--text-secondary);
   text-decoration: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   transition: all var(--transition-fast);
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
-  position: relative;
-}
-
-.nav-item::after {
-  content: '';
-  position: absolute;
-  bottom: 4px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 2px;
-  background: var(--primary-gradient);
-  border-radius: var(--radius-full);
-  transition: width var(--transition-normal);
 }
 
 .nav-item .arrow {
@@ -319,18 +327,10 @@ onMounted(() => {
   background: var(--primary-bg);
 }
 
-.nav-item:hover::after {
-  width: 20px;
-}
-
 .nav-item.router-link-exact-active {
   color: var(--primary-color);
   background: var(--primary-bg);
   font-weight: 600;
-}
-
-.nav-item.router-link-exact-active::after {
-  width: 20px;
 }
 
 .search-box {
@@ -339,20 +339,23 @@ onMounted(() => {
 }
 
 .search-box :deep(.el-input__wrapper) {
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-sm);
   background: var(--bg-secondary);
   box-shadow: none;
-  padding: 4px 16px;
+  padding: 4px 12px;
+  border: 1px solid transparent;
   transition: all var(--transition-fast);
 }
 
 .search-box :deep(.el-input__wrapper:hover) {
-  background: var(--bg-tertiary);
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
 }
 
 .search-box :deep(.el-input__wrapper.is-focus) {
-  background: #fff;
-  box-shadow: 0 0 0 2px var(--primary-color), var(--shadow-md);
+  background: var(--bg-primary);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 1px var(--primary-color);
 }
 
 .search-box :deep(.el-input__inner) {
@@ -370,21 +373,50 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
+.theme-toggle {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  color: var(--text-secondary);
+}
+
+.theme-toggle:hover {
+  background: var(--primary-bg);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.theme-icon {
+  font-size: 18px;
+  transition: all var(--transition-normal);
+}
+
+.theme-icon.rotate {
+  transform: rotate(180deg);
+}
+
 .user-info {
   display: flex;
   align-items: center;
   gap: 10px;
   cursor: pointer;
   padding: 6px 12px 6px 6px;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-sm);
   transition: all var(--transition-fast);
   background: transparent;
 }
 
 .user-info .el-avatar {
   border-radius: var(--radius-sm) !important;
-  border: 2px solid transparent;
-  transition: border-color var(--transition-fast);
+  border: none;
+  transition: all var(--transition-fast);
 }
 
 .user-info:hover {
@@ -392,7 +424,7 @@ onMounted(() => {
 }
 
 .user-info:hover .el-avatar {
-  border-color: var(--primary-light);
+  box-shadow: 0 0 0 2px var(--primary-light);
 }
 
 .username {
@@ -418,23 +450,24 @@ onMounted(() => {
 
 .fade-slide-enter-active,
 .fade-slide-leave-active {
-  transition: all 0.3s ease;
+  transition: all 0.15s ease;
 }
 
 .fade-slide-enter-from {
   opacity: 0;
-  transform: translateY(20px);
+  transform: translateY(8px);
 }
 
 .fade-slide-leave-to {
   opacity: 0;
-  transform: translateY(-20px);
+  transform: translateY(-8px);
 }
 
 .footer {
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-  color: #fff;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   margin-top: auto;
+  border-top: 1px solid var(--border-color);
 }
 
 .footer-inner {
@@ -448,7 +481,7 @@ onMounted(() => {
   grid-template-columns: 1.5fr 1fr 1fr;
   gap: 60px;
   padding-bottom: 40px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .footer-brand {
@@ -467,17 +500,16 @@ onMounted(() => {
 .logo-icon-small {
   width: 36px;
   height: 36px;
-  background: var(--primary-gradient);
+  background: var(--primary-color);
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 18px;
-  box-shadow: var(--shadow-primary);
 }
 
 .footer-brand p {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
   font-size: 14px;
   line-height: 1.7;
   margin-bottom: 20px;
@@ -491,19 +523,18 @@ onMounted(() => {
 .social-link {
   width: 40px;
   height: 40px;
-  border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
   transition: all var(--transition-fast);
 }
 
 .social-link:hover {
-  background: var(--primary-gradient);
+  background: var(--primary-color);
   color: #fff;
-  transform: translateY(-2px);
 }
 
 .footer-links h4,
@@ -511,7 +542,7 @@ onMounted(() => {
   font-size: 15px;
   font-weight: 600;
   margin-bottom: 20px;
-  color: #fff;
+  color: var(--text-primary);
   letter-spacing: 0.5px;
 }
 
@@ -519,7 +550,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
   text-decoration: none;
   padding: 8px 0;
   font-size: 14px;
@@ -527,8 +558,7 @@ onMounted(() => {
 }
 
 .footer-links a:hover {
-  color: #fff;
-  transform: translateX(4px);
+  color: var(--primary-color);
 }
 
 .footer-links a .el-icon {
@@ -544,7 +574,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
   font-size: 14px;
   margin-bottom: 12px;
 }
@@ -559,7 +589,7 @@ onMounted(() => {
 }
 
 .footer-bottom p {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-tertiary);
   font-size: 13px;
 }
 

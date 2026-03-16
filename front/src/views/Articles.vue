@@ -11,7 +11,7 @@
 
       <el-row :gutter="24">
         <el-col :span="18">
-          <div class="article-list" v-loading="loading">
+          <div class="article-list">
             <template v-if="loading">
               <div v-for="i in pageSize" :key="'skeleton-' + i" class="article-item skeleton">
                 <div class="article-cover">
@@ -289,6 +289,7 @@ onMounted(() => {
 .articles-page {
   padding: 32px 0;
   min-height: calc(100vh - var(--header-height) - 200px);
+  background: var(--bg-color);
 }
 
 .container {
@@ -299,10 +300,10 @@ onMounted(() => {
 
 .page-header {
   margin-bottom: 32px;
-  padding: 28px 32px;
-  background: #fff;
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-sm);
+  padding: 24px 28px;
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
 }
 
 .page-header h1 {
@@ -336,23 +337,23 @@ onMounted(() => {
 }
 
 .article-item {
-  background: #fff;
+  background: var(--card-bg);
   border-radius: var(--radius-lg);
   padding: 24px;
   display: flex;
   gap: 24px;
   cursor: pointer;
-  transition: all var(--transition-normal);
-  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
+  border: 1px solid var(--border-light);
   position: relative;
   overflow: hidden;
-  animation: fadeInUp 0.5s ease-out backwards;
+  animation: fadeInUp 0.15s ease-out backwards;
 }
 
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -360,25 +361,9 @@ onMounted(() => {
   }
 }
 
-.article-item::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 4px;
-  height: 100%;
-  background: var(--primary-gradient);
-  opacity: 0;
-  transition: opacity var(--transition-fast);
-}
-
 .article-item:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateX(4px);
-}
-
-.article-item:hover::before {
-  opacity: 1;
+  border-color: var(--primary-color);
+  box-shadow: var(--shadow-md);
 }
 
 .article-cover {
@@ -486,13 +471,17 @@ onMounted(() => {
   gap: 6px;
   padding: 4px 10px;
   background: var(--bg-secondary);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-sm);
   transition: all var(--transition-fast);
 }
 
 .article-meta span:hover {
   background: var(--primary-bg);
   color: var(--primary-color);
+}
+
+[data-theme="dark"] .article-meta span {
+  background: var(--bg-tertiary);
 }
 
 .article-meta span .el-icon {
@@ -508,10 +497,10 @@ onMounted(() => {
 }
 
 .sidebar-card {
-  background: #fff;
+  background: var(--card-bg);
   border-radius: var(--radius-lg);
   padding: 24px;
-  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-light);
 }
 
 .sidebar-card h3 {
@@ -540,8 +529,8 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 14px;
-  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all var(--transition-fast);
   font-size: 14px;
@@ -551,11 +540,10 @@ onMounted(() => {
 .category-item:hover {
   background: var(--primary-bg);
   color: var(--primary-color);
-  transform: translateX(4px);
 }
 
 .category-item.active {
-  background: var(--primary-gradient);
+  background: var(--primary-color);
   color: #fff;
 }
 
@@ -574,16 +562,14 @@ onMounted(() => {
 .tag-item {
   cursor: pointer;
   transition: all var(--transition-fast);
-  border-radius: var(--radius-full);
-  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
 }
 
 .tag-item:hover {
-  background: var(--primary-gradient) !important;
+  background: var(--primary-color) !important;
   color: #fff !important;
   border-color: transparent !important;
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-primary);
 }
 
 .author-list {
@@ -596,15 +582,14 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 12px 14px;
-  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all var(--transition-fast);
 }
 
 .author-item:hover {
   background: var(--primary-bg);
-  transform: translateX(4px);
 }
 
 .author-item.active {
@@ -614,16 +599,15 @@ onMounted(() => {
 .author-avatar {
   width: 44px;
   height: 44px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   overflow: hidden;
-  background: var(--primary-gradient);
+  background: var(--primary-color);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
   font-weight: 600;
   font-size: 16px;
-  box-shadow: var(--shadow-primary);
 }
 
 .author-avatar img {
@@ -664,7 +648,7 @@ onMounted(() => {
 }
 
 .pagination-container :deep(.el-pager li.is-active) {
-  background: var(--primary-gradient) !important;
+  background: var(--primary-color) !important;
   color: #fff !important;
   border: none !important;
 }

@@ -3,8 +3,29 @@
     <div class="container">
       <el-row :gutter="24">
         <el-col :span="17">
-          <div class="article-main" v-loading="loading">
-            <article class="article">
+          <div class="article-main">
+            <template v-if="loading">
+              <div class="article-skeleton">
+                <el-skeleton animated>
+                  <template #template>
+                    <el-skeleton-item variant="h1" style="width: 80%; margin-bottom: 24px;" />
+                    <div style="display: flex; gap: 16px; margin-bottom: 24px;">
+                      <el-skeleton-item variant="circle" style="width: 40px; height: 40px;" />
+                      <div style="flex: 1;">
+                        <el-skeleton-item variant="text" style="width: 30%; margin-bottom: 8px;" />
+                        <el-skeleton-item variant="text" style="width: 20%;" />
+                      </div>
+                    </div>
+                    <el-skeleton-item variant="image" style="width: 100%; height: 300px; margin-bottom: 24px;" />
+                    <el-skeleton-item variant="text" style="width: 100%; margin-bottom: 12px;" />
+                    <el-skeleton-item variant="text" style="width: 100%; margin-bottom: 12px;" />
+                    <el-skeleton-item variant="text" style="width: 80%;" />
+                  </template>
+                </el-skeleton>
+              </div>
+            </template>
+            <template v-else>
+              <article class="article">
               <header class="article-header">
                 <div class="article-category" v-if="article.category_name">
                   <el-tag type="success" effect="plain" @click="handleCategoryClick">{{ article.category_name }}</el-tag>
@@ -45,8 +66,9 @@
                 <el-skeleton :rows="10" animated />
               </div>
             </article>
+            </template>
 
-            <div class="article-nav">
+            <div v-if="prevArticle || nextArticle" class="article-nav">
               <el-button v-if="prevArticle" text @click="$router.push(getArticleUrl(prevArticle))">
                 <el-icon><ArrowLeft /></el-icon> 上一篇
               </el-button>
@@ -820,6 +842,8 @@ onUnmounted(() => {
 <style scoped>
 .article-page {
   padding: 32px 0;
+  background: var(--bg-color);
+  min-height: calc(100vh - var(--header-height));
 }
 
 .container {
@@ -829,17 +853,21 @@ onUnmounted(() => {
 }
 
 .article-main {
-  background: #fff;
-  border-radius: var(--radius-xl);
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
   padding: 40px;
-  box-shadow: var(--shadow-sm);
-  animation: fadeInUp 0.5s ease-out;
+  border: 1px solid var(--border-light);
+  animation: fadeInUp 0.15s ease-out;
+}
+
+.article-skeleton {
+  padding: 24px 0;
 }
 
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -858,15 +886,17 @@ onUnmounted(() => {
 }
 
 .article-category .el-tag {
-  border-radius: var(--radius-full);
-  padding: 6px 16px;
+  border-radius: var(--radius-sm);
+  padding: 6px 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all var(--transition-fast);
 }
 
 .article-category .el-tag:hover {
-  transform: scale(1.05);
+  background: var(--primary-color);
+  color: #fff;
+  border-color: var(--primary-color);
 }
 
 .article-header h1 {
@@ -889,10 +919,14 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 12px 16px;
+  padding: 10px 14px;
   background: var(--bg-secondary);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-sm);
   transition: all var(--transition-fast);
+}
+
+[data-theme="dark"] .author-info {
+  background: var(--bg-tertiary);
 }
 
 .author-info:hover {
@@ -900,8 +934,8 @@ onUnmounted(() => {
 }
 
 .author-info .el-avatar {
-  border-radius: var(--radius-md) !important;
-  border: 2px solid var(--border-light);
+  border-radius: var(--radius-sm) !important;
+  border: none;
 }
 
 .author-detail {
@@ -931,9 +965,13 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 14px;
+  padding: 8px 12px;
   background: var(--bg-secondary);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-sm);
+}
+
+[data-theme="dark"] .article-stats span {
+  background: var(--bg-tertiary);
 }
 
 .article-stats span .el-icon {
@@ -948,16 +986,15 @@ onUnmounted(() => {
 
 .article-tags .el-tag {
   cursor: pointer;
-  border-radius: var(--radius-full);
-  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
   transition: all var(--transition-fast);
 }
 
 .article-tags .el-tag:hover {
-  background: var(--primary-gradient) !important;
+  background: var(--primary-color) !important;
   color: #fff !important;
   border-color: transparent !important;
-  transform: translateY(-2px);
 }
 
 .article-cover {
@@ -1033,11 +1070,6 @@ onUnmounted(() => {
   transition: all var(--transition-fast);
 }
 
-.comment-form-wrapper:focus-within {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px var(--primary-bg);
-}
-
 .comment-form-wrapper .el-avatar {
   border-radius: var(--radius-md) !important;
   border: 2px solid var(--border-light);
@@ -1054,7 +1086,7 @@ onUnmounted(() => {
 }
 
 .comment-textarea :deep(.el-textarea__inner) {
-  background: #fff;
+  background: var(--bg-primary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   padding: 14px;
@@ -1065,7 +1097,6 @@ onUnmounted(() => {
 
 .comment-textarea :deep(.el-textarea__inner:focus) {
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px var(--primary-bg);
 }
 
 .comment-form-footer {
@@ -1272,7 +1303,7 @@ onUnmounted(() => {
 .reply-form {
   margin-top: 14px;
   padding: 18px;
-  background: #fff;
+  background: var(--card-bg);
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
 }
@@ -1282,6 +1313,7 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
+  color: var(--text-primary);
 }
 
 .reply-target {
@@ -1293,10 +1325,56 @@ onUnmounted(() => {
   margin-bottom: 10px;
 }
 
+.reply-form :deep(.el-textarea__inner) {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--radius-sm) !important;
+  color: var(--text-primary) !important;
+  padding: 12px !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+  transition: all var(--transition-fast) !important;
+}
+
+.reply-form :deep(.el-textarea__inner:focus) {
+  border-color: var(--primary-color) !important;
+}
+
+.reply-form :deep(.el-textarea__inner::placeholder) {
+  color: var(--text-tertiary) !important;
+}
+
+[data-theme="dark"] .reply-form {
+  background: var(--bg-secondary);
+}
+
+[data-theme="dark"] .reply-form :deep(.el-textarea__inner) {
+  background: var(--bg-tertiary) !important;
+}
+
 .reply-form-actions {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   gap: 10px;
+}
+
+.reply-form-actions .el-button--primary {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.reply-form-actions .el-button--primary:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+.reply-form-header .el-button.is-link {
+  color: var(--text-secondary);
+}
+
+.reply-form-header .el-button.is-link:hover {
+  color: var(--primary-color);
 }
 
 .reply-tip {
@@ -1347,7 +1425,7 @@ onUnmounted(() => {
   gap: 12px;
   padding: 14px;
   margin-bottom: 10px;
-  background: #fff;
+  background: var(--card-bg);
   border-radius: var(--radius-md);
   border: 1px solid var(--border-light);
   transition: all var(--transition-fast);
@@ -1422,15 +1500,16 @@ onUnmounted(() => {
 }
 
 .sidebar-card {
-  background: #fff;
+  background: var(--card-bg);
   border-radius: var(--radius-lg);
   padding: 24px;
-  box-shadow: var(--shadow-sm);
-  transition: all var(--transition-normal);
+  border: 1px solid var(--border-light);
+  transition: all var(--transition-fast);
 }
 
 .sidebar-card:hover {
-  box-shadow: var(--shadow-md);
+  border-color: rgba(0, 120, 212, 0.2);
+  box-shadow: var(--shadow-sm);
 }
 
 .sidebar-title {
@@ -1596,14 +1675,18 @@ onUnmounted(() => {
   display: flex;
   gap: 12px;
   margin-bottom: 24px;
-  background: #f7f8fa;
+  background: var(--bg-secondary);
   padding: 16px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+[data-theme="dark"] .dialog-comment-item {
+  background: var(--bg-tertiary);
 }
 
 .dialog-comment-item .el-avatar {
-  border-radius: 4px !important;
+  border-radius: var(--radius-sm) !important;
 }
 
 .dialog-comment-body {
@@ -1625,18 +1708,18 @@ onUnmounted(() => {
 
 .dialog-comment-author {
   font-weight: 600;
-  color: #303133;
+  color: var(--text-primary);
   font-size: 15px;
 }
 
 .dialog-comment-time {
   font-size: 13px;
-  color: #8590a6;
+  color: var(--text-tertiary);
 }
 
 .dialog-comment-text {
   font-size: 15px;
-  color: #1a1a1a;
+  color: var(--text-primary);
   line-height: 1.7;
 }
 
@@ -1651,17 +1734,17 @@ onUnmounted(() => {
   align-items: center;
   gap: 4px;
   font-size: 13px;
-  color: #8590a6;
+  color: var(--text-tertiary);
   cursor: pointer;
-  transition: color 0.2s;
+  transition: color var(--transition-fast);
 }
 
 .dialog-action-btn:hover {
-  color: #409eff;
+  color: var(--primary-color);
 }
 
 .dialog-action-btn.liked {
-  color: #409eff;
+  color: var(--primary-color);
 }
 
 .dialog-action-btn.small {
@@ -1671,9 +1754,9 @@ onUnmounted(() => {
 .dialog-reply-form {
   margin-top: 12px;
   padding: 16px;
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 8px;
-  border: 1px solid #e8e8e8;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
 }
 
 .dialog-reply-form-header {
@@ -1684,12 +1767,39 @@ onUnmounted(() => {
 }
 
 .dialog-reply-target {
-  color: #409eff;
+  color: var(--primary-color);
   font-weight: 500;
 }
 
 .dialog-reply-form .el-textarea {
   margin-bottom: 8px;
+}
+
+.dialog-reply-form :deep(.el-textarea__inner) {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--radius-sm) !important;
+  color: var(--text-primary) !important;
+  padding: 12px !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+  transition: all var(--transition-fast) !important;
+}
+
+.dialog-reply-form :deep(.el-textarea__inner:focus) {
+  border-color: var(--primary-color) !important;
+}
+
+.dialog-reply-form :deep(.el-textarea__inner::placeholder) {
+  color: var(--text-tertiary) !important;
+}
+
+[data-theme="dark"] .dialog-reply-form {
+  background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .dialog-reply-form :deep(.el-textarea__inner) {
+  background: var(--bg-secondary) !important;
 }
 
 .dialog-reply-form-actions {
@@ -1700,7 +1810,7 @@ onUnmounted(() => {
 
 .dialog-reply-tip {
   font-size: 12px;
-  color: #8590a6;
+  color: var(--text-tertiary);
 }
 
 .dialog-reply-section {
@@ -1712,25 +1822,30 @@ onUnmounted(() => {
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: #f0f0f0;
-  color: #666;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
   font-size: 12px;
   cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.2s;
-  border: 1px solid #e0e0e0;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  border: 1px solid var(--border-color);
   font-weight: 500;
 }
 
 .dialog-reply-toggle:hover {
-  background: #e0e0e0;
-  border-color: #d0d0d0;
+  background: var(--primary-bg);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
 }
 
 .dialog-reply-toggle .el-icon {
   font-size: 16px;
-  color: #666;
-  transition: transform 0.3s;
+  color: var(--text-secondary);
+  transition: transform var(--transition-normal);
+}
+
+[data-theme="dark"] .dialog-reply-toggle {
+  background: var(--bg-tertiary);
 }
 
 .dialog-reply-toggle .el-icon.rotated {
@@ -1747,9 +1862,13 @@ onUnmounted(() => {
   gap: 10px;
   padding: 12px;
   margin-bottom: 8px;
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 6px;
-  border: 1px solid #f0f2f5;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+}
+
+[data-theme="dark"] .dialog-reply-item {
+  background: var(--bg-tertiary);
 }
 
 .dialog-reply-item .el-avatar {
@@ -1773,18 +1892,18 @@ onUnmounted(() => {
 
 .dialog-reply-author {
   font-weight: 600;
-  color: #303133;
+  color: var(--text-primary);
   font-size: 14px;
 }
 
 .dialog-reply-time {
   font-size: 12px;
-  color: #8590a6;
+  color: var(--text-tertiary);
 }
 
 .dialog-reply-text {
   font-size: 14px;
-  color: #1a1a1a;
+  color: var(--text-primary);
   line-height: 1.6;
 }
 
@@ -1795,7 +1914,7 @@ onUnmounted(() => {
 }
 
 .dialog-reply-arrow {
-  color: #8590a6;
+  color: var(--text-tertiary);
   font-size: 12px;
 }
 </style>
@@ -1834,7 +1953,7 @@ onUnmounted(() => {
   left: 0;
   width: 60px;
   height: 3px;
-  background: var(--primary-gradient);
+  background: var(--primary-color);
   border-radius: 2px;
 }
 
@@ -1852,7 +1971,7 @@ onUnmounted(() => {
   left: 0;
   width: 40px;
   height: 3px;
-  background: var(--primary-gradient);
+  background: var(--primary-color);
   border-radius: 2px;
 }
 
@@ -1987,7 +2106,7 @@ onUnmounted(() => {
 }
 
 .markdown-body th {
-  background: var(--primary-gradient);
+  background: var(--primary-color);
   color: #fff;
   font-weight: 600;
 }

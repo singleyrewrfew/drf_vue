@@ -142,6 +142,7 @@ const handleLogin = async () => {
   justify-content: center;
   position: relative;
   overflow: hidden;
+  background: var(--bg-color);
 }
 
 .bg-animation {
@@ -159,7 +160,7 @@ const handleLogin = async () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  background: linear-gradient(135deg, #0078D4 0%, #106EBE 50%, #005A9E 100%);
   background-size: 400% 400%;
   animation: gradient 15s ease infinite;
 }
@@ -247,19 +248,20 @@ const handleLogin = async () => {
 }
 
 .login-card {
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--card-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   padding: 40px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  animation: fadeInUp 0.6s ease-out;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-lg);
+  animation: fadeInUp 0.15s ease-out;
 }
 
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -282,15 +284,14 @@ const handleLogin = async () => {
 .logo-icon {
   width: 56px;
   height: 56px;
-  background: var(--primary-gradient);
-  border-radius: var(--radius-lg);
+  background: var(--primary-color);
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
   font-size: 28px;
   font-weight: bold;
-  box-shadow: var(--shadow-primary-lg);
 }
 
 .login-header h2 {
@@ -316,20 +317,20 @@ const handleLogin = async () => {
 }
 
 .login-form :deep(.el-input__wrapper) {
-  border-radius: var(--radius-md);
-  padding: 4px 16px;
+  border-radius: var(--radius-sm);
+  padding: 4px 12px;
   box-shadow: none;
   border: 1px solid var(--border-color);
   transition: all var(--transition-fast);
 }
 
 .login-form :deep(.el-input__wrapper:hover) {
-  border-color: var(--primary-light);
+  border-color: var(--border-dark);
 }
 
 .login-form :deep(.el-input__wrapper.is-focus) {
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px var(--primary-bg);
+  box-shadow: 0 0 0 1px var(--primary-color);
 }
 
 .remember-row {
@@ -357,7 +358,7 @@ const handleLogin = async () => {
   height: 48px;
   font-size: 16px;
   font-weight: 600;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   letter-spacing: 2px;
 }
 
@@ -391,9 +392,9 @@ const handleLogin = async () => {
 .social-btn {
   width: 48px;
   height: 48px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border-color);
-  background: #fff;
+  background: var(--bg-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -404,8 +405,7 @@ const handleLogin = async () => {
 
 .social-btn:hover {
   border-color: var(--primary-color);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  background: var(--primary-bg);
 }
 
 .social-btn.github:hover {

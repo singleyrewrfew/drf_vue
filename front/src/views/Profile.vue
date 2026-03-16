@@ -233,6 +233,7 @@ onMounted(() => {
 .profile-page {
   padding: 32px 0;
   min-height: calc(100vh - var(--header-height) - 200px);
+  background: var(--bg-color);
 }
 
 .container {
@@ -242,10 +243,10 @@ onMounted(() => {
 }
 
 .profile-card {
-  background: #fff;
-  border-radius: var(--radius-xl);
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
   padding: 24px;
-  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-light);
   position: sticky;
   top: 96px;
 }
@@ -269,10 +270,10 @@ onMounted(() => {
   left: -4px;
   right: -4px;
   bottom: -4px;
-  background: var(--primary-gradient);
+  background: var(--primary-color);
   border-radius: 50%;
   z-index: -1;
-  opacity: 0.3;
+  opacity: 0.15;
 }
 
 .avatar-section .el-avatar {
@@ -298,7 +299,7 @@ onMounted(() => {
 }
 
 .profile-menu .el-menu-item {
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   margin: 4px 0;
   transition: all var(--transition-fast);
 }
@@ -308,7 +309,7 @@ onMounted(() => {
 }
 
 .profile-menu .el-menu-item.is-active {
-  background: var(--primary-gradient) !important;
+  background: var(--primary-color) !important;
   color: #fff !important;
 }
 
@@ -317,11 +318,11 @@ onMounted(() => {
 }
 
 .content-card {
-  background: #fff;
-  border-radius: var(--radius-xl);
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
   padding: 32px;
   min-height: 500px;
-  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-light);
 }
 
 .content-card h2 {
@@ -350,20 +351,20 @@ onMounted(() => {
 }
 
 .profile-form :deep(.el-input__wrapper) {
-  border-radius: var(--radius-md);
-  padding: 4px 16px;
+  border-radius: var(--radius-sm);
+  padding: 4px 12px;
   box-shadow: none;
   border: 1px solid var(--border-color);
   transition: all var(--transition-fast);
 }
 
 .profile-form :deep(.el-input__wrapper:hover) {
-  border-color: var(--primary-light);
+  border-color: var(--border-dark);
 }
 
 .profile-form :deep(.el-input__wrapper.is-focus) {
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px var(--primary-bg);
+  box-shadow: 0 0 0 1px var(--primary-color);
 }
 
 .profile-form :deep(.el-input.is-disabled .el-input__wrapper) {
@@ -371,9 +372,9 @@ onMounted(() => {
 }
 
 .save-btn {
-  padding: 12px 32px;
+  padding: 12px 28px;
   font-weight: 500;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
 }
 
 .comment-list {
@@ -388,13 +389,13 @@ onMounted(() => {
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-light);
   transition: all var(--transition-fast);
-  animation: fadeInUp 0.5s ease-out backwards;
+  animation: fadeInUp 0.15s ease-out backwards;
 }
 
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -403,8 +404,7 @@ onMounted(() => {
 }
 
 .comment-item:hover {
-  border-color: var(--primary-light);
-  box-shadow: var(--shadow-sm);
+  border-color: rgba(0, 120, 212, 0.2);
 }
 
 .comment-content p {

@@ -38,8 +38,8 @@
                   查看更多 <el-icon><ArrowRight /></el-icon>
                 </el-button>
               </div>
-              <div class="article-grid" v-loading="loading">
-                <template v-if="loading">
+              <div class="article-grid">
+                <template v-if="loading && isInitialLoad">
                   <div v-for="i in 4" :key="i" class="article-card skeleton-card">
                     <div class="article-cover">
                       <el-skeleton animated>
@@ -101,13 +101,12 @@
                 </template>
               </div>
               <div class="pagination-container">
-                <el-pagination
+                <WinPagination
                   v-model:current-page="currentPage"
                   v-model:page-size="pageSize"
                   :page-sizes="[4, 8, 12, 16]"
                   :total="total"
                   :pager-count="5"
-                  layout="total, sizes, prev, pager, next, jumper"
                   @size-change="handleSizeChange"
                   @current-change="handleCurrentChange"
                 />
@@ -192,6 +191,7 @@ import { ref, onMounted } from 'vue'
 import { User, View, Calendar, Clock, Document, ArrowRight, TrendCharts, Folder, FolderOpened, PriceTag, Star, Top } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { getContents, getCategories, getTags } from '@/api/content'
+import WinPagination from '@/components/WinPagination.vue'
 
 const featuredContents = ref([])
 const latestArticles = ref([])
@@ -202,6 +202,7 @@ const currentPage = ref(1)
 const pageSize = ref(4)
 const total = ref(0)
 const loading = ref(true)
+const isInitialLoad = ref(true)
 
 const getCoverUrl = (coverImage) => {
   if (!coverImage) return 'https://picsum.photos/800/400?random=' + Math.random()
@@ -226,7 +227,9 @@ const formatDate = (dateStr) => {
 }
 
 const fetchData = async () => {
-  loading.value = true
+  if (isInitialLoad.value) {
+    loading.value = true
+  }
   try {
     const offset = (currentPage.value - 1) * pageSize.value
     const [featuredRes, latestRes, hotRes, catRes, tagRes] = await Promise.all([
@@ -250,6 +253,7 @@ const fetchData = async () => {
     }
   } finally {
     loading.value = false
+    isInitialLoad.value = false
   }
 }
 
@@ -272,10 +276,11 @@ onMounted(() => {
 <style scoped>
 .home-page {
   min-height: 100vh;
+  background: var(--bg-color);
 }
 
 .hero-section {
-  background: #fff;
+  background: var(--card-bg);
   margin-bottom: 32px;
   overflow: hidden;
   box-shadow: var(--shadow-sm);
@@ -340,8 +345,9 @@ onMounted(() => {
 }
 
 .recommend-tag {
-  border-radius: var(--radius-full) !important;
-  background: var(--primary-gradient) !important;
+  border-radius: var(--radius-sm) !important;
+  background: var(--primary-color) !important;
+  color: #fff !important;
   border: none !important;
   font-weight: 600;
   font-size: 13px;
@@ -440,18 +446,16 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 20px;
-  border-radius: var(--radius-full);
-  background: var(--primary-gradient);
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--primary-color);
   border: none;
   color: #fff;
   transition: all var(--transition-fast);
-  box-shadow: var(--shadow-primary);
 }
 
 .section-header .el-button:hover {
-  transform: translateX(4px);
-  box-shadow: var(--shadow-primary-lg);
+  background: var(--primary-hover);
 }
 
 .section-header .el-button .el-icon {
@@ -469,34 +473,18 @@ onMounted(() => {
 }
 
 .article-card {
-  background: #fff;
+  background: var(--card-bg);
   border-radius: var(--radius-lg);
   overflow: hidden;
   cursor: pointer;
-  transition: all var(--transition-normal);
-  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
+  border: 1px solid var(--border-light);
   position: relative;
 }
 
-.article-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--primary-gradient);
-  opacity: 0;
-  transition: opacity var(--transition-fast);
-}
-
 .article-card:hover {
-  transform: translateY(-6px);
-  box-shadow: var(--shadow-lg);
-}
-
-.article-card:hover::before {
-  opacity: 1;
+  border-color: rgba(0, 120, 212, 0.2);
+  box-shadow: var(--shadow-md);
 }
 
 .article-cover {
@@ -563,16 +551,15 @@ onMounted(() => {
 }
 
 .article-category {
-  padding: 4px 14px;
-  background: var(--primary-gradient);
+  padding: 4px 12px;
+  background: var(--primary-color);
   color: #fff;
   font-size: 12px;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-sm);
   font-weight: 500;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow-primary);
 }
 
 .article-info {
@@ -649,15 +636,16 @@ onMounted(() => {
 }
 
 .sidebar-card {
-  background: #fff;
+  background: var(--card-bg);
   border-radius: var(--radius-lg);
   padding: 24px;
-  box-shadow: var(--shadow-sm);
-  transition: all var(--transition-normal);
+  border: 1px solid var(--border-light);
+  transition: all var(--transition-fast);
 }
 
 .sidebar-card:hover {
-  box-shadow: var(--shadow-md);
+  border-color: rgba(0, 120, 212, 0.2);
+  box-shadow: var(--shadow-sm);
 }
 
 .sidebar-title {
@@ -721,9 +709,8 @@ onMounted(() => {
 }
 
 .hot-rank.top {
-  background: var(--primary-gradient);
+  background: var(--primary-color);
   color: #fff;
-  box-shadow: var(--shadow-primary);
 }
 
 .hot-item:hover .hot-rank {
@@ -769,8 +756,8 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 14px;
-  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all var(--transition-fast);
   font-size: 14px;
@@ -780,18 +767,17 @@ onMounted(() => {
 .category-item:hover {
   background: var(--primary-bg);
   color: var(--primary-color);
-  transform: translateX(4px);
 }
 
 .category-item:hover .el-tag {
-  background: var(--primary-gradient) !important;
+  background: var(--primary-color) !important;
   color: #fff !important;
   border-color: transparent !important;
 }
 
 .category-item .el-tag {
   font-weight: 600;
-  background: var(--primary-gradient);
+  background: var(--primary-color);
   color: #fff !important;
   border: none;
   min-width: 24px;
@@ -828,76 +814,20 @@ onMounted(() => {
 .tag-item {
   cursor: pointer;
   transition: all var(--transition-fast);
-  border-radius: var(--radius-full);
-  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
 }
 
 .tag-item:hover {
-  background: var(--primary-gradient) !important;
+  background: var(--primary-color) !important;
   color: #fff !important;
   border-color: transparent !important;
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-primary);
 }
 
 .pagination-container {
   margin-top: 40px;
   display: flex;
   justify-content: center;
-}
-
-.pagination-container :deep(.el-pagination) {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-}
-
-.pagination-container :deep(.el-pagination__total) {
-  color: var(--text-secondary);
-  font-size: 14px;
-}
-
-.pagination-container :deep(.el-pagination__sizes) {
-  margin: 0 8px;
-}
-
-.pagination-container :deep(.el-pager li.is-active) {
-  background: var(--primary-gradient) !important;
-  color: #fff !important;
-  border: none !important;
-}
-
-.pagination-container :deep(.el-pager li:hover) {
-  color: var(--primary-color) !important;
-}
-
-.pagination-container :deep(.btn-prev),
-.pagination-container :deep(.btn-next) {
-  border-radius: var(--radius-md) !important;
-  transition: all var(--transition-fast) !important;
-}
-
-.pagination-container :deep(.btn-prev:hover),
-.pagination-container :deep(.btn-next:hover) {
-  color: var(--primary-color) !important;
-  background: var(--primary-bg) !important;
-}
-
-.pagination-container :deep(.el-pagination__jump) {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--text-secondary);
-  font-size: 14px;
-}
-
-.pagination-container :deep(.el-pagination__goto) {
-  font-size: 14px;
-}
-
-.pagination-container :deep(.el-pagination__classifier) {
-  font-size: 14px;
 }
 
 @media (max-width: 1200px) {
