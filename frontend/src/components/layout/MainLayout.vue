@@ -96,23 +96,25 @@
           </template>
         </nav>
         <div class="sidebar-footer">
-          <div class="collapse-btn" @click="toggleCollapse">
-            <el-icon>
-              <ArrowLeft v-if="!isCollapsed" />
-              <ArrowRight v-else />
-            </el-icon>
-          </div>
-          <div class="user-card" :class="{ collapsed: isCollapsed }">
-            <el-tooltip :content="isCollapsed ? userStore.user?.username : ''" placement="right" :disabled="!isCollapsed">
-              <el-avatar :size="isCollapsed ? 36 : 40" :src="getAvatarUrl(userStore.user?.avatar_url || userStore.user?.avatar)">
-                <el-icon><UserFilled /></el-icon>
-              </el-avatar>
-            </el-tooltip>
+          <div class="user-card" :class="{ collapsed: isCollapsed }" @click="toggleCollapse">
+            <div class="avatar-wrapper">
+              <el-tooltip :content="isCollapsed ? userStore.user?.username : ''" placement="right" :disabled="!isCollapsed">
+                <el-avatar :size="isCollapsed ? 36 : 40" :src="getAvatarUrl(userStore.user?.avatar_url || userStore.user?.avatar)">
+                  <el-icon><UserFilled /></el-icon>
+                </el-avatar>
+              </el-tooltip>
+              <div class="collapse-icon">
+                <el-icon>
+                  <ArrowLeft v-if="!isCollapsed" />
+                  <ArrowRight v-else />
+                </el-icon>
+              </div>
+            </div>
             <div class="user-info">
               <span class="user-name">{{ userStore.user?.username }}</span>
               <span class="user-role">{{ userStore.user?.role_name || '用户' }}</span>
             </div>
-            <el-dropdown trigger="click" placement="top" v-show="!isCollapsed">
+            <el-dropdown trigger="click" placement="top" v-show="!isCollapsed" @click.stop>
               <div class="user-actions">
                 <el-icon><Setting /></el-icon>
               </div>
@@ -383,29 +385,6 @@ const handleLogout = async () => {
   gap: 12px;
 }
 
-.collapse-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  color: rgba(255, 255, 255, 0.8);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.collapse-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-}
-
-.collapse-btn .el-icon {
-  font-size: 18px;
-  transition: transform 0.3s ease;
-}
-
 .user-card {
   display: flex;
   align-items: center;
@@ -416,6 +395,8 @@ const handleLogout = async () => {
   transition: all 0.3s ease;
   height: 64px;
   box-sizing: border-box;
+  cursor: pointer;
+  position: relative;
 }
 
 .user-card.collapsed {
@@ -429,8 +410,40 @@ const handleLogout = async () => {
   background: rgba(255, 255, 255, 0.1);
 }
 
+.avatar-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
 .user-card .el-avatar {
   flex-shrink: 0;
+}
+
+.collapse-icon {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+}
+
+.user-card:hover .collapse-icon {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.collapse-icon .el-icon {
+  font-size: 12px;
+  color: #fff;
 }
 
 .user-info {

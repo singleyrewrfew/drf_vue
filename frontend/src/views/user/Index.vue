@@ -43,11 +43,13 @@
       </el-table>
       <el-pagination
         v-model:current-page="page"
-        :page-size="20"
+        v-model:page-size="pageSize"
+        :page-sizes="[10, 20, 50, 100]"
         :total="total"
-        layout="total, prev, pager, next"
+        layout="total, sizes, prev, pager, next, jumper"
         style="margin-top: 20px; justify-content: flex-end"
         @current-change="fetchUsers"
+        @size-change="handleSizeChange"
       />
     </el-card>
 
@@ -104,6 +106,7 @@ const submitLoading = ref(false)
 const userList = ref([])
 const roles = ref([])
 const page = ref(1)
+const pageSize = ref(20)
 const total = ref(0)
 const dialogVisible = ref(false)
 const editingId = ref(null)
@@ -174,7 +177,11 @@ const getRoleType = (roleCode) => {
 const fetchUsers = async () => {
   loading.value = true
   try {
-    const { data } = await getUsers({ page: page.value })
+    const offset = (page.value - 1) * pageSize.value
+    const { data } = await getUsers({
+      limit: pageSize.value,
+      offset: offset
+    })
     userList.value = data.results || data
     total.value = data.count || userList.value.length
   } catch (error) {
@@ -278,6 +285,11 @@ const handleDelete = async (row) => {
   } catch (error) {
     ElMessage.error('删除失败')
   }
+}
+
+const handleSizeChange = () => {
+  page.value = 1
+  fetchUsers()
 }
 
 onMounted(() => {

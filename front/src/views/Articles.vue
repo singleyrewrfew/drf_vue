@@ -656,6 +656,35 @@ onMounted(() => {
   justify-content: center;
 }
 
+.pagination-container :deep(.el-pagination) {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+.pagination-container :deep(.el-pager li.is-active) {
+  background: var(--primary-gradient) !important;
+  color: #fff !important;
+  border: none !important;
+}
+
+.pagination-container :deep(.el-pager li:hover) {
+  color: var(--primary-color) !important;
+}
+
+.pagination-container :deep(.btn-prev),
+.pagination-container :deep(.btn-next) {
+  border-radius: var(--radius-md) !important;
+  transition: all var(--transition-fast) !important;
+}
+
+.pagination-container :deep(.btn-prev:hover),
+.pagination-container :deep(.btn-next:hover) {
+  color: var(--primary-color) !important;
+  background: var(--primary-bg) !important;
+}
+
 @media (max-width: 768px) {
   .article-cover {
     width: 160px;

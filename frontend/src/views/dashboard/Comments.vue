@@ -55,11 +55,13 @@
       </el-table>
       <el-pagination
         v-model:current-page="page"
-        :page-size="20"
+        v-model:page-size="pageSize"
+        :page-sizes="[10, 20, 50, 100]"
         :total="total"
-        layout="total, prev, pager, next"
+        layout="total, sizes, prev, pager, next, jumper"
         style="margin-top: 20px; justify-content: flex-end"
         @current-change="fetchComments"
+        @size-change="handleSizeChange"
       />
     </el-card>
   </div>
@@ -77,6 +79,7 @@ const userStore = useUserStore()
 const loading = ref(false)
 const commentList = ref([])
 const page = ref(1)
+const pageSize = ref(20)
 const total = ref(0)
 
 const isAdmin = computed(() => userStore.user?.role_code === 'admin' || userStore.user?.is_superuser)
@@ -84,7 +87,11 @@ const isAdmin = computed(() => userStore.user?.role_code === 'admin' || userStor
 const fetchComments = async () => {
   loading.value = true
   try {
-    const params = { page: page.value }
+    const offset = (page.value - 1) * pageSize.value
+    const params = {
+      limit: pageSize.value,
+      offset: offset
+    }
     // 非管理员只显示自己的评论
     if (!isAdmin.value) {
       params.my = true
@@ -120,6 +127,11 @@ const handleDelete = async (row) => {
   } catch (error) {
     ElMessage.error('删除失败')
   }
+}
+
+const handleSizeChange = () => {
+  page.value = 1
+  fetchComments()
 }
 
 onMounted(() => {

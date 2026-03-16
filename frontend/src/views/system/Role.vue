@@ -4,7 +4,7 @@
       <template #header>
         <div class="card-header">
           <span>角色管理</span>
-          <CreateButton text="新建角色" @click="handleCreate" />
+          <el-button type="primary" @click="handleCreate">新建角色</el-button>
         </div>
       </template>
       <el-table :data="roleList" v-loading="loading" stripe>
@@ -23,15 +23,24 @@
           </template>
         </el-table-column>
         <el-table-column prop="created_at" label="创建时间" width="180" />
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column label="操作" width="150">
           <template #default="{ row }">
-            <div class="action-buttons">
-              <EditButton @click="handleEdit(row)" />
-              <DeleteButton @click="handleDelete(row)" :disabled="row.is_system" />
-            </div>
+            <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
+            <el-button type="danger" link @click="handleDelete(row)" :disabled="row.is_system">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
+      <div class="pagination-wrapper">
+        <el-pagination
+          v-model:current-page="pagination.page"
+          v-model:page-size="pagination.page_size"
+          :page-sizes="[10, 20, 50, 100]"
+          layout="total, sizes, prev, pager, next, jumper"
+          :total="pagination.total"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+        />
+      </div>
     </el-card>
 
     <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑角色' : '新建角色'" width="600px" destroy-on-close>
@@ -66,9 +75,6 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getRoles, getRole, createRole, updateRole, deleteRole, getPermissions } from '@/api/role'
-import EditButton from '@/components/EditButton.vue'
-import DeleteButton from '@/components/DeleteButton.vue'
-import CreateButton from '@/components/CreateButton.vue'
 
 const loading = ref(false)
 const submitting = ref(false)
@@ -78,6 +84,12 @@ const dialogVisible = ref(false)
 const isEdit = ref(false)
 const editId = ref(null)
 const formRef = ref()
+
+const pagination = reactive({
+  page: 1,
+  page_size: 10,
+  total: 0,
+})
 
 const form = reactive({
   name: '',
@@ -94,8 +106,13 @@ const rules = {
 const fetchRoles = async () => {
   loading.value = true
   try {
-    const { data } = await getRoles()
+    const offset = (pagination.page - 1) * pagination.page_size
+    const { data } = await getRoles({
+      limit: pagination.page_size,
+      offset: offset
+    })
     roleList.value = data.results || data
+    pagination.total = data.count || 0
   } catch (error) {
     ElMessage.error('获取角色列表失败')
   } finally {
@@ -165,10 +182,22 @@ const handleDelete = async (row) => {
   try {
     await deleteRole(row.id)
     ElMessage.success('删除成功')
+    if (roleList.value.length === 1 && pagination.page > 1) {
+      pagination.page--
+    }
     fetchRoles()
   } catch (error) {
     ElMessage.error('删除失败')
   }
+}
+
+const handleSizeChange = () => {
+  pagination.page = 1
+  fetchRoles()
+}
+
+const handleCurrentChange = () => {
+  fetchRoles()
 }
 
 onMounted(() => {
@@ -188,10 +217,9 @@ onMounted(() => {
   align-items: center;
 }
 
-.action-buttons {
+.pagination-wrapper {
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  align-items: center;
+  justify-content: flex-end;
+  margin-top: 20px;
 }
 </style>

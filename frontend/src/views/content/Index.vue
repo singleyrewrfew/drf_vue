@@ -54,11 +54,13 @@
       </el-table>
       <el-pagination
         v-model:current-page="page"
-        :page-size="20"
+        v-model:page-size="pageSize"
+        :page-sizes="[10, 20, 50, 100]"
         :total="total"
-        layout="total, prev, pager, next"
+        layout="total, sizes, prev, pager, next, jumper"
         style="margin-top: 20px; justify-content: flex-end"
         @current-change="fetchContents"
+        @size-change="handleSizeChange"
       />
     </el-card>
   </div>
@@ -85,6 +87,7 @@ const loading = ref(false)
 const contentList = ref([])
 const categories = ref([])
 const page = ref(1)
+const pageSize = ref(20)
 const total = ref(0)
 
 const searchForm = reactive({
@@ -108,7 +111,11 @@ const statusOptions = [
 const fetchContents = async () => {
   loading.value = true
   try {
-    const params = { page: page.value }
+    const offset = (page.value - 1) * pageSize.value
+    const params = {
+      limit: pageSize.value,
+      offset: offset
+    }
     if (searchForm.status) params.status = searchForm.status
     if (searchForm.category) params.category = searchForm.category
     if (searchForm.search) params.search = searchForm.search.trim()
@@ -172,6 +179,11 @@ const handleDelete = async (row) => {
   } catch (error) {
     ElMessage.error('删除失败')
   }
+}
+
+const handleSizeChange = () => {
+  page.value = 1
+  fetchContents()
 }
 
 onMounted(() => {

@@ -24,12 +24,6 @@
           <div class="avatar-section">
             <div class="avatar-wrapper">
               <el-avatar :size="100" :src="getAvatarUrl(userStore.user?.avatar_url || userStore.user?.avatar)" />
-              <div class="avatar-overlay">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                  <circle cx="12" cy="13" r="4" />
-                </svg>
-              </div>
             </div>
             <div class="avatar-actions">
               <el-upload
@@ -570,31 +564,6 @@ onMounted(() => {
 .avatar-wrapper :deep(.el-avatar) {
   border: 3px solid #fff;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.avatar-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.avatar-wrapper:hover .avatar-overlay {
-  opacity: 1;
-}
-
-.avatar-overlay svg {
-  width: 32px;
-  height: 32px;
-  color: #fff;
 }
 
 .avatar-actions {

@@ -846,12 +846,58 @@ onMounted(() => {
   justify-content: center;
 }
 
+.pagination-container :deep(.el-pagination) {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+.pagination-container :deep(.el-pagination__total) {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.pagination-container :deep(.el-pagination__sizes) {
+  margin: 0 8px;
+}
+
 .pagination-container :deep(.el-pager li.is-active) {
-  color: #fff;
+  background: var(--primary-gradient) !important;
+  color: #fff !important;
+  border: none !important;
 }
 
 .pagination-container :deep(.el-pager li:hover) {
-  color: var(--primary-color);
+  color: var(--primary-color) !important;
+}
+
+.pagination-container :deep(.btn-prev),
+.pagination-container :deep(.btn-next) {
+  border-radius: var(--radius-md) !important;
+  transition: all var(--transition-fast) !important;
+}
+
+.pagination-container :deep(.btn-prev:hover),
+.pagination-container :deep(.btn-next:hover) {
+  color: var(--primary-color) !important;
+  background: var(--primary-bg) !important;
+}
+
+.pagination-container :deep(.el-pagination__jump) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.pagination-container :deep(.el-pagination__goto) {
+  font-size: 14px;
+}
+
+.pagination-container :deep(.el-pagination__classifier) {
+  font-size: 14px;
 }
 
 @media (max-width: 1200px) {

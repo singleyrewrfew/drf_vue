@@ -22,6 +22,16 @@
           </template>
         </el-table-column>
       </el-table>
+      <el-pagination
+        v-model:current-page="page"
+        v-model:page-size="pageSize"
+        :page-sizes="[10, 20, 50, 100]"
+        :total="total"
+        layout="total, sizes, prev, pager, next, jumper"
+        style="margin-top: 20px; justify-content: flex-end"
+        @current-change="fetchCategories"
+        @size-change="handleSizeChange"
+      />
     </el-card>
 
     <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑分类' : '新建分类'" width="500px">
@@ -63,6 +73,9 @@ import CreateButton from '@/components/CreateButton.vue'
 const loading = ref(false)
 const submitLoading = ref(false)
 const categoryList = ref([])
+const page = ref(1)
+const pageSize = ref(20)
+const total = ref(0)
 const dialogVisible = ref(false)
 const editingId = ref(null)
 const formRef = ref()
@@ -88,8 +101,13 @@ const parentCategories = computed(() => {
 const fetchCategories = async () => {
   loading.value = true
   try {
-    const { data } = await getCategories()
+    const offset = (page.value - 1) * pageSize.value
+    const { data } = await getCategories({
+      limit: pageSize.value,
+      offset: offset
+    })
     categoryList.value = data.results || data
+    total.value = data.count || categoryList.value.length
   } catch (error) {
     ElMessage.error('获取分类列表失败')
   } finally {
@@ -161,6 +179,11 @@ const handleDelete = async (row) => {
   } catch (error) {
     ElMessage.error('删除失败')
   }
+}
+
+const handleSizeChange = () => {
+  page.value = 1
+  fetchCategories()
 }
 
 onMounted(() => {
