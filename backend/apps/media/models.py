@@ -16,7 +16,7 @@ def get_ffmpeg_executable(name):
     ffmpeg_path = shutil.which(name)
     if ffmpeg_path:
         return ffmpeg_path
-    default_path = os.path.join(r'D:\ffmpeg\bin', f'{name}.exe')
+    default_path = os.path.join(r'D:\ffmpeg-2025-12-18-git-78c75d546a-essentials_build\bin', f'{name}.exe')
     if os.path.exists(default_path):
         return default_path
     return name
@@ -194,32 +194,49 @@ class Media(models.Model):
 
     def generate_thumbnails(self):
         """生成视频缩略图"""
-        if not self.is_video or not self.file:
+        print(f"[Thumbnail] generate_thumbnails called for media {self.id}")
+        
+        if not self.is_video:
+            print(f"[Thumbnail] Media {self.id} is not a video, skipping")
             return False
         
+        actual_file = self.actual_file
+        if not actual_file:
+            print(f"[Thumbnail] Media {self.id} has no actual file, skipping")
+            return False
+        
+        print(f"[Thumbnail] Setting status to 'processing' for media {self.id}")
         self.thumbnail_status = 'processing'
         self.save(update_fields=['thumbnail_status'])
         
-        video_path = self.file.path
+        video_path = actual_file.path
+        print(f"[Thumbnail] Video path: {video_path}")
         output_dir = os.path.join(settings.MEDIA_ROOT, 'thumbnails', str(self.uploader.id), str(self.id))
+        print(f"[Thumbnail] Output directory: {output_dir}")
         
         try:
             thumbnails_image, num_thumbnails = generate_video_thumbnails(video_path, output_dir)
+            print(f"[Thumbnail] Generated: image={thumbnails_image}, count={num_thumbnails}")
             
             if thumbnails_image and num_thumbnails > 0:
                 relative_image_path = os.path.relpath(thumbnails_image, settings.MEDIA_ROOT)
+                print(f"[Thumbnail] Relative path: {relative_image_path}")
                 
                 self.thumbnails.name = relative_image_path
                 self.thumbnails_count = num_thumbnails
                 self.thumbnail_status = 'completed'
                 self.save(update_fields=['thumbnails', 'thumbnails_count', 'thumbnail_status'])
+                print(f"[Thumbnail] Successfully saved thumbnails for media {self.id}")
                 return True
             else:
+                print(f"[Thumbnail] No thumbnails generated for media {self.id}")
                 self.thumbnail_status = 'failed'
                 self.save(update_fields=['thumbnail_status'])
                 return False
         except Exception as e:
-            print(f"Error generating thumbnails: {e}")
+            print(f"[Thumbnail] Error generating thumbnails for media {self.id}: {e}")
+            import traceback
+            traceback.print_exc()
             self.thumbnail_status = 'failed'
             self.save(update_fields=['thumbnail_status'])
             return False
@@ -229,15 +246,29 @@ class Media(models.Model):
         if not self.is_video:
             return
         
+        media_id = self.id
+        print(f"[Thumbnail] Starting async thumbnail generation for media {media_id}")
+        
         def _generate():
             import django
-            django.setup()
-            from apps.media.models import Media
+            from django.db import connection
+            
+            if not django.apps.apps.ready:
+                django.setup()
+            
             try:
-                media = Media.objects.get(id=self.id)
-                media.generate_thumbnails()
+                from apps.media.models import Media
+                print(f"[Thumbnail] Fetching media {media_id} from database")
+                media = Media.objects.get(id=media_id)
+                print(f"[Thumbnail] Media found, current status: {media.thumbnail_status}")
+                result = media.generate_thumbnails()
+                print(f"[Thumbnail] Generation result: {result}, new status: {media.thumbnail_status}")
             except Exception as e:
-                print(f"Async thumbnail generation error: {e}")
+                print(f"[Thumbnail] Async thumbnail generation error: {e}")
+                import traceback
+                traceback.print_exc()
+            finally:
+                connection.close()
         
         thread = threading.Thread(target=_generate)
         thread.daemon = True
