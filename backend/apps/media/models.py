@@ -16,9 +16,21 @@ def get_ffmpeg_executable(name):
     ffmpeg_path = shutil.which(name)
     if ffmpeg_path:
         return ffmpeg_path
-    default_path = os.path.join(r'D:\ffmpeg-2025-12-18-git-78c75d546a-essentials_build\bin', f'{name}.exe')
-    if os.path.exists(default_path):
-        return default_path
+    
+    from django.conf import settings
+    
+    common_paths = [getattr(settings, 'FFMPEG_PATH', None)]
+    common_paths.extend(getattr(settings, 'FFMPEG_ADDITIONAL_PATHS', []))
+    common_paths.extend([
+        os.path.join(os.environ.get('LOCALAPPDATA', ''), 'ffmpeg', 'bin'),
+        os.path.join(os.environ.get('PROGRAMFILES', ''), 'ffmpeg', 'bin'),
+    ])
+    
+    for path in common_paths:
+        if path:
+            exe_path = os.path.join(path, f'{name}.exe')
+            if os.path.exists(exe_path):
+                return exe_path
     return name
 
 

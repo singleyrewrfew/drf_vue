@@ -157,3 +157,9 @@ ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'im
 ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime']
 ALLOWED_DOCUMENT_TYPES = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
 ALLOWED_FILE_TYPES = ALLOWED_IMAGE_TYPES + ALLOWED_VIDEO_TYPES + ALLOWED_DOCUMENT_TYPES
+
+# FFmpeg 配置
+FFMPEG_PATH = r'D:\ffmpeg-2025-12-18-git-78c75d546a-essentials_build\bin'
+FFMPEG_ADDITIONAL_PATHS = [
+    r'D:\ffmpeg\bin',
+]
