@@ -78,7 +78,7 @@ const fetchData = async () => {
   loading.value = true
   try {
     const offset = (page.value - 1) * pageSize.value
-    const tagId = route.params.slug || route.params.id
+    const tagId = route.params.id_or_slug
     const [tagRes, contentRes] = await Promise.all([
       getTag(tagId),
       getContents({ 
@@ -101,7 +101,7 @@ const fetchData = async () => {
   }
 }
 
-watch(() => [route.params.id, route.params.slug], fetchData, { immediate: true })
+watch(() => route.params.id_or_slug, fetchData, { immediate: true })
 </script>
 
 <style scoped>

@@ -7,7 +7,7 @@
             <article class="article">
               <header class="article-header">
                 <div class="article-category" v-if="article.category_name">
-                  <el-tag type="success" effect="plain" @click="$router.push(`/category/${article.category_slug || article.category_id}`)">{{ article.category_name }}</el-tag>
+                  <el-tag type="success" effect="plain" @click="handleCategoryClick">{{ article.category_name }}</el-tag>
                 </div>
                 <h1>{{ article.title }}</h1>
                 <div class="article-meta">
@@ -28,7 +28,7 @@
                     :key="tag.id" 
                     size="small" 
                     effect="plain"
-                    @click="$router.push(`/tag/${tag.id}`)"
+                    @click="$router.push(`/tag/${tag.slug || tag.id}`)"
                   >
                     #{{ tag.name }}
                   </el-tag>
@@ -362,7 +362,7 @@
 
 <script setup>
 import { ref, computed, watch, onUnmounted, nextTick } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { View, ArrowLeft, ArrowRight, ChatDotRound, Document, List, Pointer, Picture, VideoCamera, Link } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { marked } from 'marked'
@@ -372,6 +372,7 @@ import { useUserStore } from '@/stores/user'
 import { getContent, getContents, getComments, createComment, likeComment } from '@/api/content'
 
 const route = useRoute()
+const router = useRouter()
 const userStore = useUserStore()
 
 const loading = ref(false)
@@ -417,6 +418,13 @@ const getAvatarUrl = (avatar) => {
 
 const getArticleUrl = (article) => {
   return `/article/${article.slug || article.id}`
+}
+
+const handleCategoryClick = () => {
+  const idOrSlug = article.value.category_slug || article.value.category
+  if (idOrSlug) {
+    router.push(`/category/${idOrSlug}`)
+  }
 }
 
 const scrollToHeading = (id) => {

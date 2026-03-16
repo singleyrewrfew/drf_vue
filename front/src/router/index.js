@@ -27,23 +27,13 @@ const routes = [
         component: () => import('@/views/Article.vue'),
       },
       {
-        path: 'category/:id',
+        path: 'category/:id_or_slug',
         name: 'Category',
         component: () => import('@/views/Category.vue'),
       },
       {
-        path: 'category/slug/:slug',
-        name: 'CategoryBySlug',
-        component: () => import('@/views/Category.vue'),
-      },
-      {
-        path: 'tag/:id',
+        path: 'tag/:id_or_slug',
         name: 'Tag',
-        component: () => import('@/views/Tag.vue'),
-      },
-      {
-        path: 'tag/slug/:slug',
-        name: 'TagBySlug',
         component: () => import('@/views/Tag.vue'),
       },
       {

@@ -190,6 +190,11 @@ p {
 
 .el-pagination.is-background .el-pager li:not(.is-disabled).is-active {
   background: var(--primary-gradient) !important;
+  color: #fff !important;
+}
+
+.el-pagination.is-background .el-pager li:not(.is-disabled):hover {
+  color: var(--primary-color) !important;
 }
 
 .el-dropdown-menu {

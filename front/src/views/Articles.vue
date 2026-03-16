@@ -122,7 +122,7 @@
                   class="tag-item"
                   type="info"
                   effect="plain"
-                  @click="$router.push(`/tag/${tag.id}`)"
+                  @click="$router.push(`/tag/${tag.slug || tag.id}`)"
                 >
                   #{{ tag.name }}
                 </el-tag>
@@ -443,10 +443,22 @@ onMounted(() => {
 }
 
 .top-tag {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 4px;
   flex-shrink: 0;
+}
+
+.top-tag :deep(.el-tag__content) {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.top-tag .el-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .article-summary {
