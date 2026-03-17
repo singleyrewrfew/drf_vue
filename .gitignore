@@ -40,7 +40,6 @@ db.sqlite3
 # IDE
 .idea/
 .vscode/
-.trae/
 *.swp
 *.swo
 *~
