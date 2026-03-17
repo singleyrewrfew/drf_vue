@@ -9,6 +9,7 @@ import pinia from './stores'
 import './styles/variables.css'
 import './styles/main.css'
 import './styles/element-override.css'
+import './styles/components.css'
 
 const savedTheme = localStorage.getItem('admin-theme') || 'light'
 document.documentElement.setAttribute('data-theme', savedTheme)
