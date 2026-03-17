@@ -521,6 +521,15 @@ const handleLogout = async () => {
 .avatar-wrapper {
   position: relative;
   flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+}
+
+.avatar-wrapper :deep(.el-avatar) {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px;
+  min-height: 36px;
 }
 
 .collapse-icon {
