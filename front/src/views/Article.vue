@@ -2182,6 +2182,25 @@ textarea::-webkit-scrollbar {
 
 .article-page .el-dialog .el-dialog__header {
   flex-shrink: 0;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .article-page .el-dialog .el-dialog__header {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.article-page .el-dialog .el-dialog__title {
+  color: var(--text-primary);
+}
+
+.article-page .el-dialog .el-dialog__headerbtn {
+  color: var(--text-secondary);
+}
+
+.article-page .el-dialog .el-dialog__headerbtn:hover {
+  color: var(--text-primary);
 }
 
 .article-page .el-dialog .el-dialog__body {

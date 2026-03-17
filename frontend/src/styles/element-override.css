@@ -632,3 +632,28 @@
   border: 1px solid var(--border-color);
   color: var(--text-primary);
 }
+
+/* Loading 遮罩暗色主题适配 */
+[data-theme="dark"] .el-loading-mask {
+  background-color: rgba(0, 0, 0, 0.7) !important;
+}
+
+[data-theme="dark"] .el-loading-spinner {
+  color: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .el-loading-spinner svg {
+  stroke: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .el-loading-spinner .path {
+  stroke: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .el-loading-spinner .circular {
+  stroke: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .el-loading-text {
+  color: var(--text-primary) !important;
+}

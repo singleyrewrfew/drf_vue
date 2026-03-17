@@ -156,4 +156,25 @@ const handleCurrentChange = (page) => {
   gap: 4px;
   align-items: center;
 }
+
+/* 暗色主题下的 loading 遮罩适配 */
+[data-theme="dark"] .el-loading-mask {
+  background-color: rgba(0, 0, 0, 0.7) !important;
+}
+
+[data-theme="dark"] .el-loading-spinner {
+  color: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .el-loading-spinner .path {
+  stroke: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .el-loading-spinner .circular {
+  stroke: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .el-loading-text {
+  color: var(--text-primary) !important;
+}
 </style>
