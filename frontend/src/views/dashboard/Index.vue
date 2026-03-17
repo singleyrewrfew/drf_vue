@@ -116,15 +116,24 @@
           </template>
           <div class="system-info">
             <div class="info-item">
-              <span class="info-label">媒体文件</span>
+              <div class="info-content">
+                <el-icon class="info-icon" color="#409EFF"><Picture /></el-icon>
+                <span class="info-label">媒体文件</span>
+              </div>
               <span class="info-value">{{ stats.media }} 个</span>
             </div>
             <div class="info-item">
-              <span class="info-label">系统版本</span>
+              <div class="info-content">
+                <el-icon class="info-icon" color="#67C23A"><InfoFilled /></el-icon>
+                <span class="info-label">系统版本</span>
+              </div>
               <span class="info-value">v1.0.0</span>
             </div>
             <div class="info-item">
-              <span class="info-label">框架</span>
+              <div class="info-content">
+                <el-icon class="info-icon" color="#E6A23C"><Platform /></el-icon>
+                <span class="info-label">框架</span>
+              </div>
               <span class="info-value">Django + Vue 3</span>
             </div>
           </div>
@@ -136,7 +145,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { Document, ChatDotRound, User, View, EditPen, Upload, Folder, PriceTag, Setting } from '@element-plus/icons-vue'
+import { Document, ChatDotRound, User, View, EditPen, Upload, Folder, PriceTag, Setting, Picture, InfoFilled, Platform } from '@element-plus/icons-vue'
 import api from '@/api'
 import { useUserStore } from '@/stores/user'
 import ViewAllButton from '@/components/ViewAllButton.vue'
@@ -225,23 +234,41 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border-light);
+  padding: 14px 16px;
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  transition: all 0.2s ease;
 }
 
-.info-item:last-child {
-  border-bottom: none;
+.info-item:hover {
+  background: var(--bg-tertiary);
+  transform: translateX(4px);
+}
+
+.info-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.info-icon {
+  font-size: 18px;
 }
 
 .info-label {
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .info-value {
   color: var(--text-primary);
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 600;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 @media (max-width: 768px) {
