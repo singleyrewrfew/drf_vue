@@ -130,33 +130,70 @@ button {
   color: var(--text-secondary);
 }
 
-.el-pagination.is-background .el-pager li {
+.el-pagination .el-pager li {
   border-radius: var(--radius-sm);
   transition: all var(--transition-fast);
   max-width: 32px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  margin: 0 4px !important;
 }
 
-.el-pagination.is-background .el-pager li:hover {
+.el-pagination .el-pager li:first-child {
+  margin-left: 0 !important;
+}
+
+.el-pagination .el-pager li:last-child {
+  margin-right: 0 !important;
+}
+
+.el-pagination .btn-prev,
+.el-pagination .btn-next {
+  margin: 0 4px !important;
+  min-width: 32px !important;
+}
+
+.el-pagination .btn-prev {
+  margin-left: 0 !important;
+}
+
+.el-pagination .btn-next {
+  margin-right: 0 !important;
+}
+
+.el-pagination .el-pager li:hover {
   color: var(--primary-color);
   background: var(--primary-bg);
 }
 
-.el-pagination.is-background .el-pager li.is-active {
+.el-pagination .el-pager li.is-active {
   background: var(--primary-color);
   color: #fff;
 }
 
-.el-pagination.is-background .el-pager li.is-more {
+.el-pagination .el-pager li.is-more {
   padding: 0 5px;
   cursor: default;
 }
 
-.el-pagination.is-background .el-pager li.is-more:hover {
+.el-pagination .el-pager li.is-more:hover {
   background: transparent;
   color: var(--text-primary);
+}
+
+/* 确保分页组件内部元素也有间距 */
+.el-pagination .el-pager {
+  display: flex;
+  gap: 4px !important;
+}
+
+.el-pagination .el-pagination__sizes {
+  margin: 0 8px !important;
+}
+
+.el-pagination .el-pagination__jump {
+  margin: 0 8px !important;
 }
 
 .el-textarea__inner:focus {

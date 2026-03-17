@@ -570,17 +570,6 @@ a:hover {
   color: var(--text-tertiary);
 }
 
-.el-popover.el-popper {
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-md);
-}
-
-.el-tooltip__popper {
-  background: var(--bg-tertiary) !important;
-  color: var(--text-primary) !important;
-}
-
 .el-select-dropdown {
   background: var(--card-bg);
   border: 1px solid var(--border-color);

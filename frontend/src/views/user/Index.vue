@@ -314,6 +314,10 @@ onMounted(() => {
   font-size: 12px;
   color: var(--text-tertiary);
   margin-top: 4px;
+  line-height: 1.5;
+  padding-left: 4px;
+  display: flex;
+  align-items: center;
 }
 
 .action-buttons {

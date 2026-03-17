@@ -173,18 +173,92 @@
   border: 1px solid var(--border-color);
   color: var(--text-primary);
   transition: all var(--transition-fast);
+  padding: 12px;
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 80px;
+  resize: none;
+  overflow-y: auto;
+}
+
+.el-textarea__inner::-webkit-scrollbar {
+  width: 0;
+}
+
+.el-textarea__inner::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+.el-textarea__inner::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.el-textarea__inner::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.el-textarea__inner::-webkit-scrollbar-button {
+  display: none;
+}
+
+.el-textarea__inner::-webkit-scrollbar-button:start {
+  display: none;
+}
+
+.el-textarea__inner::-webkit-scrollbar-button:end {
+  display: none;
+}
+
+.el-textarea__inner::-webkit-scrollbar-button:vertical {
+  display: none;
+}
+
+.el-textarea__inner::-webkit-scrollbar-button:horizontal {
+  display: none;
+}
+
+.el-textarea__inner::-webkit-scrollbar-thumb:vertical {
+  background: transparent;
+}
+
+.el-textarea__inner::-webkit-scrollbar-thumb:horizontal {
+  background: transparent;
+}
+
+.el-textarea__inner::-webkit-scrollbar-track-piece {
+  background: transparent;
+}
+
+.el-textarea__inner::-webkit-scrollbar-thumb-piece {
+  background: transparent;
+}
+
+.el-textarea__inner::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 .el-textarea__inner:focus {
   border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.el-textarea__inner:hover {
+  border-color: var(--border-dark);
 }
 
 .el-textarea__inner::placeholder {
   color: var(--text-tertiary);
+  font-size: 14px;
 }
 
 [data-theme="dark"] .el-textarea__inner {
   background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .el-textarea__inner:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
 }
 
 .el-select {
@@ -229,17 +303,39 @@
 .el-pagination {
   justify-content: center;
   margin-top: 20px;
+  display: flex;
+  gap: 8px !important;
+  align-items: center;
 }
 
 .el-pagination .el-pager li {
   border-radius: var(--radius-xs);
   transition: all var(--transition-fast);
+  margin: 0 4px !important;
+}
+
+.el-pagination .el-pager li:first-child {
+  margin-left: 0 !important;
+}
+
+.el-pagination .el-pager li:last-child {
+  margin-right: 0 !important;
 }
 
 .el-pagination .btn-prev,
 .el-pagination .btn-next {
   border-radius: var(--radius-xs);
   transition: all var(--transition-fast);
+  margin: 0 4px !important;
+  min-width: 32px !important;
+}
+
+.el-pagination .btn-prev {
+  margin-left: 0 !important;
+}
+
+.el-pagination .btn-next {
+  margin-right: 0 !important;
 }
 
 .el-pagination button:hover {
@@ -273,6 +369,9 @@
   border-top: 1px solid var(--border-color);
   padding: 12px 20px;
   text-align: right;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 .el-form-item__label {
@@ -601,11 +700,6 @@
   color: var(--text-secondary);
 }
 
-.el-popper {
-  background: var(--card-bg) !important;
-  border: 1px solid var(--border-color) !important;
-}
-
 .el-select-dropdown {
   background: var(--card-bg);
   border: 1px solid var(--border-color);
@@ -625,12 +719,6 @@
   color: var(--primary-color);
   font-weight: 600;
   background: var(--primary-bg);
-}
-
-.el-tooltip__popper {
-  background: var(--card-bg) !important;
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
 }
 
 /* Loading 遮罩暗色主题适配 */
