@@ -276,12 +276,9 @@ const handlePreview = (row) => {
   previewVisible.value = true
 }
 
-const onVideoReady = () => {
-  console.log('Video player ready')
-}
+const onVideoReady = () => {}
 
 const onVideoError = (error) => {
-  console.error('Video load error:', error)
   ElMessage.error('视频加载失败，请检查视频格式或网络连接')
 }
 

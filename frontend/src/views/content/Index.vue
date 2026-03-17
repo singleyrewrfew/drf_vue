@@ -132,7 +132,6 @@ const fetchCategories = async () => {
   try {
     const { data } = await api.get('/categories/')
     categories.value = data.results || data
-    console.log('Categories loaded:', categories.value)
   } catch (error) {
     console.error(error)
   }
@@ -156,7 +155,8 @@ const handleEdit = (row) => {
 }
 
 const handleView = (row) => {
-  window.open(`http://localhost:3000/article/${row.id}`, '_blank')
+  const frontUrl = import.meta.env.VITE_FRONT_URL || 'http://localhost:3000'
+  window.open(`${frontUrl}/article/${row.id}`, '_blank')
 }
 
 const handlePublish = async (row) => {

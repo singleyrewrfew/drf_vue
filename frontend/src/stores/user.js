@@ -57,36 +57,19 @@ export const useUserStore = defineStore('user', () => {
       clearInterval(profileCheckTimer)
     }
     
-    console.log('Starting profile check timer')
-    
     profileCheckTimer = setInterval(async () => {
       if (token.value) {
         try {
-          console.log('Checking profile for updates...')
           const { data } = await getProfile()
           
-          // 比较avatar_url字段
-          const oldAvatarUrl = user.value?.avatar_url
-          const newAvatarUrl = data.avatar_url
-          
-          console.log('Old avatar_url:', oldAvatarUrl)
-          console.log('New avatar_url:', newAvatarUrl)
-          console.log('Full old user:', user.value)
-          console.log('Full new user:', data)
-          
-          // 检查是否有任何变化
           if (JSON.stringify(user.value) !== JSON.stringify(data)) {
-            console.log('User info changed, updating...')
             setUser(data)
-          } else {
-            console.log('No changes detected')
           }
         } catch (error) {
           console.error('Profile check error:', error)
         }
       }
-    }, 5000)
-    console.log('Profile check timer set to run every 5 seconds')
+    }, 30000)
   }
 
   const stopProfileCheck = () => {

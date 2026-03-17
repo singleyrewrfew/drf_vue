@@ -1,10 +1,8 @@
-import uuid
-
-from django.utils.text import slugify
 from rest_framework import serializers
 
 from apps.categories.serializers import CategorySerializer
 from apps.tags.serializers import TagSerializer
+from utils.serializer_mixins import AutoSlugMixin
 
 from .models import Content
 
@@ -64,7 +62,8 @@ class ContentListSerializer(serializers.ModelSerializer):
         ]
 
 
-class ContentCreateUpdateSerializer(serializers.ModelSerializer):
+class ContentCreateUpdateSerializer(AutoSlugMixin, serializers.ModelSerializer):
+    slug_source_field = 'title'
     tags = serializers.ListField(child=serializers.UUIDField(), write_only=True, required=False)
     category = serializers.PrimaryKeyRelatedField(allow_null=True, required=False, queryset=Content._meta.get_field('category').related_model.objects.all())
     cover_image = serializers.CharField(required=False, allow_null=True, allow_blank=True)
@@ -84,19 +83,6 @@ class ContentCreateUpdateSerializer(serializers.ModelSerializer):
             return None
         return value
 
-    def validate(self, data):
-        if not data.get('slug'):
-            base_slug = slugify(data['title'])
-            if not base_slug:
-                base_slug = uuid.uuid4().hex[:8]
-            slug = base_slug
-            counter = 1
-            while Content.objects.filter(slug=slug).exclude(id=self.instance.id if self.instance else None).exists():
-                slug = f'{base_slug}-{counter}'
-                counter += 1
-            data['slug'] = slug
-        return data
-
     def create(self, validated_data):
         tags_data = validated_data.pop('tags', [])
         cover_image_url = validated_data.pop('cover_image', None)
@@ -105,20 +91,6 @@ class ContentCreateUpdateSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             if 'author' not in validated_data or not validated_data.get('author'):
                 validated_data['author'] = request.user
-        
-        # 自动生成 slug
-        if not validated_data.get('slug'):
-            from django.utils.text import slugify
-            import uuid
-            base_slug = slugify(validated_data['title'])
-            if not base_slug:
-                base_slug = str(uuid.uuid4())[:8]
-            slug = base_slug
-            counter = 1
-            while Content.objects.filter(slug=slug).exists():
-                slug = f"{base_slug}-{counter}"
-                counter += 1
-            validated_data['slug'] = slug
         
         content = Content.objects.create(**validated_data)
         

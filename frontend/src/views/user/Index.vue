@@ -91,6 +91,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getUsers, updateUser, deleteUser, register } from '@/api/user'
 import { useUserStore } from '@/stores/user'
@@ -101,6 +102,7 @@ import CreateButton from '@/components/CreateButton.vue'
 import ResetButton from '@/components/ResetButton.vue'
 import SearchButton from '@/components/SearchButton.vue'
 
+const router = useRouter()
 const userStore = useUserStore()
 const loading = ref(false)
 const submitLoading = ref(false)

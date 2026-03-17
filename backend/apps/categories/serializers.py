@@ -1,6 +1,6 @@
-from django.utils.text import slugify
 from rest_framework import serializers
 
+from utils.serializer_mixins import AutoSlugMixin
 from .models import Category
 
 
@@ -33,18 +33,9 @@ class CategoryListSerializer(serializers.ModelSerializer):
         return obj.contents.filter(status='published').count()
 
 
-class CategoryCreateUpdateSerializer(serializers.ModelSerializer):
+class CategoryCreateUpdateSerializer(AutoSlugMixin, serializers.ModelSerializer):
+    slug_source_field = 'name'
+    
     class Meta:
         model = Category
         fields = ['name', 'slug', 'parent', 'description', 'sort_order']
-
-    def validate(self, data):
-        if not data.get('slug'):
-            base_slug = slugify(data['name'])
-            slug = base_slug
-            counter = 1
-            while Category.objects.filter(slug=slug).exclude(id=self.instance.id if self.instance else None).exists():
-                slug = f'{base_slug}-{counter}'
-                counter += 1
-            data['slug'] = slug
-        return data
