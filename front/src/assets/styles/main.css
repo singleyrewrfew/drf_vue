@@ -133,6 +133,10 @@ button {
 .el-pagination.is-background .el-pager li {
   border-radius: var(--radius-sm);
   transition: all var(--transition-fast);
+  max-width: 32px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .el-pagination.is-background .el-pager li:hover {
@@ -143,6 +147,16 @@ button {
 .el-pagination.is-background .el-pager li.is-active {
   background: var(--primary-color);
   color: #fff;
+}
+
+.el-pagination.is-background .el-pager li.is-more {
+  padding: 0 5px;
+  cursor: default;
+}
+
+.el-pagination.is-background .el-pager li.is-more:hover {
+  background: transparent;
+  color: var(--text-primary);
 }
 
 .el-textarea__inner:focus {
