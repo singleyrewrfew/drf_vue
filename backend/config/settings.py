@@ -172,13 +172,19 @@ SIMPLE_JWT = {
 # CORS 配置：允许所有来源（仅开发环境）
 CORS_ALLOW_ALL_ORIGINS = DEBUG
 
-# CORS 配置：允许的来源列表
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-]
+# CORS 配置：允许的来源列表（从环境变量读取）
+_cors_origins = os.getenv('CORS_ALLOWED_ORIGINS', '')
+if _cors_origins:
+    CORS_ALLOWED_ORIGINS = [origin.strip() for origin in _cors_origins.split(',')]
+elif DEBUG:
+    CORS_ALLOWED_ORIGINS = [
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+    ]
+else:
+    CORS_ALLOWED_ORIGINS = []
 
 # CORS 配置：允许携带凭证
 CORS_ALLOW_CREDENTIALS = True
@@ -205,9 +211,8 @@ ALLOWED_DOCUMENT_TYPES = ['application/pdf', 'application/msword', 'application/
 # 所有允许的文件类型
 ALLOWED_FILE_TYPES = ALLOWED_IMAGE_TYPES + ALLOWED_VIDEO_TYPES + ALLOWED_DOCUMENT_TYPES
 
-# FFmpeg 配置：主路径
-FFMPEG_PATH = r'D:\ffmpeg-2025-12-18-git-78c75d546a-essentials_build\bin'
-# FFmpeg 配置：备用路径列表
+# FFmpeg 配置：从环境变量读取路径
+FFMPEG_PATH = os.getenv('FFMPEG_PATH', '')
 FFMPEG_ADDITIONAL_PATHS = [
-    r'D:\ffmpeg\bin',
+    p.strip() for p in os.getenv('FFMPEG_ADDITIONAL_PATHS', '').split(',') if p.strip()
 ]
