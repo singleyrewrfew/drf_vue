@@ -192,6 +192,7 @@ import { User, View, Calendar, Clock, Document, ArrowRight, TrendCharts, Folder,
 import { ElMessage } from 'element-plus'
 import { getContents, getCategories, getTags } from '@/api/content'
 import WinPagination from '@/components/WinPagination.vue'
+import { getCoverUrl, getAvatarUrl, getArticleUrl, formatDate } from '@/utils'
 
 const featuredContents = ref([])
 const latestArticles = ref([])
@@ -203,28 +204,6 @@ const pageSize = ref(4)
 const total = ref(0)
 const loading = ref(true)
 const isInitialLoad = ref(true)
-
-const getCoverUrl = (coverImage) => {
-  if (!coverImage) return 'https://picsum.photos/800/400?random=' + Math.random()
-  if (coverImage.startsWith('http')) return coverImage
-  return `http://localhost:8001${coverImage}`
-}
-
-const getArticleUrl = (article) => {
-  return `/article/${article.slug || article.id}`
-}
-
-const getAvatarUrl = (avatar) => {
-  if (!avatar) return ''
-  if (avatar.startsWith('http')) return avatar
-  return `http://localhost:8001${avatar}`
-}
-
-const formatDate = (dateStr) => {
-  if (!dateStr) return ''
-  const date = new Date(dateStr)
-  return date.toLocaleDateString('zh-CN')
-}
 
 const fetchData = async () => {
   if (isInitialLoad.value) {

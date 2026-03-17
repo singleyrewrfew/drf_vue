@@ -864,17 +864,6 @@ onUnmounted(() => {
   padding: 24px 0;
 }
 
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 .article-header {
   margin-bottom: 32px;
   padding-bottom: 24px;

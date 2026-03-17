@@ -167,6 +167,7 @@ import { User, Folder, View, Calendar, Document, FolderOpened, PriceTag, UserFil
 import { ElMessage } from 'element-plus'
 import { getContents, getCategories, getTags } from '@/api/content'
 import { getPopularAuthors } from '@/api/user'
+import { getCoverUrl, getArticleUrl, formatDate } from '@/utils'
 
 const route = useRoute()
 
@@ -180,22 +181,6 @@ const pageSize = ref(4)
 const total = ref(0)
 const currentCategory = ref(null)
 const currentAuthor = ref(null)
-
-const getCoverUrl = (coverImage) => {
-  if (!coverImage) return ''
-  if (coverImage.startsWith('http')) return coverImage
-  return `http://localhost:8001${coverImage}`
-}
-
-const getArticleUrl = (article) => {
-  return `/article/${article.slug || article.id}`
-}
-
-const formatDate = (dateStr) => {
-  if (!dateStr) return ''
-  const date = new Date(dateStr)
-  return date.toLocaleDateString('zh-CN')
-}
 
 const fetchArticles = async () => {
   loading.value = true
@@ -348,17 +333,6 @@ onMounted(() => {
   position: relative;
   overflow: hidden;
   animation: fadeInUp 0.15s ease-out backwards;
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .article-item:hover {

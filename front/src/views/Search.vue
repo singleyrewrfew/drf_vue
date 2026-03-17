@@ -40,6 +40,7 @@ import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { User, View, Calendar } from '@element-plus/icons-vue'
 import { searchContents } from '@/api/content'
+import { getCoverUrl, getArticleUrl, formatDate } from '@/utils'
 
 const route = useRoute()
 
@@ -48,21 +49,6 @@ const articles = ref([])
 const total = ref(0)
 
 const keyword = ref('')
-
-const getCoverUrl = (coverImage) => {
-  if (!coverImage) return ''
-  if (coverImage.startsWith('http')) return coverImage
-  return `http://localhost:8001${coverImage}`
-}
-
-const getArticleUrl = (article) => {
-  return `/article/${article.slug || article.id}`
-}
-
-const formatDate = (dateStr) => {
-  if (!dateStr) return ''
-  return new Date(dateStr).toLocaleDateString('zh-CN')
-}
 
 const highlightKeyword = (text) => {
   if (!text || !keyword.value) return text
@@ -138,17 +124,6 @@ watch(() => route.query.q, fetchArticles, { immediate: true })
   position: relative;
   overflow: hidden;
   animation: fadeInUp 0.15s ease-out backwards;
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .article-item:hover {

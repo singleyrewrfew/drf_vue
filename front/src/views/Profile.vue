@@ -135,17 +135,12 @@ import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { updateProfile as updateProfileApi, changePassword as changePasswordApi } from '@/api/user'
 import { getComments } from '@/api/content'
+import { getAvatarUrl, formatDate } from '@/utils'
 
 const userStore = useUserStore()
 
 const activeMenu = ref('profile')
 const comments = ref([])
-
-const getAvatarUrl = (avatar) => {
-  if (!avatar) return ''
-  if (avatar.startsWith('http')) return avatar
-  return `http://localhost:8001${avatar}`
-}
 
 const profileForm = reactive({
   username: userStore.user?.username || '',
@@ -216,11 +211,6 @@ const fetchComments = async () => {
   } catch (e) {
     console.error(e)
   }
-}
-
-const formatDate = (dateStr) => {
-  if (!dateStr) return ''
-  return new Date(dateStr).toLocaleDateString('zh-CN')
 }
 
 onMounted(() => {
@@ -390,17 +380,6 @@ onMounted(() => {
   border: 1px solid var(--border-light);
   transition: all var(--transition-fast);
   animation: fadeInUp 0.15s ease-out backwards;
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .comment-item:hover {

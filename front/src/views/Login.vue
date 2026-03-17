@@ -258,17 +258,6 @@ const handleLogin = async () => {
   animation: fadeInUp 0.15s ease-out;
 }
 
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 .login-header {
   text-align: center;
   margin-bottom: 32px;

@@ -53,30 +53,20 @@ export const useUserStore = defineStore('user', () => {
       clearInterval(profileCheckTimer)
     }
     
-    console.log('前台：Starting profile check timer')
-    
     profileCheckTimer = setInterval(async () => {
       if (token.value) {
         try {
-          console.log('前台：Checking profile for updates...')
           const { data } = await api.get('/auth/profile/')
           
-          console.log('前台：Old user:', user.value)
-          console.log('前台：New user:', data)
-          
           if (JSON.stringify(user.value) !== JSON.stringify(data)) {
-            console.log('前台：User info changed, updating...')
             user.value = data
             localStorage.setItem('front_user', JSON.stringify(data))
-          } else {
-            console.log('前台：No changes detected')
           }
         } catch (error) {
-          console.error('前台：Profile check error:', error)
+          console.error('Profile check error:', error)
         }
       }
-    }, 5000)
-    console.log('前台：Profile check timer set to run every 5 seconds')
+    }, 30000)
   }
 
   const stopProfileCheck = () => {

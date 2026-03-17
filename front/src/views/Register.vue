@@ -337,17 +337,6 @@ const handleRegister = async () => {
   animation: fadeInUp 0.15s ease-out;
 }
 
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 .register-header {
   text-align: center;
   margin-bottom: 28px;

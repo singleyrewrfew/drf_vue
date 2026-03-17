@@ -152,6 +152,7 @@ import { useUserStore } from '@/stores/user'
 import { useThemeStore } from '@/stores/theme'
 import { getCategories } from '@/api/content'
 import WinDropdown from '@/components/WinDropdown.vue'
+import { getAvatarUrl } from '@/utils'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -182,12 +183,6 @@ const handleUserMenuSelect = (item) => {
   } else if (item.value === 'logout') {
     handleLogout()
   }
-}
-
-const getAvatarUrl = (avatar) => {
-  if (!avatar) return ''
-  if (avatar.startsWith('http')) return avatar
-  return `http://localhost:8001${avatar}`
 }
 
 const handleSearch = () => {
