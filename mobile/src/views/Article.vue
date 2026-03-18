@@ -1,18 +1,12 @@
 <template>
   <div class="page">
-    <header class="page-header">
-      <div class="header-left">
-        <button class="btn-back" @click="$router.back()">
-          <el-icon><ArrowLeft /></el-icon>
-        </button>
-      </div>
-      <h1 class="page-title">详情</h1>
-      <div class="header-right">
+    <PageHeader title="详情">
+      <template #right>
         <button class="btn-icon" @click="shareArticle">
           <el-icon><Share /></el-icon>
         </button>
-      </div>
-    </header>
+      </template>
+    </PageHeader>
     
     <div v-if="loading" class="page-content" style="padding: 0;">
       <Skeleton type="article" />
@@ -305,13 +299,14 @@
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, Share, Document, List, Star, ChatDotRound, Loading, ArrowRight } from '@element-plus/icons-vue'
+import { Share, Document, List, Star, ChatDotRound, ArrowRight } from '@element-plus/icons-vue'
 import { marked } from 'marked'
 import hljs from 'highlight.js'
 import { getContent, getComments, createComment, likeComment as likeCommentApi } from '@/api/content'
 import { getCoverUrl, getAvatarUrl, formatRelativeTime } from '@/utils'
 import { useUserStore } from '@/stores/user'
 import Skeleton from '@/components/Skeleton.vue'
+import PageHeader from '@/components/PageHeader.vue'
 
 const route = useRoute()
 const userStore = useUserStore()
@@ -321,7 +316,6 @@ const showToc = ref(false)
 const tocItems = ref([])
 const activeTocId = ref('')
 const comments = ref([])
-const commentsLoading = ref(false)
 const newCommentText = ref('')
 const submitting = ref(false)
 const showCommentsDialog = ref(false)
@@ -496,14 +490,11 @@ const updateActiveToc = () => {
 
 const fetchComments = async () => {
   if (!article.value?.id) return
-  commentsLoading.value = true
   try {
     const { data } = await getComments({ content: article.value.id })
     comments.value = data.results || data
   } catch (e) {
     console.error(e)
-  } finally {
-    commentsLoading.value = false
   }
 }
 
