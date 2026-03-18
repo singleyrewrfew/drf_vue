@@ -50,6 +50,174 @@
         </router-link>
       </div>
       
+      <div class="comment-section">
+        <div class="section-title">
+          <el-icon><ChatDotRound /></el-icon>
+          <span>评论 ({{ comments.length }})</span>
+        </div>
+        
+        <div v-if="userStore.isLoggedIn" class="comment-form">
+          <div class="comment-form-wrapper">
+            <el-avatar :size="36" :src="getAvatarUrl(userStore.user?.avatar)">
+              {{ userStore.user?.username?.charAt(0)?.toUpperCase() }}
+            </el-avatar>
+            <div class="comment-form-content">
+              <textarea
+                v-model="newCommentText"
+                class="comment-textarea"
+                placeholder="理性发言，友善互动..."
+                rows="3"
+              ></textarea>
+              <div class="comment-form-footer">
+                <div class="comment-form-tools">
+                  <el-popover placement="top-start" :width="280" trigger="click">
+                    <template #reference>
+                      <button class="tool-btn">
+                        <svg width="1.2em" height="1.2em" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M14.413 14.223a.785.785 0 0 1 1.45.601A4.174 4.174 0 0 1 12 17.4a4.19 4.19 0 0 1-2.957-1.221 4.174 4.174 0 0 1-.906-1.355.785.785 0 1 1 1.449-.601 2.604 2.604 0 0 0 1.413 1.41 2.621 2.621 0 0 0 2.849-.566c.242-.242.434-.529.565-.844ZM8.6 8.77a1.308 1.308 0 1 1 0 2.615 1.308 1.308 0 0 1 0-2.615ZM15.4 8.77a1.308 1.308 0 1 1 0 2.615 1.308 1.308 0 0 1 0-2.615Z"></path>
+                          <path fill-rule="evenodd" d="M12 1.573c5.758 0 10.427 4.669 10.427 10.427S17.758 22.427 12 22.427 1.573 17.758 1.573 12 6.242 1.573 12 1.573Zm0 1.746a8.681 8.681 0 1 0 .001 17.362A8.681 8.681 0 0 0 12 3.32Z" clip-rule="evenodd"></path>
+                        </svg>
+                      </button>
+                    </template>
+                    <div class="emoji-picker">
+                      <div class="emoji-list">
+                        <span v-for="emoji in emojis" :key="emoji" class="emoji-item" @click="insertEmoji(emoji)">
+                          {{ emoji }}
+                        </span>
+                      </div>
+                    </div>
+                  </el-popover>
+                </div>
+                <div class="comment-form-actions">
+                  <span class="char-count">{{ newCommentText.length }}/500</span>
+                  <button 
+                    class="submit-btn" 
+                    :disabled="!newCommentText.trim() || submitting"
+                    @click="submitComment"
+                  >
+                    发布
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-else class="login-tip">
+          <p>登录后才能评论</p>
+          <button class="btn btn-primary" @click="$router.push('/login')">立即登录</button>
+        </div>
+        
+        <div class="comment-list">
+          <div 
+            v-for="comment in comments" 
+            :key="comment.id" 
+            class="comment-item"
+          >
+            <el-avatar :size="40" :src="getAvatarUrl(comment.user_avatar)">
+              {{ comment.user_name?.charAt(0)?.toUpperCase() }}
+            </el-avatar>
+            <div class="comment-body">
+              <div class="comment-main">
+                <div class="comment-header">
+                  <span class="comment-author">{{ comment.user_name }}</span>
+                  <span class="comment-time">{{ formatRelativeTime(comment.created_at) }}</span>
+                </div>
+                <p class="comment-text">{{ comment.content }}</p>
+                <div class="comment-actions">
+                  <button 
+                    class="action-btn" 
+                    :class="{ liked: comment.is_liked }"
+                    @click="likeComment(comment.id)"
+                  >
+                    <el-icon><Star /></el-icon>
+                    <span>{{ comment.like_count || '' }}</span>
+                  </button>
+                  <button class="action-btn" @click="openReplyForm(comment.id, comment.user_name, comment.user)">
+                    <el-icon><ChatDotRound /></el-icon>
+                    <span>回复</span>
+                  </button>
+                </div>
+                
+                <div v-if="replyToParent === comment.id" class="reply-form">
+                  <div class="reply-form-header">
+                    <span>回复 <span class="reply-target">@{{ replyToName }}</span></span>
+                    <button class="cancel-btn" @click="closeReplyForm">取消</button>
+                  </div>
+                  <textarea
+                    v-model="replyContent"
+                    class="reply-textarea"
+                    placeholder="写下你的回复..."
+                    rows="2"
+                  ></textarea>
+                  <div class="reply-form-footer">
+                    <span class="char-count">{{ replyContent.length }}/500</span>
+                    <button 
+                      class="submit-btn small" 
+                      :disabled="!replyContent.trim() || submittingReply"
+                      @click="submitReply(comment.id)"
+                    >
+                      发送
+                    </button>
+                  </div>
+                </div>
+                
+                <div v-if="comment.reply_count > 0" class="reply-section">
+                  <div 
+                    class="reply-toggle" 
+                    @click="toggleReplies(comment.id)"
+                  >
+                    <span>{{ expandedReplies.includes(comment.id) ? '收起回复' : `${comment.reply_count} 条回复` }}</span>
+                    <el-icon :class="{ rotated: expandedReplies.includes(comment.id) }"><ArrowRight /></el-icon>
+                  </div>
+                  
+                  <div v-if="expandedReplies.includes(comment.id) && comment.replies?.length" class="reply-list">
+                    <div v-for="reply in comment.replies" :key="reply.id" class="reply-item">
+                      <el-avatar :size="28" :src="getAvatarUrl(reply.user_avatar)">
+                        {{ reply.user_name?.charAt(0)?.toUpperCase() }}
+                      </el-avatar>
+                      <div class="reply-body">
+                        <div class="reply-header">
+                          <span class="reply-author">{{ reply.user_name }}</span>
+                          <template v-if="reply.reply_to_name">
+                            <el-icon class="reply-arrow"><ArrowRight /></el-icon>
+                            <span class="reply-to-user">{{ reply.reply_to_name }}</span>
+                          </template>
+                          <span class="reply-time">{{ formatRelativeTime(reply.created_at) }}</span>
+                        </div>
+                        <p class="reply-text">{{ reply.content }}</p>
+                        <div class="reply-actions">
+                          <button 
+                            class="action-btn small" 
+                            :class="{ liked: reply.is_liked }"
+                            @click="likeComment(reply.id, comment.id)"
+                          >
+                            <el-icon><Star /></el-icon>
+                            <span>{{ reply.like_count || '' }}</span>
+                          </button>
+                          <button class="action-btn small" @click="openReplyForm(comment.id, reply.user_name, reply.user_id)">
+                            <el-icon><ChatDotRound /></el-icon>
+                            <span>回复</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-if="comments.length === 0" class="empty-comments">
+            暂无评论，快来抢沙发吧~
+          </div>
+          
+          <div v-if="comments.length > 3" class="show-more-comments">
+            <button class="more-btn" @click="showCommentsDialog = true">
+              查看全部 {{ comments.length }} 条评论
+            </button>
+          </div>
+        </div>
+      </div>
+      
       <button 
         v-if="tocItems.length" 
         class="toc-fab" 
@@ -87,6 +255,49 @@
         </a>
       </div>
     </el-drawer>
+    
+    <el-drawer
+      v-model="showCommentsDialog"
+      direction="btt"
+      size="90%"
+      title="全部评论"
+      :with-header="true"
+    >
+      <div class="all-comments">
+        <div 
+          v-for="comment in comments" 
+          :key="comment.id" 
+          class="comment-item"
+        >
+          <el-avatar :size="40" :src="getAvatarUrl(comment.user_avatar)">
+            {{ comment.user_name?.charAt(0)?.toUpperCase() }}
+          </el-avatar>
+          <div class="comment-body">
+            <div class="comment-main">
+              <div class="comment-header">
+                <span class="comment-author">{{ comment.user_name }}</span>
+                <span class="comment-time">{{ formatRelativeTime(comment.created_at) }}</span>
+              </div>
+              <p class="comment-text">{{ comment.content }}</p>
+              <div class="comment-actions">
+                <button 
+                  class="action-btn" 
+                  :class="{ liked: comment.is_liked }"
+                  @click="likeComment(comment.id)"
+                >
+                  <el-icon><Star /></el-icon>
+                  <span>{{ comment.like_count || '' }}</span>
+                </button>
+                <button class="action-btn" @click="openReplyForm(comment.id, comment.user_name, comment.user)">
+                  <el-icon><ChatDotRound /></el-icon>
+                  <span>回复</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </el-drawer>
   </div>
 </template>
 
@@ -94,19 +305,98 @@
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, Share, Document, List } from '@element-plus/icons-vue'
+import { ArrowLeft, Share, Document, List, Star, ChatDotRound, Loading, ArrowRight } from '@element-plus/icons-vue'
 import { marked } from 'marked'
 import hljs from 'highlight.js'
-import { getContent } from '@/api/content'
+import { getContent, getComments, createComment, likeComment as likeCommentApi } from '@/api/content'
 import { getCoverUrl, getAvatarUrl, formatRelativeTime } from '@/utils'
+import { useUserStore } from '@/stores/user'
 import Skeleton from '@/components/Skeleton.vue'
 
 const route = useRoute()
+const userStore = useUserStore()
 const loading = ref(true)
 const article = ref(null)
 const showToc = ref(false)
 const tocItems = ref([])
 const activeTocId = ref('')
+const comments = ref([])
+const commentsLoading = ref(false)
+const newCommentText = ref('')
+const submitting = ref(false)
+const showCommentsDialog = ref(false)
+const expandedReplies = ref([])
+const replyToParent = ref(null)
+const replyToName = ref('')
+const replyToUserId = ref(null)
+const replyContent = ref('')
+const submittingReply = ref(false)
+
+const emojis = ['😀', '😂', '😍', '🥰', '😎', '🤔', '👍', '👎', '❤️', '💔', '🎉', '🔥', '✨', '🌟', '⭐', '💯', '💪', '🙏', '😭', '😱', '🤣', '😊', '🥺', '👏', '🙄', '😴', '😋', '😜', '🤪', '😇']
+
+const insertEmoji = (emoji) => {
+  newCommentText.value += emoji
+}
+
+const openReplyForm = (parentId, userName, userId) => {
+  replyToParent.value = parentId
+  replyToName.value = userName
+  replyToUserId.value = userId
+  replyContent.value = ''
+}
+
+const closeReplyForm = () => {
+  replyToParent.value = null
+  replyToName.value = ''
+  replyToUserId.value = null
+  replyContent.value = ''
+}
+
+const toggleReplies = async (commentId) => {
+  const index = expandedReplies.value.indexOf(commentId)
+  if (index > -1) {
+    expandedReplies.value.splice(index, 1)
+  } else {
+    expandedReplies.value.push(commentId)
+  }
+}
+
+const submitReply = async (parentId) => {
+  if (!replyContent.value.trim() || submittingReply.value) return
+  
+  if (!userStore.isLoggedIn) {
+    ElMessage.warning('请先登录')
+    return
+  }
+  
+  submittingReply.value = true
+  try {
+    const { data } = await createComment({
+      article: article.value.id,
+      content: replyContent.value.trim(),
+      parent: parentId,
+      reply_to_id: replyToUserId.value
+    })
+    
+    const parentComment = comments.value.find(c => c.id === parentId)
+    if (parentComment) {
+      if (!parentComment.replies) parentComment.replies = []
+      parentComment.replies.push(data)
+      parentComment.reply_count = (parentComment.reply_count || 0) + 1
+      if (!expandedReplies.value.includes(parentId)) {
+        expandedReplies.value.push(parentId)
+      }
+    }
+    
+    closeReplyForm()
+    ElMessage.success('回复成功')
+  } catch (e) {
+    console.error(e)
+    ElMessage.error('回复失败')
+  } finally {
+    submittingReply.value = false
+  }
+}
 
 let headingIdCounter = 0
 
@@ -193,6 +483,69 @@ const updateActiveToc = () => {
   activeTocId.value = currentId
 }
 
+const fetchComments = async () => {
+  if (!article.value?.id) return
+  commentsLoading.value = true
+  try {
+    const { data } = await getComments({ content: article.value.id })
+    comments.value = data.results || data
+  } catch (e) {
+    console.error(e)
+  } finally {
+    commentsLoading.value = false
+  }
+}
+
+const submitComment = async () => {
+  if (!newCommentText.value.trim() || submitting.value) return
+  
+  if (!userStore.isLoggedIn) {
+    ElMessage.warning('请先登录')
+    return
+  }
+  
+  submitting.value = true
+  try {
+    const { data } = await createComment({
+      article: article.value.id,
+      content: newCommentText.value.trim()
+    })
+    comments.value.unshift(data)
+    newCommentText.value = ''
+    ElMessage.success('评论成功')
+  } catch (e) {
+    console.error(e)
+    ElMessage.error('评论失败')
+  } finally {
+    submitting.value = false
+  }
+}
+
+const likeComment = async (commentId, parentId = null) => {
+  try {
+    await likeCommentApi(commentId)
+    
+    if (parentId) {
+      const parentComment = comments.value.find(c => c.id === parentId)
+      if (parentComment?.replies) {
+        const reply = parentComment.replies.find(r => r.id === commentId)
+        if (reply) {
+          reply.like_count = (reply.like_count || 0) + 1
+          reply.is_liked = true
+        }
+      }
+    } else {
+      const comment = comments.value.find(c => c.id === commentId)
+      if (comment) {
+        comment.like_count = (comment.like_count || 0) + 1
+        comment.is_liked = true
+      }
+    }
+  } catch (e) {
+    console.error(e)
+  }
+}
+
 watch(() => article.value, async () => {
   if (article.value) {
     await nextTick()
@@ -200,6 +553,7 @@ watch(() => article.value, async () => {
     if (pageContent) {
       pageContent.addEventListener('scroll', updateActiveToc)
     }
+    fetchComments()
   }
 })
 
@@ -654,5 +1008,421 @@ onMounted(fetchArticle)
 :global(.dark) .toc-fab,
 :global([data-theme="dark"]) .toc-fab {
   background: var(--bg-tertiary);
+}
+
+.comment-section {
+  margin-top: 24px;
+  padding: 16px;
+  padding-bottom: calc(var(--tab-bar-height) + var(--safe-area-bottom) + 16px);
+  background: var(--card-bg);
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+}
+
+.section-title .el-icon {
+  color: var(--primary-color);
+}
+
+.comment-form {
+  margin-bottom: 20px;
+}
+
+.comment-form-wrapper {
+  display: flex;
+  gap: 12px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  padding: 14px;
+}
+
+.comment-form-wrapper .el-avatar {
+  border-radius: var(--radius-sm) !important;
+  border: 2px solid var(--border-color);
+}
+
+.comment-form-content {
+  flex: 1;
+}
+
+.comment-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-color);
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.6;
+  resize: none;
+  font-family: inherit;
+}
+
+.comment-textarea::placeholder {
+  color: var(--text-placeholder);
+}
+
+.comment-textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.comment-form-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.comment-form-tools {
+  display: flex;
+  gap: 6px;
+}
+
+.tool-btn {
+  padding: 6px 10px;
+  color: var(--text-tertiary);
+  font-size: 18px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.tool-btn:active {
+  color: var(--primary-color);
+  background: var(--primary-bg);
+}
+
+.comment-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.char-count {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.submit-btn {
+  padding: 6px 16px;
+  background: var(--primary-color);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.submit-btn:disabled {
+  opacity: 0.5;
+}
+
+.submit-btn:not(:disabled):active {
+  opacity: 0.8;
+}
+
+.emoji-picker {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.emoji-list {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px;
+}
+
+.emoji-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  font-size: 18px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.emoji-item:active {
+  background: var(--primary-bg);
+  transform: scale(1.1);
+}
+
+.login-tip {
+  text-align: center;
+  padding: 24px;
+  background: linear-gradient(135deg, var(--primary-bg) 0%, var(--bg-secondary) 100%);
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+}
+
+.login-tip p {
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.comment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.comment-item {
+  display: flex;
+  gap: 12px;
+  background: var(--bg-secondary);
+  padding: 14px;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.comment-item .el-avatar {
+  border-radius: var(--radius-sm) !important;
+  border: 2px solid var(--border-color);
+}
+
+.comment-body {
+  flex: 1;
+}
+
+.comment-main {
+  background: transparent;
+  padding: 0;
+}
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.comment-author {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.comment-time {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.comment-text {
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.7;
+  margin: 0;
+}
+
+.comment-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 16px;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  transition: all var(--transition-fast);
+}
+
+.action-btn:active {
+  color: var(--primary-color);
+  background: var(--primary-bg);
+}
+
+.action-btn.liked {
+  color: var(--primary-color);
+  background: var(--primary-bg);
+}
+
+.empty-comments {
+  text-align: center;
+  padding: 32px;
+  color: var(--text-tertiary);
+  font-size: 14px;
+}
+
+.reply-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+}
+
+.reply-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--primary-color);
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.reply-toggle .el-icon {
+  font-size: 12px;
+  transition: transform var(--transition-fast);
+}
+
+.reply-toggle .el-icon.rotated {
+  transform: rotate(90deg);
+}
+
+.reply-list {
+  margin-top: 12px;
+  padding-left: 12px;
+  border-left: 2px solid var(--border-color);
+}
+
+.reply-item {
+  display: flex;
+  gap: 10px;
+  padding: 10px 0;
+}
+
+.reply-item .el-avatar {
+  border-radius: var(--radius-sm) !important;
+  border: 2px solid var(--border-color);
+}
+
+.reply-body {
+  flex: 1;
+}
+
+.reply-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+.reply-author {
+  font-weight: 500;
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.reply-arrow {
+  font-size: 10px;
+  color: var(--text-tertiary);
+}
+
+.reply-to-user {
+  font-size: 13px;
+  color: var(--primary-color);
+}
+
+.reply-time {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.reply-text {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.reply-actions {
+  margin-top: 6px;
+  display: flex;
+  gap: 12px;
+}
+
+.action-btn.small {
+  font-size: 11px;
+  padding: 2px 8px;
+}
+
+.reply-form {
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+}
+
+.reply-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.reply-target {
+  color: var(--primary-color);
+  font-weight: 500;
+}
+
+.cancel-btn {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.reply-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-color);
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.5;
+  resize: none;
+  font-family: inherit;
+}
+
+.reply-textarea::placeholder {
+  color: var(--text-placeholder);
+}
+
+.reply-textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.reply-form-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.submit-btn.small {
+  padding: 4px 12px;
+  font-size: 13px;
+}
+
+.show-more-comments {
+  text-align: center;
+  padding: 16px;
+}
+
+.more-btn {
+  color: var(--primary-color);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.all-comments {
+  padding: 0 16px;
+  padding-bottom: calc(var(--tab-bar-height) + var(--safe-area-bottom) + 16px);
 }
 </style>
