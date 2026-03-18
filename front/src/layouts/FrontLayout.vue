@@ -2,6 +2,13 @@
   <div class="front-layout">
     <header class="header">
       <div class="header-inner">
+        <button class="mobile-menu-btn" @click="mobileMenuVisible = true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
         <div class="logo" @click="$router.push('/')">
           <span class="logo-icon">C</span>
           <div class="logo-text">
@@ -40,6 +47,7 @@
             v-model="searchKeyword"
             placeholder="搜索文章..."
             @keyup.enter="handleSearch"
+            @clear="handleSearchClear"
             clearable
             :prefix-icon="Search"
           />
@@ -141,25 +149,34 @@
         </div>
       </div>
     </footer>
+    
+    <MobileMenu 
+      :visible="mobileMenuVisible" 
+      @close="mobileMenuVisible = false" 
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { HomeFilled, Document, Folder, FolderOpened, Search, User, SwitchButton, ArrowDown, Sunny, Moon } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { useThemeStore } from '@/stores/theme'
 import { getCategories } from '@/api/content'
 import WinDropdown from '@/components/WinDropdown.vue'
+import MobileMenu from '@/components/MobileMenu.vue'
 import { getAvatarUrl } from '@/utils'
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
 const themeStore = useThemeStore()
 
 const searchKeyword = ref('')
 const categories = ref([])
+const mobileMenuVisible = ref(false)
+const previousPath = ref('')
 
 const categoryItems = computed(() => 
   categories.value.map(cat => ({
@@ -187,9 +204,32 @@ const handleUserMenuSelect = (item) => {
 
 const handleSearch = () => {
   if (searchKeyword.value.trim()) {
+    if (route.path !== '/search') {
+      previousPath.value = route.fullPath
+    }
     router.push({ path: '/search', query: { q: searchKeyword.value } })
   }
 }
+
+const handleSearchClear = () => {
+  if (route.path === '/search') {
+    if (previousPath.value) {
+      router.push(previousPath.value)
+    } else {
+      router.push('/')
+    }
+  }
+}
+
+watch(searchKeyword, (newVal, oldVal) => {
+  if (oldVal && !newVal && route.path === '/search') {
+    if (previousPath.value) {
+      router.push(previousPath.value)
+    } else {
+      router.push('/')
+    }
+  }
+})
 
 const handleLogout = async () => {
   await userStore.logout()
@@ -216,6 +256,29 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   background: var(--bg-color);
+}
+
+.mobile-menu-btn {
+  display: none;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.mobile-menu-btn:hover {
+  background: var(--bg-secondary);
+}
+
+.mobile-menu-btn svg {
+  width: 22px;
+  height: 22px;
 }
 
 .header {
@@ -359,6 +422,15 @@ onMounted(() => {
 
 .search-box :deep(.el-input__inner::placeholder) {
   color: var(--text-placeholder);
+}
+
+.search-box :deep(.el-input__clear) {
+  color: var(--text-tertiary);
+  transition: color var(--transition-fast);
+}
+
+.search-box :deep(.el-input__clear:hover) {
+  color: var(--primary-color);
 }
 
 .user-area {
@@ -601,6 +673,10 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
+  .mobile-menu-btn {
+    display: flex;
+  }
+  
   .header-inner {
     gap: 16px;
     padding: 0 16px;
@@ -618,6 +694,10 @@ onMounted(() => {
     max-width: 180px;
   }
   
+  .user-area {
+    display: none;
+  }
+  
   .username {
     display: none;
   }
@@ -628,11 +708,124 @@ onMounted(() => {
   
   .footer-content {
     grid-template-columns: 1fr;
-    gap: 32px;
+    gap: 24px;
   }
   
   .footer-inner {
-    padding: 60px 16px 20px;
+    padding: 40px 16px 20px;
+  }
+  
+  .footer-brand {
+    max-width: 100%;
+    text-align: center;
+    order: 1;
+  }
+  
+  .footer-logo {
+    justify-content: center;
+    font-size: 20px;
+    margin-bottom: 12px;
+  }
+  
+  .logo-icon-small {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+  
+  .footer-brand p {
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+  
+  .footer-social {
+    justify-content: center;
+  }
+  
+  .social-link {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .footer-links,
+  .footer-contact {
+    text-align: center;
+    order: 2;
+  }
+  
+  .footer-links h4,
+  .footer-contact h4 {
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+  
+  .footer-links a {
+    justify-content: center;
+    padding: 6px 0;
+    font-size: 13px;
+  }
+  
+  .footer-contact p {
+    justify-content: center;
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+  
+  .footer-bottom {
+    padding-top: 16px;
+  }
+  
+  .footer-bottom p {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 576px) {
+  .footer-inner {
+    padding: 32px 12px 16px;
+  }
+  
+  .footer-content {
+    gap: 20px;
+  }
+  
+  .footer-logo {
+    font-size: 18px;
+  }
+  
+  .logo-icon-small {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+  }
+  
+  .footer-brand p {
+    font-size: 12px;
+  }
+  
+  .social-link {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .social-link svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .footer-links h4,
+  .footer-contact h4 {
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+  
+  .footer-links a,
+  .footer-contact p {
+    font-size: 12px;
+  }
+  
+  .footer-bottom p {
+    font-size: 11px;
   }
 }
 </style>

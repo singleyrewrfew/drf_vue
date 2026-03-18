@@ -567,4 +567,47 @@ const handleRegister = async () => {
     padding: 20px 0;
   }
 }
+
+@media (max-width: 375px) {
+  .register-container {
+    padding: 16px;
+  }
+  
+  .register-card {
+    padding: 24px 20px;
+  }
+  
+  .register-header h2 {
+    font-size: 20px;
+  }
+  
+  .register-header p {
+    font-size: 13px;
+  }
+  
+  .logo-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 24px;
+  }
+  
+  .register-btn {
+    height: 44px;
+    font-size: 15px;
+  }
+  
+  .social-btn {
+    width: 44px;
+    height: 44px;
+  }
+  
+  .social-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .strength-bar span {
+    width: 24px;
+  }
+}
 </style>

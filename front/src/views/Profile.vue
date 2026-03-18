@@ -424,9 +424,131 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
+  .profile-page {
+    padding: 16px 0;
+  }
+  
+  .container {
+    padding: 0 16px;
+  }
+  
+  .el-col-6 {
+    max-width: 100%;
+    flex: 0 0 100%;
+  }
+  
+  .el-col-18 {
+    max-width: 100%;
+    flex: 0 0 100%;
+  }
+  
   .profile-card {
     position: static;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
+    padding: 20px;
+  }
+  
+  .avatar-section {
+    padding: 16px 0;
+    margin-bottom: 16px;
+  }
+  
+  .avatar-section .el-avatar {
+    width: 60px !important;
+    height: 60px !important;
+  }
+  
+  .avatar-section h3 {
+    font-size: 18px;
+    margin-top: 12px;
+  }
+  
+  .avatar-section p {
+    font-size: 13px;
+  }
+  
+  .profile-menu {
+    display: flex;
+    gap: 8px;
+  }
+  
+  .profile-menu .el-menu-item {
+    flex: 1;
+    justify-content: center;
+    padding: 12px 8px;
+    font-size: 13px;
+  }
+  
+  .profile-menu .el-menu-item span {
+    display: none;
+  }
+  
+  .profile-menu .el-menu-item .el-icon {
+    margin-right: 0;
+    font-size: 18px;
+  }
+  
+  .content-card {
+    padding: 20px;
+    min-height: auto;
+  }
+  
+  .content-card h2 {
+    font-size: 18px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+  }
+  
+  .profile-form {
+    max-width: 100%;
+  }
+  
+  .comment-item {
+    padding: 16px;
+  }
+  
+  .comment-content p {
+    font-size: 14px;
+  }
+  
+  .comment-meta {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 576px) {
+  .profile-card {
+    padding: 16px;
+  }
+  
+  .avatar-section {
+    padding: 12px 0;
+  }
+  
+  .avatar-section .el-avatar {
+    width: 50px !important;
+    height: 50px !important;
+  }
+  
+  .avatar-section h3 {
+    font-size: 16px;
+  }
+  
+  .profile-menu .el-menu-item {
+    padding: 10px 6px;
+  }
+  
+  .content-card {
+    padding: 16px;
+  }
+  
+  .content-card h2 {
+    font-size: 16px;
+  }
+  
+  .save-btn {
+    width: 100%;
   }
 }
 </style>

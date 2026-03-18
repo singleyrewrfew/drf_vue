@@ -643,15 +643,90 @@ onMounted(() => {
   background: var(--primary-bg) !important;
 }
 
+@media (max-width: 992px) {
+  .el-col-18 {
+    max-width: 100%;
+    flex: 0 0 100%;
+  }
+  
+  .el-col-6 {
+    display: none;
+  }
+}
+
 @media (max-width: 768px) {
+  .articles-page {
+    padding: 16px 0;
+  }
+  
+  .container {
+    padding: 0 16px;
+  }
+  
+  .page-header {
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  
+  .page-header h1 {
+    font-size: 22px;
+  }
+  
+  .article-item {
+    flex-direction: column;
+    padding: 16px;
+    gap: 16px;
+  }
+  
   .article-cover {
-    width: 160px;
-    height: 100px;
+    width: 100%;
+    height: 180px;
+  }
+  
+  .article-content h2 {
+    font-size: 16px;
+  }
+  
+  .article-summary {
+    font-size: 13px;
+    -webkit-line-clamp: 3;
   }
   
   .article-meta {
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 8px;
+    font-size: 12px;
+  }
+  
+  .article-meta span {
+    padding: 3px 8px;
+  }
+  
+  .pagination-container {
+    margin-top: 24px;
+  }
+  
+  .pagination-container :deep(.el-pagination) {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 576px) {
+  .page-header {
+    padding: 16px;
+  }
+  
+  .page-header h1 {
+    font-size: 20px;
+  }
+  
+  .article-cover {
+    height: 160px;
+  }
+  
+  .article-meta span:nth-child(n+3) {
+    display: none;
   }
 }
 </style>

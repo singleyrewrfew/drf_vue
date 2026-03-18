@@ -2,24 +2,28 @@
   <router-view />
   
   <div class="scroll-buttons">
-    <el-button
+    <button
       @click="scrollToTop"
       class="scroll-btn scroll-top"
+      title="回到顶部"
     >
-      <el-icon><Top /></el-icon>
-    </el-button>
-    <el-button
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M18 15l-6-6-6 6" />
+      </svg>
+    </button>
+    <button
       @click="scrollToBottom"
       class="scroll-btn scroll-bottom"
+      title="滚动到底部"
     >
-      <el-icon><Bottom /></el-icon>
-    </el-button>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M6 9l6 6 6-6" />
+      </svg>
+    </button>
   </div>
 </template>
 
 <script setup>
-import { Top, Bottom } from '@element-plus/icons-vue'
-
 const scrollToTop = () => {
   window.scrollTo({
     top: 0,
@@ -35,7 +39,7 @@ const scrollToBottom = () => {
 }
 </script>
 
-<style scoped>
+<style>
 .scroll-buttons {
   position: fixed;
   right: 24px;
@@ -49,15 +53,14 @@ const scrollToBottom = () => {
 .scroll-btn {
   width: 40px;
   height: 40px;
-  font-size: 16px;
   padding: 0;
   margin: 0;
-  border-radius: var(--radius-sm);
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
-  box-shadow: var(--shadow-sm);
-  transition: all var(--transition-fast);
+  border-radius: 6px;
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border-color, #e4e7ed);
+  color: var(--text-primary, #303133);
+  box-shadow: var(--shadow-sm, 0 2px 8px rgba(0, 0, 0, 0.08));
+  transition: all var(--transition-fast, 0.2s ease);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -65,25 +68,44 @@ const scrollToBottom = () => {
 }
 
 .scroll-btn:hover {
-  background: var(--primary-bg);
-  border-color: var(--primary-color);
-  color: var(--primary-color);
-  box-shadow: var(--shadow-md);
+  background: var(--primary-bg, rgba(0, 120, 212, 0.1));
+  border-color: var(--primary-color, #0078D4);
+  color: var(--primary-color, #0078D4);
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.12));
 }
 
 .scroll-btn:active {
   transform: scale(0.95);
 }
 
-.scroll-btn .el-icon {
-  transition: transform var(--transition-fast);
+.scroll-btn svg {
+  width: 18px;
+  height: 18px;
+  transition: transform var(--transition-fast, 0.2s ease);
 }
 
-.scroll-top:hover .el-icon {
+.scroll-top:hover svg {
   transform: translateY(-2px);
 }
 
-.scroll-bottom:hover .el-icon {
+.scroll-bottom:hover svg {
   transform: translateY(2px);
+}
+
+@media (max-width: 768px) {
+  .scroll-buttons {
+    right: 16px;
+    bottom: 140px;
+  }
+  
+  .scroll-btn {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .scroll-btn svg {
+    width: 16px;
+    height: 16px;
+  }
 }
 </style>

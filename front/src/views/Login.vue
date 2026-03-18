@@ -436,4 +436,43 @@ const handleLogin = async () => {
     font-size: 22px;
   }
 }
+
+@media (max-width: 375px) {
+  .login-container {
+    padding: 16px;
+  }
+  
+  .login-card {
+    padding: 24px 20px;
+  }
+  
+  .login-header h2 {
+    font-size: 20px;
+  }
+  
+  .login-header p {
+    font-size: 13px;
+  }
+  
+  .logo-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 24px;
+  }
+  
+  .login-btn {
+    height: 44px;
+    font-size: 15px;
+  }
+  
+  .social-btn {
+    width: 44px;
+    height: 44px;
+  }
+  
+  .social-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+}
 </style>

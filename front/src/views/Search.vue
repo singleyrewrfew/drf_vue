@@ -224,4 +224,65 @@ watch(() => route.query.q, fetchArticles, { immediate: true })
 [data-theme="dark"] .article-meta span {
   background: var(--bg-tertiary);
 }
+
+@media (max-width: 768px) {
+  .search-page {
+    padding: 16px 0;
+  }
+  
+  .container {
+    padding: 0 16px;
+  }
+  
+  .page-header {
+    margin-bottom: 20px;
+  }
+  
+  .page-header h1 {
+    font-size: 18px;
+  }
+  
+  .article-item {
+    flex-direction: column;
+    padding: 16px;
+    gap: 16px;
+  }
+  
+  .article-cover {
+    width: 100%;
+    height: 180px;
+  }
+  
+  .article-content h2 {
+    font-size: 16px;
+  }
+  
+  .article-summary {
+    font-size: 13px;
+  }
+  
+  .article-meta {
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 12px;
+  }
+  
+  .article-meta span {
+    padding: 3px 8px;
+  }
+}
+
+@media (max-width: 576px) {
+  .page-header h1 {
+    font-size: 16px;
+  }
+  
+  .article-cover {
+    height: 160px;
+  }
+  
+  .article-meta span:nth-child(n+3) {
+    display: none;
+  }
+}
 </style>

@@ -815,21 +815,168 @@ onMounted(() => {
   }
 }
 
+@media (max-width: 992px) {
+  .el-col-17 {
+    max-width: 100%;
+    flex: 0 0 100%;
+  }
+  
+  .el-col-7 {
+    display: none;
+  }
+}
+
 @media (max-width: 768px) {
+  .hero-section {
+    margin-bottom: 20px;
+  }
+  
+  .hero-section :deep(.el-carousel) {
+    height: 300px !important;
+  }
+  
   .hero-content {
-    padding: 32px 24px;
+    padding: 24px 20px;
   }
   
   .hero-content h2 {
-    font-size: 24px;
+    font-size: 22px;
+    margin: 12px 0 8px;
   }
   
-  .hero-section {
-    margin-bottom: 24px;
+  .hero-content p {
+    font-size: 14px;
+    -webkit-line-clamp: 2;
+  }
+  
+  .hero-meta {
+    gap: 16px;
+    font-size: 12px;
+    margin-top: 12px;
+  }
+  
+  .recommend-tag {
+    font-size: 12px;
+    padding: 4px 10px !important;
+  }
+  
+  .main-content {
+    padding: 0 0 32px;
   }
   
   .container {
     padding: 0 16px;
+  }
+  
+  .section-header {
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+  }
+  
+  .section-header h2 {
+    font-size: 18px;
+  }
+  
+  .section-header .el-button {
+    font-size: 13px;
+    padding: 6px 12px;
+  }
+  
+  .article-grid {
+    gap: 16px;
+  }
+  
+  .article-cover {
+    height: 160px;
+  }
+  
+  .article-info {
+    padding: 14px;
+  }
+  
+  .article-info h3 {
+    font-size: 15px;
+    margin-bottom: 8px;
+  }
+  
+  .article-summary {
+    font-size: 13px;
+    height: auto;
+    -webkit-line-clamp: 2;
+    margin-bottom: 12px;
+  }
+  
+  .article-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .article-author {
+    font-size: 12px;
+  }
+  
+  .article-stats {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  .pagination-container {
+    margin-top: 24px;
+  }
+}
+
+@media (max-width: 576px) {
+  .hero-section :deep(.el-carousel) {
+    height: 240px !important;
+  }
+  
+  .hero-content {
+    padding: 20px 16px;
+  }
+  
+  .hero-content h2 {
+    font-size: 18px;
+  }
+  
+  .hero-content p {
+    display: none;
+  }
+  
+  .hero-meta {
+    gap: 12px;
+  }
+  
+  .hero-meta span:nth-child(n+3) {
+    display: none;
+  }
+  
+  .article-cover {
+    height: 140px;
+  }
+  
+  .article-info {
+    padding: 12px;
+  }
+  
+  .article-info h3 {
+    font-size: 14px;
+  }
+  
+  .article-badges {
+    top: 8px;
+    left: 8px;
+    gap: 6px;
+  }
+  
+  .top-tag {
+    font-size: 11px;
+    padding: 2px 6px !important;
+  }
+  
+  .article-category {
+    font-size: 11px;
+    padding: 2px 8px;
   }
 }
 </style>

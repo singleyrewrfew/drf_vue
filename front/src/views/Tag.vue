@@ -254,4 +254,70 @@ watch(() => route.params.id_or_slug, fetchData, { immediate: true })
 .pagination-container :deep(.el-pager li:hover) {
   color: var(--primary-color) !important;
 }
+
+@media (max-width: 768px) {
+  .tag-page {
+    padding: 16px 0;
+  }
+  
+  .container {
+    padding: 0 16px;
+  }
+  
+  .page-header {
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  
+  .page-header h1 {
+    font-size: 20px;
+  }
+  
+  .article-item {
+    flex-direction: column;
+    padding: 16px;
+    gap: 16px;
+  }
+  
+  .article-cover {
+    width: 100%;
+    height: 180px;
+  }
+  
+  .article-content h2 {
+    font-size: 16px;
+  }
+  
+  .article-summary {
+    font-size: 13px;
+  }
+  
+  .article-meta {
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 12px;
+  }
+  
+  .article-meta span {
+    padding: 3px 8px;
+  }
+  
+  .pagination-container {
+    margin-top: 24px;
+  }
+}
+
+@media (max-width: 576px) {
+  .page-header {
+    padding: 16px;
+  }
+  
+  .article-cover {
+    height: 160px;
+  }
+  
+  .article-meta span:nth-child(n+3) {
+    display: none;
+  }
+}
 </style>

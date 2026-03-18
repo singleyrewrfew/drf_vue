@@ -626,3 +626,151 @@ button {
   opacity: 0;
   transform: translateY(-8px);
 }
+
+/* ========== 移动端适配 ========== */
+
+@media (max-width: 768px) {
+  html {
+    font-size: 14px;
+  }
+  
+  body {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+  
+  .container {
+    padding: 0 var(--mobile-padding);
+    max-width: 100%;
+  }
+  
+  .el-dialog {
+    margin: 16px !important;
+    max-width: calc(100% - 32px) !important;
+  }
+  
+  .el-dialog__header {
+    padding: 16px 20px;
+  }
+  
+  .el-dialog__body {
+    padding: 16px 20px !important;
+  }
+  
+  .el-card {
+    margin: 12px 0;
+  }
+  
+  .el-pagination {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
+  
+  .el-pagination .el-pagination__sizes {
+    display: none;
+  }
+  
+  .el-pagination .el-pagination__jump {
+    display: none;
+  }
+  
+  .el-pagination .el-pager li {
+    min-width: 28px !important;
+    height: 28px !important;
+    line-height: 28px !important;
+    font-size: 13px;
+  }
+  
+  .el-pagination .btn-prev,
+  .el-pagination .btn-next {
+    min-width: 28px !important;
+    height: 28px !important;
+  }
+}
+
+@media (max-width: 576px) {
+  html {
+    font-size: 13px;
+  }
+  
+  .container {
+    padding: 0 12px;
+  }
+  
+  .el-card {
+    border-radius: var(--radius-md);
+    margin: 8px 0;
+  }
+  
+  .el-button {
+    padding: 8px 16px;
+  }
+  
+  .el-input__wrapper {
+    padding: 4px 12px;
+  }
+  
+  .el-textarea__inner {
+    padding: 8px 12px;
+  }
+}
+
+/* 移动端工具类 */
+@media (max-width: 768px) {
+  .mobile-hidden {
+    display: none !important;
+  }
+  
+  .mobile-full-width {
+    width: 100% !important;
+  }
+  
+  .mobile-text-center {
+    text-align: center !important;
+  }
+  
+  .mobile-flex-column {
+    flex-direction: column !important;
+  }
+  
+  .mobile-no-margin {
+    margin: 0 !important;
+  }
+  
+  .mobile-no-padding {
+    padding: 0 !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .desktop-hidden {
+    display: none !important;
+  }
+}
+
+/* 触摸设备优化 */
+@media (hover: none) and (pointer: coarse) {
+  .el-button:active {
+    transform: scale(0.98);
+  }
+  
+  a:active {
+    opacity: 0.8;
+  }
+  
+  .el-card:active {
+    transform: scale(0.99);
+  }
+}
+
+/* 安全区域适配 (iPhone X 等) */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+}

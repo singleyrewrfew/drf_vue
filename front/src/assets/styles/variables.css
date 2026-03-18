@@ -78,6 +78,15 @@
   --header-height: 64px;
   --sidebar-width: 280px;
   --container-max: 1200px;
+  
+  --breakpoint-xs: 576px;
+  --breakpoint-sm: 768px;
+  --breakpoint-md: 992px;
+  --breakpoint-lg: 1200px;
+  
+  --mobile-header-height: 56px;
+  --mobile-padding: 16px;
+  --mobile-card-padding: 16px;
 }
 
 [data-theme="dark"] {
