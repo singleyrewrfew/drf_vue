@@ -378,10 +378,21 @@ const submitReply = async (parentId) => {
       reply_to_id: replyToUserId.value
     })
     
+    // 补充用户信息
+    const newReply = {
+      ...data,
+      user_id: userStore.user?.id,
+      user_name: userStore.user?.username,
+      user_avatar: userStore.user?.avatar,
+      reply_to_name: replyToName.value,
+      like_count: data.like_count || 0,
+      replies: []
+    }
+    
     const parentComment = comments.value.find(c => c.id === parentId)
     if (parentComment) {
       if (!parentComment.replies) parentComment.replies = []
-      parentComment.replies.push(data)
+      parentComment.replies.push(newReply)
       parentComment.reply_count = (parentComment.reply_count || 0) + 1
       if (!expandedReplies.value.includes(parentId)) {
         expandedReplies.value.push(parentId)
@@ -510,7 +521,19 @@ const submitComment = async () => {
       article: article.value.id,
       content: newCommentText.value.trim()
     })
-    comments.value.unshift(data)
+    
+    // 补充用户信息
+    const newComment = {
+      ...data,
+      user_id: userStore.user?.id,
+      user_name: userStore.user?.username,
+      user_avatar: userStore.user?.avatar,
+      like_count: data.like_count || 0,
+      reply_count: 0,
+      replies: []
+    }
+    
+    comments.value.unshift(newComment)
     newCommentText.value = ''
     ElMessage.success('评论成功')
   } catch (e) {
