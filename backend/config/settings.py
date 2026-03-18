@@ -8,19 +8,24 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-# 加载 .env 环境变量文件
-load_dotenv()
-
 # 项目根目录（backend/）
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Django 安全密钥，用于加密签名
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-mel0ejcq^bkc+c$)m5k*dpcs%udk^$9td=%^t15m@2r51eb^hh')
+# 当前环境：development 或 production
+ENV = 'development'
 
-# 调试模式，生产环境应设置为 False
+# 加载对应环境的 .env 文件
+env_file = BASE_DIR / f'.env.{ENV}'
+if env_file.exists():
+    load_dotenv(env_file)
+
+# Django 安全密钥，用于加密签名
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-x7k#m9p@q2r$t5v&w8y*z1b!c4d6e7f9g0h2j3k4l5m6n7o8p9')
+
+# 调试模式
 DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'True'
 
-# 允许的主机列表，用于 CORS 和 ALLOWED_HOSTS
+# 允许的主机列表
 ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 # 已安装的应用列表
@@ -173,18 +178,7 @@ SIMPLE_JWT = {
 CORS_ALLOW_ALL_ORIGINS = DEBUG
 
 # CORS 配置：允许的来源列表（从环境变量读取）
-_cors_origins = os.getenv('CORS_ALLOWED_ORIGINS', '')
-if _cors_origins:
-    CORS_ALLOWED_ORIGINS = [origin.strip() for origin in _cors_origins.split(',')]
-elif DEBUG:
-    CORS_ALLOWED_ORIGINS = [
-        'http://localhost:5173',
-        'http://127.0.0.1:5173',
-        'http://localhost:3000',
-        'http://127.0.0.1:3000',
-    ]
-else:
-    CORS_ALLOWED_ORIGINS = []
+CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', '').split(',') if os.getenv('CORS_ALLOWED_ORIGINS') else []
 
 # CORS 配置：允许携带凭证
 CORS_ALLOW_CREDENTIALS = True
@@ -204,10 +198,13 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
 
 # 允许的图片类型
 ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml']
+
 # 允许的视频类型
 ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime']
+
 # 允许的文档类型
 ALLOWED_DOCUMENT_TYPES = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+
 # 所有允许的文件类型
 ALLOWED_FILE_TYPES = ALLOWED_IMAGE_TYPES + ALLOWED_VIDEO_TYPES + ALLOWED_DOCUMENT_TYPES
 
