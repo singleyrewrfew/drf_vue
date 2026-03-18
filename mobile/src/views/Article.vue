@@ -132,7 +132,7 @@
                     <el-icon><Star /></el-icon>
                     <span>{{ comment.like_count || '' }}</span>
                   </button>
-                  <button class="action-btn" @click="openReplyForm(comment.id, comment.user_name, comment.user)">
+                  <button class="action-btn" @click="openReplyForm(comment.id, comment.user_name, comment.user_id)">
                     <el-icon><ChatDotRound /></el-icon>
                     <span>回复</span>
                   </button>
@@ -288,7 +288,7 @@
                   <el-icon><Star /></el-icon>
                   <span>{{ comment.like_count || '' }}</span>
                 </button>
-                <button class="action-btn" @click="openReplyForm(comment.id, comment.user_name, comment.user)">
+                <button class="action-btn" @click="openReplyForm(comment.id, comment.user_name, comment.user_id); showCommentsDialog = false">
                   <el-icon><ChatDotRound /></el-icon>
                   <span>回复</span>
                 </button>
