@@ -6,18 +6,20 @@
       </keep-alive>
     </router-view>
     
-    <nav v-if="showTabBar" class="tab-bar">
+    <ScrollButtons />
+    
+    <nav v-if="showTabBar" class="bottom-nav">
       <router-link 
         v-for="item in tabItems" 
         :key="item.path" 
         :to="item.path"
-        class="tab-item"
+        class="nav-item"
         :class="{ active: isActive(item.path) }"
       >
-        <el-icon class="tab-icon">
+        <el-icon class="nav-icon">
           <component :is="item.icon" />
         </el-icon>
-        <span class="tab-label">{{ item.label }}</span>
+        <span class="nav-label">{{ item.label }}</span>
       </router-link>
     </nav>
   </div>
@@ -27,6 +29,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { HomeFilled, Document, User } from '@element-plus/icons-vue'
+import ScrollButtons from '@/components/ScrollButtons.vue'
 
 const route = useRoute()
 
@@ -34,14 +37,12 @@ const showTabBar = computed(() => route.meta.showTabBar !== false)
 
 const tabItems = [
   { path: '/', label: '首页', icon: HomeFilled },
-  { path: '/articles', label: '文章', icon: Document },
+  { path: '/articles', label: '发现', icon: Document },
   { path: '/profile', label: '我的', icon: User },
 ]
 
 const isActive = (path) => {
-  if (path === '/') {
-    return route.path === '/'
-  }
+  if (path === '/') return route.path === '/'
   return route.path.startsWith(path)
 }
 </script>
@@ -55,14 +56,13 @@ const isActive = (path) => {
   background: var(--bg-color);
 }
 
-.tab-bar {
+.bottom-nav {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
   height: var(--tab-bar-height);
   background: var(--bg-primary);
-  border-top: 1px solid var(--border-light);
   display: flex;
   align-items: center;
   justify-content: space-around;
@@ -70,38 +70,43 @@ const isActive = (path) => {
   z-index: var(--z-fixed);
 }
 
-.tab-item {
-  flex: 1;
+.bottom-nav::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--border-color);
+  transform: scaleY(0.5);
+}
+
+.nav-item {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 2px;
-  padding: 6px 0;
+  padding: 4px 24px;
   color: var(--text-tertiary);
   text-decoration: none;
-  transition: all var(--transition-fast);
+  transition: color var(--transition-fast);
 }
 
-.tab-icon {
-  font-size: 22px;
-  transition: transform var(--transition-fast);
+.nav-icon {
+  font-size: 24px;
 }
 
-.tab-label {
-  font-size: 11px;
+.nav-label {
+  font-size: 10px;
   font-weight: 500;
 }
 
-.tab-item:active .tab-icon {
-  transform: scale(0.9);
-}
-
-.tab-item.active {
+.nav-item.active {
   color: var(--primary-color);
 }
 
-.tab-item.active .tab-icon {
-  transform: scale(1.05);
+.nav-item:active {
+  opacity: 0.6;
 }
 </style>

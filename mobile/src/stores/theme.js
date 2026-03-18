@@ -15,10 +15,13 @@ export const useThemeStore = defineStore('mobileTheme', () => {
   watch(theme, (newTheme) => {
     localStorage.setItem('mobile_theme', newTheme)
     document.documentElement.setAttribute('data-theme', newTheme)
+    
     if (newTheme === 'dark') {
-      document.documentElement.style.backgroundColor = '#1A1A1A'
+      document.documentElement.classList.add('dark')
+      document.documentElement.style.backgroundColor = '#121212'
     } else {
-      document.documentElement.style.backgroundColor = '#F3F3F4'
+      document.documentElement.classList.remove('dark')
+      document.documentElement.style.backgroundColor = '#F6F6F6'
     }
   }, { immediate: true })
 

@@ -1,65 +1,83 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 
+import MobileLayout from '@/layouts/MobileLayout.vue'
+import Home from '@/views/Home.vue'
+import Articles from '@/views/Articles.vue'
+import Article from '@/views/Article.vue'
+import Category from '@/views/Category.vue'
+import Tag from '@/views/Tag.vue'
+import Search from '@/views/Search.vue'
+import Profile from '@/views/Profile.vue'
+import ProfileEdit from '@/views/ProfileEdit.vue'
+import Login from '@/views/Login.vue'
+import Register from '@/views/Register.vue'
+
 const routes = [
   {
     path: '/',
-    component: () => import('@/layouts/MobileLayout.vue'),
+    component: MobileLayout,
     children: [
       {
         path: '',
         name: 'Home',
-        component: () => import('@/views/Home.vue'),
+        component: Home,
         meta: { title: '首页', showTabBar: true }
       },
       {
         path: 'articles',
         name: 'Articles',
-        component: () => import('@/views/Articles.vue'),
+        component: Articles,
         meta: { title: '文章', showTabBar: true }
       },
       {
         path: 'article/:id',
         name: 'Article',
-        component: () => import('@/views/Article.vue'),
+        component: Article,
         meta: { title: '文章详情' }
       },
       {
         path: 'category/:id_or_slug',
         name: 'Category',
-        component: () => import('@/views/Category.vue'),
+        component: Category,
         meta: { title: '分类' }
       },
       {
         path: 'tag/:id_or_slug',
         name: 'Tag',
-        component: () => import('@/views/Tag.vue'),
+        component: Tag,
         meta: { title: '标签' }
       },
       {
         path: 'search',
         name: 'Search',
-        component: () => import('@/views/Search.vue'),
+        component: Search,
         meta: { title: '搜索' }
       },
       {
         path: 'profile',
         name: 'Profile',
-        component: () => import('@/views/Profile.vue'),
+        component: Profile,
         meta: { title: '我的', showTabBar: true, requiresAuth: true }
+      },
+      {
+        path: 'profile/edit',
+        name: 'ProfileEdit',
+        component: ProfileEdit,
+        meta: { title: '编辑资料', requiresAuth: true }
       },
     ],
   },
   {
     path: '/login',
     name: 'Login',
-    component: () => import('@/views/Login.vue'),
+    component: Login,
     meta: { title: '登录' }
   },
   {
     path: '/register',
     name: 'Register',
-    component: () => import('@/views/Register.vue'),
+    component: Register,
     meta: { title: '注册' }
   },
 ]

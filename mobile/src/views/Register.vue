@@ -1,14 +1,17 @@
 <template>
-  <div class="page register-page">
+  <div class="page">
     <header class="page-header">
-      <button class="btn-back" @click="$router.back()">
-        <el-icon><ArrowLeft /></el-icon>
-      </button>
+      <div class="header-left">
+        <button class="btn-back" @click="$router.back()">
+          <el-icon><ArrowLeft /></el-icon>
+        </button>
+      </div>
       <h1 class="page-title">注册</h1>
+      <div class="header-right"></div>
     </header>
     
     <div class="page-content">
-      <div class="register-form">
+      <div class="form-container">
         <div class="form-group">
           <label class="form-label">用户名</label>
           <el-input 
@@ -54,7 +57,7 @@
         </div>
         
         <button 
-          class="btn btn-primary btn-block register-btn" 
+          class="btn btn-primary btn-block" 
           :disabled="loading"
           @click="handleRegister"
         >
@@ -62,8 +65,8 @@
         </button>
         
         <div class="form-footer">
-          <span class="footer-text">已有账号？</span>
-          <router-link to="/login" class="footer-link">立即登录</router-link>
+          <span class="form-footer-text">已有账号？</span>
+          <router-link to="/login" class="form-footer-link">立即登录</router-link>
         </div>
       </div>
     </div>
@@ -117,65 +120,7 @@ const handleRegister = async () => {
 </script>
 
 <style scoped>
-.register-page {
-  background: var(--bg-color);
-}
-
-.btn-back {
-  width: 36px;
-  height: 36px;
-  border: none;
-  background: transparent;
-  border-radius: var(--radius-full);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-primary);
-  transition: all var(--transition-fast);
-}
-
-.btn-back:active {
-  background: var(--bg-secondary);
-}
-
-.register-form {
-  padding: 20px;
-}
-
-.form-group {
-  margin-bottom: 16px;
-}
-
-.form-label {
-  display: block;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-primary);
-  margin-bottom: 8px;
-}
-
-.register-btn {
-  margin-top: 24px;
-  height: 44px;
-  font-size: 16px;
-}
-
-.form-footer {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  margin-top: 20px;
-}
-
-.footer-text {
-  font-size: 14px;
-  color: var(--text-tertiary);
-}
-
-.footer-link {
-  font-size: 14px;
-  color: var(--primary-color);
-  font-weight: 500;
+.form-container {
+  padding: 20px 0;
 }
 </style>

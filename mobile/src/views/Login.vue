@@ -1,30 +1,36 @@
 <template>
-  <div class="page login-page">
+  <div class="page">
     <header class="page-header">
-      <button class="btn-back" @click="$router.back()">
-        <el-icon><ArrowLeft /></el-icon>
-      </button>
+      <div class="header-left">
+        <button class="btn-back" @click="$router.back()">
+          <el-icon><ArrowLeft /></el-icon>
+        </button>
+      </div>
       <h1 class="page-title">登录</h1>
+      <div class="header-right"></div>
     </header>
     
     <div class="page-content">
+      <div class="login-header">
+        <h1 class="login-title">CMS</h1>
+        <p class="login-subtitle">内容管理系统</p>
+      </div>
+      
       <div class="login-form">
         <div class="form-group">
-          <label class="form-label">用户名</label>
           <el-input 
             v-model="form.username" 
-            placeholder="请输入用户名"
+            placeholder="用户名"
             size="large"
             clearable
           />
         </div>
         
         <div class="form-group">
-          <label class="form-label">密码</label>
           <el-input 
             v-model="form.password" 
             type="password"
-            placeholder="请输入密码"
+            placeholder="密码"
             size="large"
             show-password
             @keyup.enter="handleLogin"
@@ -32,7 +38,7 @@
         </div>
         
         <button 
-          class="btn btn-primary btn-block login-btn" 
+          class="btn btn-primary btn-block btn-lg" 
           :disabled="loading"
           @click="handleLogin"
         >
@@ -40,8 +46,8 @@
         </button>
         
         <div class="form-footer">
-          <span class="footer-text">还没有账号？</span>
-          <router-link to="/register" class="footer-link">立即注册</router-link>
+          <span class="form-footer-text">还没有账号？</span>
+          <router-link to="/register" class="form-footer-link">立即注册</router-link>
         </div>
       </div>
     </div>
@@ -75,8 +81,7 @@ const handleLogin = async () => {
   try {
     await userStore.login(form)
     ElMessage.success('登录成功')
-    const redirect = route.query.redirect || '/'
-    router.push(redirect)
+    router.push(route.query.redirect || '/')
   } catch (e) {
     ElMessage.error(e.response?.data?.detail || '登录失败')
   } finally {
@@ -86,65 +91,25 @@ const handleLogin = async () => {
 </script>
 
 <style scoped>
-.login-page {
-  background: var(--bg-color);
+.login-header {
+  text-align: center;
+  padding: 40px 0 32px;
 }
 
-.btn-back {
-  width: 36px;
-  height: 36px;
-  border: none;
-  background: transparent;
-  border-radius: var(--radius-full);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-primary);
-  transition: all var(--transition-fast);
+.login-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin: 0 0 8px;
 }
 
-.btn-back:active {
-  background: var(--bg-secondary);
+.login-subtitle {
+  font-size: 14px;
+  color: var(--text-tertiary);
+  margin: 0;
 }
 
 .login-form {
-  padding: 20px;
-}
-
-.form-group {
-  margin-bottom: 16px;
-}
-
-.form-label {
-  display: block;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-primary);
-  margin-bottom: 8px;
-}
-
-.login-btn {
-  margin-top: 24px;
-  height: 44px;
-  font-size: 16px;
-}
-
-.form-footer {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  margin-top: 20px;
-}
-
-.footer-text {
-  font-size: 14px;
-  color: var(--text-tertiary);
-}
-
-.footer-link {
-  font-size: 14px;
-  color: var(--primary-color);
-  font-weight: 500;
+  padding: 0 24px;
 }
 </style>

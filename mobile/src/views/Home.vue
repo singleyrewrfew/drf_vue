@@ -1,100 +1,96 @@
 <template>
   <div class="page home-page">
     <header class="page-header">
-      <h1 class="page-title">CMS</h1>
-      <div class="header-actions">
-        <button class="btn-icon" @click="$router.push('/search')">
-          <el-icon><Search /></el-icon>
-        </button>
+      <h1 class="logo">CMS</h1>
+      <div class="search-bar" @click="$router.push('/search')">
+        <el-icon class="search-bar-icon"><Search /></el-icon>
+        <span class="search-placeholder">搜索文章内容</span>
       </div>
+      <button class="btn-icon" @click="handleTheme">
+        <el-icon><Sunny v-if="themeStore.theme === 'dark'" /><Moon v-else /></el-icon>
+      </button>
     </header>
     
+    <nav class="tab-bar">
+      <button 
+        v-for="tab in tabs" 
+        :key="tab.key"
+        class="tab-item"
+        :class="{ active: activeTab === tab.key }"
+        @click="activeTab = tab.key"
+      >
+        {{ tab.label }}
+      </button>
+    </nav>
+    
     <div class="page-content">
-      <div class="section">
-        <div class="section-header">
-          <h2 class="section-title">最新文章</h2>
-          <router-link to="/articles" class="section-more">
-            更多 <el-icon><ArrowRight /></el-icon>
-          </router-link>
-        </div>
-        
-        <div v-if="loading" class="skeleton-list">
-          <div v-for="i in 3" :key="i" class="skeleton-card">
-            <div class="skeleton skeleton-cover"></div>
-            <div class="skeleton skeleton-title"></div>
-            <div class="skeleton skeleton-text"></div>
-          </div>
-        </div>
-        
-        <div v-else-if="articles.length" class="article-list">
-          <router-link 
-            v-for="article in articles" 
-            :key="article.id" 
-            :to="`/article/${article.slug || article.id}`"
-            class="article-card"
-          >
-            <img 
-              v-if="article.cover_image" 
-              :src="getCoverUrl(article.cover_image)" 
-              class="article-cover"
-              loading="lazy"
-            />
-            <div class="article-content">
-              <h3 class="article-title">{{ article.title }}</h3>
-              <p class="article-excerpt">{{ truncateText(article.summary || article.content, 80) }}</p>
-              <div class="article-meta">
-                <span class="article-date">{{ formatRelativeTime(article.created_at) }}</span>
-                <span v-if="article.category" class="article-category">{{ article.category_name }}</span>
-              </div>
-            </div>
-          </router-link>
-        </div>
-        
-        <div v-else class="empty-state">
-          <el-icon class="empty-state-icon"><Document /></el-icon>
-          <p class="empty-state-text">暂无文章</p>
-        </div>
+      <div v-if="loading" class="feed-list">
+        <Skeleton v-for="i in 5" :key="i" type="card-image" />
       </div>
       
-      <div v-if="categories.length" class="section">
-        <div class="section-header">
-          <h2 class="section-title">分类</h2>
-        </div>
-        <div class="category-grid">
-          <router-link 
-            v-for="cat in categories" 
-            :key="cat.id" 
-            :to="`/category/${cat.slug || cat.id}`"
-            class="category-card"
-          >
-            <el-icon class="category-icon"><Folder /></el-icon>
-            <span class="category-name">{{ cat.name }}</span>
-          </router-link>
-        </div>
+      <div v-else-if="articles.length" class="feed-list">
+        <router-link 
+          v-for="article in articles" 
+          :key="article.id" 
+          :to="`/article/${article.slug || article.id}`"
+          class="feed-card"
+        >
+          <h3 class="feed-title">{{ article.title }}</h3>
+          
+          <p v-if="article.summary || article.content" class="feed-excerpt">
+            {{ truncateText(article.summary || article.content, 120) }}
+          </p>
+          
+          <img 
+            v-if="article.cover_image" 
+            :src="getCoverUrl(article.cover_image)" 
+            class="feed-image-single"
+            loading="lazy"
+          />
+          
+          <div class="feed-meta">
+            <span class="feed-author-name">{{ article.author_name || '匿名用户' }}</span>
+            <span>{{ formatRelativeTime(article.created_at) }}</span>
+          </div>
+        </router-link>
+      </div>
+      
+      <div v-else class="empty-state">
+        <el-icon class="empty-state-icon"><Document /></el-icon>
+        <p class="empty-state-text">暂无内容</p>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { Search, ArrowRight, Document, Folder } from '@element-plus/icons-vue'
-import { getContents, getCategories } from '@/api/content'
+import { ref, onMounted, watch } from 'vue'
+import { Search, Sunny, Moon, Document } from '@element-plus/icons-vue'
+import { getContents } from '@/api/content'
 import { getCoverUrl, truncateText, formatRelativeTime } from '@/utils'
+import { useThemeStore } from '@/stores/theme'
+import Skeleton from '@/components/Skeleton.vue'
 
+const themeStore = useThemeStore()
+
+const tabs = [
+  { key: 'recommend', label: '推荐' },
+  { key: 'hot', label: '热门' },
+]
+
+const activeTab = ref('recommend')
 const loading = ref(true)
 const articles = ref([])
-const categories = ref([])
 
-const fetchData = async () => {
+const fetchArticles = async () => {
   loading.value = true
   try {
-    const [articlesRes, categoriesRes] = await Promise.all([
-      getContents({ page_size: 5 }),
-      getCategories({ page_size: 8 })
-    ])
-    articles.value = articlesRes.data.results || articlesRes.data
-    categories.value = categoriesRes.data.results || categoriesRes.data
+    const params = { page_size: 10 }
+    if (activeTab.value === 'hot') {
+      params.ordering = '-views_count'
+    }
+    const { data } = await getContents(params)
+    articles.value = data.results || data
   } catch (e) {
     console.error(e)
   } finally {
@@ -102,193 +98,68 @@ const fetchData = async () => {
   }
 }
 
-onMounted(() => {
-  fetchData()
-})
+const handleTheme = () => {
+  themeStore.toggleTheme()
+}
+
+watch(activeTab, fetchArticles)
+onMounted(fetchArticles)
 </script>
 
 <style scoped>
-.home-page {
-  background: var(--bg-color);
-}
-
-.header-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.btn-icon {
-  width: 36px;
-  height: 36px;
-  border: none;
-  background: var(--bg-secondary);
-  border-radius: var(--radius-full);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-secondary);
-  transition: all var(--transition-fast);
-}
-
-.btn-icon:active {
-  background: var(--bg-tertiary);
-  transform: scale(0.95);
-}
-
-.section {
-  margin-bottom: 20px;
-}
-
-.section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-
-.section-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.section-more {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  font-size: 13px;
-  color: var(--text-tertiary);
-}
-
-.skeleton-list {
-  display: flex;
-  flex-direction: column;
+.home-page .page-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--z-sticky);
   gap: 12px;
 }
 
-.skeleton-card {
-  background: var(--card-bg);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
+.home-page .page-content {
+  padding-top: calc(var(--header-height) + 44px);
 }
 
-.skeleton-cover {
-  height: 120px;
-}
-
-.skeleton-title {
-  height: 18px;
-  margin: 12px 12px 8px;
-  border-radius: var(--radius-sm);
-}
-
-.skeleton-text {
-  height: 14px;
-  margin: 0 12px 12px;
-  width: 60%;
-  border-radius: var(--radius-sm);
-}
-
-.article-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.article-card {
-  display: flex;
-  background: var(--card-bg);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  text-decoration: none;
-  transition: all var(--transition-fast);
-}
-
-.article-card:active {
-  transform: scale(0.98);
-}
-
-.article-cover {
-  width: 100px;
-  height: 80px;
-  object-fit: cover;
+.logo {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin: 0;
   flex-shrink: 0;
 }
 
-.article-content {
+.home-page .search-bar {
   flex: 1;
-  padding: 10px 12px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
   min-width: 0;
 }
 
-.article-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
-  line-height: 1.4;
-  margin: 0 0 4px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+.home-page .btn-icon {
+  flex-shrink: 0;
 }
 
-.article-excerpt {
+.search-placeholder {
+  color: var(--text-placeholder);
+  font-size: 14px;
+}
+
+.feed-list {
+  background: var(--card-bg);
+}
+
+.feed-card {
+  display: block;
+  text-decoration: none;
+}
+
+.feed-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   font-size: 12px;
   color: var(--text-tertiary);
-  line-height: 1.5;
-  margin: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
-.article-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 11px;
-  color: var(--text-tertiary);
-}
-
-.article-category {
-  color: var(--primary-color);
-}
-
-.category-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-}
-
-.category-card {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px;
-  background: var(--card-bg);
-  border-radius: var(--radius-lg);
-  text-decoration: none;
-  transition: all var(--transition-fast);
-}
-
-.category-card:active {
-  transform: scale(0.98);
-  background: var(--card-bg-hover);
-}
-
-.category-icon {
-  font-size: 20px;
-  color: var(--primary-color);
-}
-
-.category-name {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-primary);
+.feed-author-name {
+  color: var(--text-secondary);
 }
 </style>

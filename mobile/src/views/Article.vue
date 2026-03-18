@@ -1,95 +1,212 @@
 <template>
-  <div class="page article-page">
+  <div class="page">
     <header class="page-header">
-      <button class="btn-back" @click="$router.back()">
-        <el-icon><ArrowLeft /></el-icon>
-      </button>
-      <h1 class="page-title">文章详情</h1>
-      <div class="header-actions">
+      <div class="header-left">
+        <button class="btn-back" @click="$router.back()">
+          <el-icon><ArrowLeft /></el-icon>
+        </button>
+      </div>
+      <h1 class="page-title">详情</h1>
+      <div class="header-right">
         <button class="btn-icon" @click="shareArticle">
           <el-icon><Share /></el-icon>
         </button>
       </div>
     </header>
     
-    <div v-if="loading" class="page-content">
-      <div class="skeleton skeleton-cover"></div>
-      <div class="skeleton skeleton-title" style="margin: 16px; height: 24px;"></div>
-      <div class="skeleton skeleton-text" style="margin: 0 16px; height: 16px;"></div>
+    <div v-if="loading" class="page-content" style="padding: 0;">
+      <Skeleton type="article" />
     </div>
     
-    <div v-else-if="article" class="page-content">
-      <img 
-        v-if="article.cover_image" 
-        :src="getCoverUrl(article.cover_image)" 
-        class="article-cover"
-      />
-      
-      <div class="article-body">
+    <div v-else-if="article" class="page-content" style="padding: 0;">
+      <div class="article-header">
         <h1 class="article-title">{{ article.title }}</h1>
         
-        <div class="article-meta">
-          <span class="meta-item">
-            <el-icon><Calendar /></el-icon>
-            {{ formatDate(article.created_at) }}
-          </span>
-          <span v-if="article.category_name" class="meta-item">
-            <el-icon><Folder /></el-icon>
-            {{ article.category_name }}
-          </span>
-          <span v-if="article.author_name" class="meta-item">
-            <el-icon><User /></el-icon>
-            {{ article.author_name }}
-          </span>
+        <div class="article-author">
+          <el-avatar :size="40" :src="getAvatarUrl(article.author_avatar)">
+            {{ article.author_name?.charAt(0) }}
+          </el-avatar>
+          <div class="author-info">
+            <span class="author-name">{{ article.author_name || '匿名用户' }}</span>
+            <span class="article-time">{{ formatRelativeTime(article.created_at) }}</span>
+          </div>
         </div>
-        
-        <div v-if="article.tags && article.tags.length" class="article-tags">
-          <router-link 
-            v-for="tag in article.tags" 
-            :key="tag.id || tag" 
-            :to="`/tag/${tag.slug || tag.id || tag}`"
-            class="tag"
-          >
-            #{{ tag.name || tag }}
-          </router-link>
-        </div>
-        
-        <div class="article-content" v-html="renderedContent"></div>
       </div>
+      
+      <div v-if="article.cover_image" class="article-cover">
+        <img :src="getCoverUrl(article.cover_image)" alt="" loading="lazy" />
+      </div>
+      
+      <div class="article-body markdown-body" v-html="renderedContent"></div>
+      
+      <div v-if="article.tags?.length" class="article-tags">
+        <router-link 
+          v-for="tag in article.tags" 
+          :key="tag.id || tag" 
+          :to="`/tag/${tag.slug || tag.id || tag}`"
+          class="tag"
+        >
+          {{ tag.name || tag }}
+        </router-link>
+      </div>
+      
+      <button 
+        v-if="tocItems.length" 
+        class="toc-fab" 
+        @click="showToc = true"
+        title="目录"
+      >
+        <el-icon><List /></el-icon>
+      </button>
     </div>
     
     <div v-else class="page-content">
       <div class="empty-state">
         <el-icon class="empty-state-icon"><Document /></el-icon>
-        <p class="empty-state-text">文章不存在</p>
+        <p class="empty-state-text">内容不存在或已删除</p>
       </div>
     </div>
+    
+    <el-drawer
+      v-model="showToc"
+      direction="rtl"
+      size="70%"
+      title="目录"
+      :with-header="true"
+    >
+      <div class="toc-list">
+        <a
+          v-for="item in tocItems"
+          :key="item.id"
+          class="toc-item"
+          :class="{ active: activeTocId === item.id }"
+          :style="{ paddingLeft: (item.level - 1) * 12 + 16 + 'px' }"
+          @click="scrollToHeading(item.id)"
+        >
+          {{ item.text }}
+        </a>
+      </div>
+    </el-drawer>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, Share, Calendar, Folder, User, Document } from '@element-plus/icons-vue'
+import { ArrowLeft, Share, Document, List } from '@element-plus/icons-vue'
 import { marked } from 'marked'
-import { getContent, getContentBySlug } from '@/api/content'
-import { getCoverUrl, formatDate } from '@/utils'
+import hljs from 'highlight.js'
+import { getContent } from '@/api/content'
+import { getCoverUrl, getAvatarUrl, formatRelativeTime } from '@/utils'
+import Skeleton from '@/components/Skeleton.vue'
 
 const route = useRoute()
 const loading = ref(true)
 const article = ref(null)
+const showToc = ref(false)
+const tocItems = ref([])
+const activeTocId = ref('')
+
+let headingIdCounter = 0
+
+const renderer = new marked.Renderer()
+
+renderer.image = ({ href, title, text }) => {
+  return `<img src="${href}" alt="${text || ''}" loading="lazy" />`
+}
+
+renderer.code = ({ text, lang }) => {
+  const code = text || ''
+  let language = lang || ''
+  let highlighted
+  
+  if (language && hljs.getLanguage(language)) {
+    highlighted = hljs.highlight(code, { language }).value
+  } else {
+    highlighted = hljs.highlightAuto(code).value
+    language = highlighted.language || 'plaintext'
+  }
+  
+  return `<pre class="code-block"><code class="hljs language-${language}">${highlighted}</code></pre>`
+}
+
+renderer.heading = ({ text, depth }) => {
+  const id = `heading-${headingIdCounter++}`
+  return `<h${depth} id="${id}">${text}</h${depth}>`
+}
+
+marked.setOptions({ renderer })
 
 const renderedContent = computed(() => {
   if (!article.value?.content) return ''
-  return marked(article.value.content)
+  headingIdCounter = 0
+  tocItems.value = []
+  
+  const html = marked(article.value.content)
+  
+  const headingRegex = /<h([1-6]) id="([^"]+)">([^<]+)<\/h\1>/g
+  let match
+  while ((match = headingRegex.exec(html)) !== null) {
+    tocItems.value.push({
+      level: parseInt(match[1]),
+      id: match[2],
+      text: match[3]
+    })
+  }
+  
+  return html
+})
+
+const scrollToHeading = (id) => {
+  showToc.value = false
+  const el = document.getElementById(id)
+  if (el) {
+    const pageContent = document.querySelector('.page-content')
+    const headerOffset = 60
+    const elementPosition = el.offsetTop
+    
+    if (pageContent) {
+      pageContent.scrollTo({
+        top: elementPosition - headerOffset,
+        behavior: 'smooth'
+      })
+    }
+    activeTocId.value = id
+  }
+}
+
+const updateActiveToc = () => {
+  const pageContent = document.querySelector('.page-content')
+  if (!pageContent) return
+  
+  const scrollTop = pageContent.scrollTop + 80
+  let currentId = ''
+  
+  for (const item of tocItems.value) {
+    const el = document.getElementById(item.id)
+    if (el && el.offsetTop <= scrollTop) {
+      currentId = item.id
+    }
+  }
+  
+  activeTocId.value = currentId
+}
+
+watch(() => article.value, async () => {
+  if (article.value) {
+    await nextTick()
+    const pageContent = document.querySelector('.page-content')
+    if (pageContent) {
+      pageContent.addEventListener('scroll', updateActiveToc)
+    }
+  }
 })
 
 const fetchArticle = async () => {
   loading.value = true
   try {
-    const id = route.params.id
-    const { data } = await getContent(id)
+    const { data } = await getContent(route.params.id)
     article.value = data
   } catch (e) {
     console.error(e)
@@ -106,7 +223,6 @@ const shareArticle = async () => {
         url: window.location.href
       })
     } catch (e) {
-      console.log('Share cancelled')
     }
   } else {
     await navigator.clipboard.writeText(window.location.href)
@@ -114,172 +230,429 @@ const shareArticle = async () => {
   }
 }
 
-onMounted(() => {
-  fetchArticle()
-})
+onMounted(fetchArticle)
 </script>
 
 <style scoped>
-.article-page {
-  background: var(--bg-color);
+.article-header {
+  padding: 16px;
+  padding-bottom: 0;
 }
 
-.btn-back {
-  width: 36px;
-  height: 36px;
-  border: none;
-  background: transparent;
-  border-radius: var(--radius-full);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.article-title {
+  font-size: 18px;
+  font-weight: 600;
   color: var(--text-primary);
-  transition: all var(--transition-fast);
+  line-height: 1.5;
+  margin: 0 0 16px;
 }
 
-.btn-back:active {
-  background: var(--bg-secondary);
-}
-
-.header-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.btn-icon {
-  width: 36px;
-  height: 36px;
-  border: none;
-  background: transparent;
-  border-radius: var(--radius-full);
+.article-author {
   display: flex;
   align-items: center;
-  justify-content: center;
-  color: var(--text-secondary);
-  transition: all var(--transition-fast);
+  gap: 12px;
 }
 
-.btn-icon:active {
-  background: var(--bg-secondary);
+.author-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
-.skeleton-cover {
-  height: 200px;
-  border-radius: 0;
+.author-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
 }
 
-.skeleton-title {
-  border-radius: var(--radius-sm);
-}
-
-.skeleton-text {
-  border-radius: var(--radius-sm);
+.article-time {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
 }
 
 .article-cover {
+  margin: 16px 0;
+}
+
+.article-cover img {
   width: 100%;
-  height: 200px;
-  object-fit: cover;
+  display: block;
 }
 
 .article-body {
   padding: 16px;
-}
-
-.article-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1.4;
-  margin: 0 0 12px;
-}
-
-.article-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.meta-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  color: var(--text-tertiary);
+  padding-bottom: 0;
 }
 
 .article-tags {
+  padding: 16px;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 16px;
 }
 
-.tag {
-  padding: 4px 10px;
-  background: var(--primary-bg);
-  color: var(--primary-color);
-  border-radius: var(--radius-full);
-  font-size: 12px;
-  text-decoration: none;
-}
-
-.article-content {
+.markdown-body {
   font-size: 15px;
   line-height: 1.8;
   color: var(--text-primary);
+  word-break: break-word;
 }
 
-.article-content :deep(h1),
-.article-content :deep(h2),
-.article-content :deep(h3),
-.article-content :deep(h4) {
-  margin: 24px 0 12px;
+.markdown-body :deep(h1),
+.markdown-body :deep(h2),
+.markdown-body :deep(h3),
+.markdown-body :deep(h4),
+.markdown-body :deep(h5),
+.markdown-body :deep(h6) {
+  margin-top: 24px;
+  margin-bottom: 12px;
   font-weight: 600;
+  line-height: 1.4;
+  color: var(--text-primary);
 }
 
-.article-content :deep(p) {
-  margin: 0 0 16px;
+.markdown-body :deep(h1) { font-size: 20px; }
+.markdown-body :deep(h2) { font-size: 18px; }
+.markdown-body :deep(h3) { font-size: 16px; }
+.markdown-body :deep(h4) { font-size: 15px; }
+
+.markdown-body :deep(p) {
+  margin-bottom: 16px;
 }
 
-.article-content :deep(img) {
+.markdown-body :deep(a) {
+  color: var(--primary-color);
+}
+
+.markdown-body :deep(img) {
   max-width: 100%;
-  height: auto;
   border-radius: var(--radius-md);
   margin: 12px 0;
 }
 
-.article-content :deep(pre) {
+.markdown-body :deep(.code-block) {
+  background: #282c34;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  margin: 16px 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.markdown-body :deep(.code-block code) {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  color: #abb2bf;
+  background: transparent;
+  padding: 0;
+}
+
+.markdown-body :deep(pre) {
   background: var(--bg-secondary);
   padding: 12px;
   border-radius: var(--radius-md);
   overflow-x: auto;
+  margin: 12px 0;
+}
+
+.markdown-body :deep(code) {
+  font-family: var(--font-mono);
   font-size: 13px;
 }
 
-.article-content :deep(code) {
-  font-family: var(--font-mono);
+.markdown-body :deep(p code) {
   background: var(--bg-secondary);
   padding: 2px 6px;
-  border-radius: var(--radius-xs);
-  font-size: 13px;
+  border-radius: var(--radius-sm);
 }
 
-.article-content :deep(blockquote) {
+.markdown-body :deep(blockquote) {
   border-left: 3px solid var(--primary-color);
   padding-left: 12px;
-  margin: 16px 0;
+  margin: 12px 0;
   color: var(--text-secondary);
 }
 
-.article-content :deep(ul),
-.article-content :deep(ol) {
+.markdown-body :deep(ul),
+.markdown-body :deep(ol) {
   padding-left: 20px;
   margin: 12px 0;
 }
 
-.article-content :deep(a) {
+.markdown-body :deep(li) {
+  margin-bottom: 6px;
+}
+
+.markdown-body :deep(table) {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  display: block;
+  overflow-x: auto;
+}
+
+.markdown-body :deep(th),
+.markdown-body :deep(td) {
+  border: 1px solid var(--border-color);
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.markdown-body :deep(th) {
+  background: var(--bg-secondary);
+  font-weight: 500;
+}
+
+.markdown-body :deep(hr) {
+  border: none;
+  height: 1px;
+  background: var(--border-color);
+  margin: 20px 0;
+}
+
+.markdown-body :deep(strong),
+.markdown-body :deep(b) {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.markdown-body :deep(em),
+.markdown-body :deep(i) {
+  font-style: italic;
+}
+
+.markdown-body :deep(del),
+.markdown-body :deep(s) {
+  text-decoration: line-through;
+  color: var(--text-tertiary);
+}
+
+.markdown-body :deep(mark) {
+  background: #fff3b0;
+  padding: 2px 4px;
+  border-radius: 2px;
+}
+
+:global(.dark) .markdown-body :deep(mark),
+:global([data-theme="dark"]) .markdown-body :deep(mark) {
+  background: #5c4a00;
+}
+
+.markdown-body :deep(kbd) {
+  display: inline-block;
+  padding: 2px 6px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 -1px 0 var(--border-color);
+}
+
+.markdown-body :deep(sup),
+.markdown-body :deep(sub) {
+  font-size: 0.75em;
+  vertical-align: baseline;
+  position: relative;
+  top: -0.5em;
+}
+
+.markdown-body :deep(sub) {
+  top: 0.2em;
+}
+
+.markdown-body :deep(details) {
+  margin: 12px 0;
+  padding: 12px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+}
+
+.markdown-body :deep(summary) {
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.markdown-body :deep(details[open] summary) {
+  margin-bottom: 12px;
+}
+
+.markdown-body :deep(ul) {
+  list-style-type: disc;
+}
+
+.markdown-body :deep(ol) {
+  list-style-type: decimal;
+}
+
+.markdown-body :deep(ul ul) {
+  list-style-type: circle;
+}
+
+.markdown-body :deep(ul ul ul) {
+  list-style-type: square;
+}
+
+.markdown-body :deep(.task-list-item) {
+  list-style: none;
+  margin-left: -20px;
+}
+
+.markdown-body :deep(.task-list-item input) {
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.markdown-body :deep(abbr) {
+  border-bottom: 1px dotted var(--text-tertiary);
+  cursor: help;
+}
+
+.markdown-body :deep(pre code) {
+  background: transparent;
+  padding: 0;
+}
+
+.markdown-body :deep(figure) {
+  margin: 16px 0;
+}
+
+.markdown-body :deep(figcaption) {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  text-align: center;
+  margin-top: 8px;
+}
+
+.markdown-body :deep(.hljs-keyword),
+.markdown-body :deep(.hljs-selector-tag),
+.markdown-body :deep(.hljs-built_in) {
+  color: #c678dd;
+}
+
+.markdown-body :deep(.hljs-string),
+.markdown-body :deep(.hljs-title),
+.markdown-body :deep(.hljs-section),
+.markdown-body :deep(.hljs-attribute) {
+  color: #98c379;
+}
+
+.markdown-body :deep(.hljs-number),
+.markdown-body :deep(.hljs-literal),
+.markdown-body :deep(.hljs-variable) {
+  color: #d19a66;
+}
+
+.markdown-body :deep(.hljs-comment),
+.markdown-body :deep(.hljs-quote) {
+  color: #5c6370;
+  font-style: italic;
+}
+
+.markdown-body :deep(.hljs-function) {
+  color: #61afef;
+}
+
+.markdown-body :deep(.hljs-params) {
+  color: #abb2bf;
+}
+
+.markdown-body :deep(.hljs-class .hljs-title),
+.markdown-body :deep(.hljs-type) {
+  color: #e5c07b;
+}
+
+.markdown-body :deep(.hljs-tag),
+.markdown-body :deep(.hljs-name) {
+  color: #e06c75;
+}
+
+.markdown-body :deep(.hljs-attr) {
+  color: #d19a66;
+}
+
+.markdown-body :deep(.hljs-symbol),
+.markdown-body :deep(.hljs-bullet) {
+  color: #61afef;
+}
+
+.markdown-body :deep(.hljs-meta) {
+  color: #61afef;
+}
+
+.markdown-body :deep(.hljs-addition) {
+  background: rgba(152, 195, 121, 0.15);
+  color: #98c379;
+}
+
+.markdown-body :deep(.hljs-deletion) {
+  background: rgba(224, 108, 117, 0.15);
+  color: #e06c75;
+}
+
+.markdown-body :deep(.hljs-emphasis) {
+  font-style: italic;
+}
+
+.markdown-body :deep(.hljs-strong) {
+  font-weight: bold;
+}
+
+.toc-list {
+  padding: 0;
+}
+
+.toc-item {
+  display: block;
+  padding: 12px 16px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  transition: all var(--transition-fast);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.toc-item:active {
+  background: var(--bg-secondary);
+}
+
+.toc-item.active {
   color: var(--primary-color);
+  border-left-color: var(--primary-color);
+  background: var(--primary-bg);
+}
+
+.toc-fab {
+  position: fixed;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--card-bg);
+  box-shadow: var(--shadow-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  z-index: var(--z-sticky);
+  transition: all var(--transition-fast);
+}
+
+.toc-fab:active {
+  transform: translateY(-50%) scale(0.95);
+  background: var(--bg-secondary);
+}
+
+:global(.dark) .toc-fab,
+:global([data-theme="dark"]) .toc-fab {
+  background: var(--bg-tertiary);
 }
 </style>
