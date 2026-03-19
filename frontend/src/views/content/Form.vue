@@ -100,9 +100,10 @@
               <el-upload
                 class="cover-uploader"
                 :action="uploadUrl"
-                :headers="headers"
+                :headers="uploadHeaders"
                 :show-file-list="false"
                 :on-success="handleCoverSuccess"
+                :before-upload="beforeUpload"
               >
                 <img v-if="form.cover_image" :src="form.cover_image" class="cover-image" />
                 <div v-else class="cover-placeholder">
@@ -110,7 +111,7 @@
                   <span>点击上传封面</span>
                 </div>
               </el-upload>
-              <div class="cover-tip">建议尺寸: 1920x1080，支持 jpg/png 格式</div>
+              <div class="cover-tip">建议尺寸：1920x1080，支持 jpg/png 格式</div>
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -194,7 +195,32 @@ const rules = {
 }
 
 const uploadUrl = computed(() => `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'}/media/`)
-const headers = computed(() => ({ Authorization: `Bearer ${userStore.token}` }))
+const uploadHeaders = computed(() => {
+  const token = userStore.token
+  console.log('上传 Token:', token ? '存在' : '为空')
+  return {
+    'Authorization': `Bearer ${token}`
+  }
+})
+
+const beforeUpload = (file) => {
+  const token = userStore.token
+  if (!token) {
+    ElMessage.error('请先登录')
+    return false
+  }
+  const isValidType = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)
+  if (!isValidType) {
+    ElMessage.error('只能上传 JPG/PNG/GIF/WEBP 格式的图片')
+    return false
+  }
+  const isLt10M = file.size / 1024 / 1024 < 10
+  if (!isLt10M) {
+    ElMessage.error('图片大小不能超过 10MB')
+    return false
+  }
+  return true
+}
 
 const toolbars = [
   'bold',

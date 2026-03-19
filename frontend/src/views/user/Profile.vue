@@ -29,11 +29,12 @@
               <el-upload
                 class="avatar-upload"
                 :action="uploadUrl"
-                :headers="headers"
+                :headers="uploadHeaders"
                 :show-file-list="false"
                 :on-success="handleAvatarSuccess"
                 :on-error="handleAvatarError"
                 name="file"
+                :before-upload="beforeAvatarUpload"
               >
                 <UploadButtonSmall>上传头像</UploadButtonSmall>
               </el-upload>
@@ -318,7 +319,31 @@ const passwordRules = {
 }
 
 const uploadUrl = computed(() => `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'}/media/`)
-const headers = computed(() => ({ Authorization: `Bearer ${userStore.token}` }))
+const uploadHeaders = computed(() => {
+  const token = userStore.token
+  return {
+    'Authorization': `Bearer ${token}`
+  }
+})
+
+const beforeAvatarUpload = (file) => {
+  const token = userStore.token
+  if (!token) {
+    ElMessage.error('请先登录')
+    return false
+  }
+  const isValidType = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)
+  if (!isValidType) {
+    ElMessage.error('只能上传 JPG/PNG/GIF/WEBP 格式的图片')
+    return false
+  }
+  const isLt2M = file.size / 1024 / 1024 < 2
+  if (!isLt2M) {
+    ElMessage.error('头像大小不能超过 2MB')
+    return false
+  }
+  return true
+}
 
 const showMediaDialog = ref(false)
 const mediaLoading = ref(false)

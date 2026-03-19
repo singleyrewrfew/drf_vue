@@ -6,7 +6,7 @@
           <span>媒体管理</span>
           <el-upload
             :action="uploadUrl"
-            :headers="headers"
+            :headers="uploadHeaders"
             :before-upload="beforeUpload"
             :on-success="handleUploadSuccess"
             :on-error="handleUploadError"
@@ -135,7 +135,12 @@ let refreshTimer = null
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'
 const uploadUrl = computed(() => `${baseUrl}/media/`)
-const headers = computed(() => ({ Authorization: `Bearer ${userStore.token}` }))
+const uploadHeaders = computed(() => {
+  const token = userStore.token
+  return {
+    'Authorization': `Bearer ${token}`
+  }
+})
 
 const isImage = computed(() => {
   if (!previewFile.value) return false
