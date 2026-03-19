@@ -42,7 +42,6 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { login } from '@/api/user'
 import { useUserStore } from '@/stores/user'
 import PageHeader from '@/components/PageHeader.vue'
 
@@ -58,9 +57,7 @@ const form = reactive({
 const handleLogin = async () => {
   loading.value = true
   try {
-    const { data } = await login(form)
-    localStorage.setItem('token', data.access)
-    await userStore.fetchUser()
+    await userStore.login(form)
     ElMessage.success('登录成功')
     router.replace('/')
   } catch (e) {
