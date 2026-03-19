@@ -31,6 +31,7 @@ ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split('
 # 已安装的应用列表
 INSTALLED_APPS = [
     'django.contrib.admin',              # Django 管理后台
+    'apps.core',                        # 核心应用（必须在 django.contrib.auth 之前）
     'django.contrib.auth',               # Django 认证系统
     'django.contrib.contenttypes',        # 内容类型框架
     'django.contrib.sessions',             # 会话框架
@@ -41,7 +42,6 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',  # JWT Token 黑名单
     'corsheaders',                      # CORS 跨域支持
     'drf_spectacular',                  # API 文档生成
-    'apps.core',                        # 核心应用
     'apps.users',                       # 用户管理应用
     'apps.roles',                       # 角色管理应用
     'apps.contents',                     # 内容管理应用
