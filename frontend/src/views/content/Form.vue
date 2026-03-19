@@ -30,6 +30,20 @@
         </el-form-item>
         
         <el-form-item label="内容" prop="content">
+          <div class="editor-header">
+            <span class="editor-label">正文内容</span>
+            <el-upload
+              ref="fileUploadRef"
+              :show-file-list="false"
+              :auto-upload="false"
+              :on-change="handleFileChange"
+              accept=".md,.txt,.markdown"
+            >
+              <el-button type="primary" size="small" :icon="Upload">
+                从文件导入
+              </el-button>
+            </el-upload>
+          </div>
           <div class="editor-wrapper">
             <MdEditor
               v-if="editorLoaded"
@@ -132,8 +146,8 @@
 <script setup>
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { Plus, Loading } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Plus, Loading, Upload } from '@element-plus/icons-vue'
 import { MdEditor } from 'md-editor-v3'
 import 'md-editor-v3/lib/style.css'
 import { createContent, updateContent, getContent } from '@/api/content'
@@ -211,6 +225,37 @@ const handleContentChange = () => {
   if (form.content && form.content !== lastSaveContent.value && form.content.length > 100) {
     triggerAutoSave()
   }
+}
+
+const handleFileChange = (file) => {
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    const content = e.target.result
+    if (form.content) {
+      ElMessageBox.confirm(
+        '当前编辑器已有内容，是否覆盖？',
+        '确认导入',
+        {
+          confirmButtonText: '覆盖',
+          cancelButtonText: '追加',
+          type: 'warning',
+        }
+      ).then(() => {
+        form.content = content
+        ElMessage.success('文件导入成功')
+      }).catch(() => {
+        form.content = form.content + '\n\n' + content
+        ElMessage.success('文件内容已追加')
+      })
+    } else {
+      form.content = content
+      ElMessage.success('文件导入成功')
+    }
+  }
+  reader.onerror = () => {
+    ElMessage.error('文件读取失败')
+  }
+  reader.readAsText(file.raw)
 }
 
 const triggerAutoSave = () => {
@@ -408,6 +453,19 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.editor-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.editor-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
 }
 
 .editor-wrapper {
