@@ -38,4 +38,4 @@ class CategoryCreateUpdateSerializer(AutoSlugMixin, serializers.ModelSerializer)
     
     class Meta:
         model = Category
-        fields = ['name', 'slug', 'parent', 'description', 'sort_order']
+        fields = ['id', 'name', 'slug', 'parent', 'description', 'sort_order']

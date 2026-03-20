@@ -418,7 +418,7 @@ const createCategory = async () => {
     newCategoryName.value = ''
     newCategorySlug.value = ''
     // 先添加到分类列表，确保显示
-    categories.value.push(data)
+    categories.value = [...categories.value, data]
     // 然后设置选中的分类
     form.category = data.id
   } catch (error) {
@@ -446,7 +446,7 @@ const createTag = async () => {
     newTagName.value = ''
     newTagSlug.value = ''
     // 先添加到标签列表，确保显示
-    tags.value.push(data)
+    tags.value = [...tags.value, data]
     // 然后添加到已选标签
     if (!form.tags) form.tags = []
     form.tags.push(data.id)
