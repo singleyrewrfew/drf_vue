@@ -448,14 +448,22 @@ const handleAvatarError = () => {
 }
 
 const handleUpdateProfile = async () => {
-  await formRef.value.validate()
+  try {
+    await formRef.value.validate()
+  } catch (error) {
+    return
+  }
+  
   loading.value = true
   try {
     await updateProfile(form)
-    await userStore.fetchProfile()
-    ElMessage.success('修改成功')
+    // 强制从后端重新获取用户信息
+    await userStore.fetchProfile(true)
+    ElMessage.success('邮箱修改成功')
+    form.email = userStore.user?.email || ''
   } catch (error) {
-    ElMessage.error('修改失败')
+    console.error('修改邮箱失败:', error)
+    ElMessage.error(error.response?.data?.message || error.response?.data?.detail || '修改失败')
   } finally {
     loading.value = false
   }
