@@ -49,10 +49,17 @@
         </el-table-column>
         <el-table-column prop="uploader_name" label="上传者" width="120" />
         <el-table-column prop="created_at" label="上传时间" width="180" />
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <div class="action-buttons">
               <PreviewButton @click="handlePreview(row)" />
+              <el-button
+                type="primary"
+                size="small"
+                @click="handleCopyLink(row)"
+              >
+                复制链接
+              </el-button>
               <DeleteButton @click="handleDelete(row)" />
             </div>
           </template>
@@ -281,6 +288,15 @@ const handlePreview = (row) => {
   previewVisible.value = true
 }
 
+const handleCopyLink = (row) => {
+  const fileUrl = getMediaUrl(row.file)
+  navigator.clipboard.writeText(fileUrl).then(() => {
+    ElMessage.success('链接已复制到剪贴板')
+  }).catch(() => {
+    ElMessage.error('复制失败，请手动复制')
+  })
+}
+
 const onVideoReady = () => {}
 
 const onVideoError = (error) => {
@@ -383,5 +399,10 @@ onUnmounted(() => {
   flex-wrap: wrap;
   gap: 4px;
   align-items: center;
+}
+
+.action-buttons .el-button {
+  padding: 4px 8px;
+  font-size: 12px;
 }
 </style>
