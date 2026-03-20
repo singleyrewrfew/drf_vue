@@ -5,7 +5,7 @@
     </el-form>
     <template #footer>
       <ResetButton :text="cancelText" @click="handleCancel" />
-      <SearchButton :text="submitText" @click="handleSubmit" :disabled="loading" />
+      <ConfirmButton :text="submitText" @click="handleSubmit" :disabled="loading" />
     </template>
   </el-dialog>
 </template>
@@ -13,7 +13,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import ResetButton from '@/components/ResetButton.vue'
-import SearchButton from '@/components/SearchButton.vue'
+import ConfirmButton from '@/components/ConfirmButton.vue'
 
 const props = defineProps({
   modelValue: {

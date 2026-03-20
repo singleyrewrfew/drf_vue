@@ -123,7 +123,7 @@
               </div>
             </el-form-item>
             <div class="form-actions">
-              <SearchButton text="保存修改" @click="handleUpdateProfile" :disabled="loading" />
+              <ConfirmButton text="保存修改" @click="handleUpdateProfile" :disabled="loading" />
             </div>
           </el-form>
         </div>
@@ -254,7 +254,7 @@
       </div>
       <template #footer>
         <ResetButton text="取消" @click="showMediaDialog = false" />
-        <SearchButton text="确定" @click="handleMediaSelect" :disabled="!selectedMedia" />
+        <ConfirmButton text="确定" @click="handleMediaSelect" :disabled="!selectedMedia" />
       </template>
     </el-dialog>
   </div>
@@ -268,7 +268,7 @@ import { updateProfile, changePassword } from '@/api/user'
 import { getAvatarUrl } from '@/utils'
 import api from '@/api'
 import UploadButtonSmall from '@/components/UploadButtonSmall.vue'
-import SearchButton from '@/components/SearchButton.vue'
+import ConfirmButton from '@/components/ConfirmButton.vue'
 import ResetButton from '@/components/ResetButton.vue'
 import SearchInput from '@/components/SearchInput.vue'
 

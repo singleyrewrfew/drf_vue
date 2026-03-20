@@ -9,7 +9,8 @@
       </template>
       <el-table :data="tagList" v-loading="loading" stripe>
         <el-table-column prop="name" label="标签名称" />
-        <el-table-column prop="slug" label="URL别名" />
+        <el-table-column prop="slug" label="URL 别名" />
+        <el-table-column prop="content_count" label="文章数量" width="100" />
         <el-table-column prop="created_at" label="创建时间" width="180" />
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
@@ -42,7 +43,7 @@
       </el-form>
       <template #footer>
         <ResetButton text="取消" @click="dialogVisible = false" />
-        <SearchButton text="确定" @click="handleSubmit" :disabled="submitLoading" />
+        <ConfirmButton text="确定" @click="handleSubmit" :disabled="submitLoading" />
       </template>
     </el-dialog>
   </div>
@@ -56,7 +57,7 @@ import EditButton from '@/components/EditButton.vue'
 import DeleteButton from '@/components/DeleteButton.vue'
 import CreateButton from '@/components/CreateButton.vue'
 import ResetButton from '@/components/ResetButton.vue'
-import SearchButton from '@/components/SearchButton.vue'
+import ConfirmButton from '@/components/ConfirmButton.vue'
 
 const loading = ref(false)
 const submitLoading = ref(false)

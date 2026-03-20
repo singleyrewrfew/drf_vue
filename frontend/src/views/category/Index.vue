@@ -55,7 +55,7 @@
       </el-form>
       <template #footer>
         <ResetButton text="取消" @click="dialogVisible = false" />
-        <SearchButton text="确定" @click="handleSubmit" :disabled="submitLoading" />
+        <ConfirmButton text="确定" @click="handleSubmit" :disabled="submitLoading" />
       </template>
     </el-dialog>
   </div>
@@ -69,7 +69,7 @@ import EditButton from '@/components/EditButton.vue'
 import DeleteButton from '@/components/DeleteButton.vue'
 import CreateButton from '@/components/CreateButton.vue'
 import ResetButton from '@/components/ResetButton.vue'
-import SearchButton from '@/components/SearchButton.vue'
+import ConfirmButton from '@/components/ConfirmButton.vue'
 
 const loading = ref(false)
 const submitLoading = ref(false)

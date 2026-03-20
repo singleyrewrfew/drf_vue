@@ -26,6 +26,22 @@
         <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip />
         <el-table-column prop="author_name" label="作者" width="120" />
         <el-table-column prop="category_name" label="分类" width="120" />
+        <el-table-column label="标签" width="200">
+          <template #default="{ row }">
+            <div class="tag-list">
+              <el-tag 
+                v-for="tag in row.tags" 
+                :key="tag.id" 
+                size="small" 
+                effect="plain"
+                class="content-tag"
+              >
+                {{ tag.name }}
+              </el-tag>
+              <span v-if="!row.tags || row.tags.length === 0" class="no-tags">-</span>
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="statusMap[row.status]?.type">
@@ -211,6 +227,23 @@ onMounted(() => {
   flex-wrap: wrap;
   gap: 4px;
   align-items: center;
+}
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  min-height: 24px;
+}
+
+.content-tag {
+  margin: 2px;
+}
+
+.no-tags {
+  color: #909399;
+  font-size: 14px;
 }
 </style>
 
