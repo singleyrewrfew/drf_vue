@@ -68,16 +68,22 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="分类" prop="category">
-              <el-select v-model="form.category" placeholder="请选择分类" clearable style="width: 100%">
-                <el-option v-for="cat in categories" :key="cat.id" :label="cat.name" :value="cat.id" />
-              </el-select>
+              <div class="select-with-button">
+                <el-select v-model="form.category" placeholder="请选择分类" clearable class="category-select">
+                  <el-option v-for="cat in categories" :key="cat.id" :label="cat.name" :value="cat.id" />
+                </el-select>
+                <el-button type="primary" size="small" @click="showCategoryDialog = true">创建</el-button>
+              </div>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="标签" prop="tags">
-              <el-select v-model="form.tags" multiple placeholder="请选择标签" style="width: 100%">
-                <el-option v-for="tag in tags" :key="tag.id" :label="tag.name" :value="tag.id" />
-              </el-select>
+              <div class="select-with-button">
+                <el-select v-model="form.tags" multiple placeholder="请选择标签" class="tag-select" label="name">
+                  <el-option v-for="tag in tags" :key="tag.id" :label="tag.name" :value="tag.id" />
+                </el-select>
+                <el-button type="primary" size="small" @click="showTagDialog = true">创建</el-button>
+              </div>
             </el-form-item>
           </el-col>
         </el-row>
@@ -141,6 +147,38 @@
         </el-form-item>
       </el-form>
     </el-card>
+
+    <!-- 创建分类对话框 -->
+    <el-dialog v-model="showCategoryDialog" title="创建分类" width="400px">
+      <el-form label-width="80px">
+        <el-form-item label="分类名称" required>
+          <el-input v-model="newCategoryName" placeholder="请输入分类名称" />
+        </el-form-item>
+        <el-form-item label="URL 别名">
+          <el-input v-model="newCategorySlug" placeholder="留空自动生成" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showCategoryDialog = false">取消</el-button>
+        <el-button type="primary" @click="createCategory" :loading="creatingCategory">创建</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 创建标签对话框 -->
+    <el-dialog v-model="showTagDialog" title="创建标签" width="400px">
+      <el-form label-width="80px">
+        <el-form-item label="标签名称" required>
+          <el-input v-model="newTagName" placeholder="请输入标签名称" />
+        </el-form-item>
+        <el-form-item label="URL 别名">
+          <el-input v-model="newTagSlug" placeholder="留空自动生成" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showTagDialog = false">取消</el-button>
+        <el-button type="primary" @click="createTag" :loading="creatingTag">创建</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -175,6 +213,14 @@ const editorHeight = ref('500px')
 const autoSaveStatus = ref('')
 const autoSaveTimer = ref(null)
 const lastSaveContent = ref('')
+const showCategoryDialog = ref(false)
+const showTagDialog = ref(false)
+const newCategoryName = ref('')
+const newCategorySlug = ref('')
+const newTagName = ref('')
+const newTagSlug = ref('')
+const creatingCategory = ref(false)
+const creatingTag = ref(false)
 
 const form = reactive({
   title: '',
@@ -355,6 +401,63 @@ const fetchTags = async () => {
   }
 }
 
+const createCategory = async () => {
+  if (!newCategoryName.value.trim()) {
+    ElMessage.warning('请输入分类名称')
+    return
+  }
+  creatingCategory.value = true
+  try {
+    const payload = {
+      name: newCategoryName.value.trim(),
+      slug: newCategorySlug.value.trim() || undefined,
+    }
+    const { data } = await api.post('/categories/', payload)
+    ElMessage.success('分类创建成功')
+    showCategoryDialog.value = false
+    newCategoryName.value = ''
+    newCategorySlug.value = ''
+    // 先添加到分类列表，确保显示
+    categories.value.push(data)
+    // 然后设置选中的分类
+    form.category = data.id
+  } catch (error) {
+    ElMessage.error('创建分类失败')
+    console.error(error)
+  } finally {
+    creatingCategory.value = false
+  }
+}
+
+const createTag = async () => {
+  if (!newTagName.value.trim()) {
+    ElMessage.warning('请输入标签名称')
+    return
+  }
+  creatingTag.value = true
+  try {
+    const payload = {
+      name: newTagName.value.trim(),
+      slug: newTagSlug.value.trim() || undefined,
+    }
+    const { data } = await api.post('/tags/', payload)
+    ElMessage.success('标签创建成功')
+    showTagDialog.value = false
+    newTagName.value = ''
+    newTagSlug.value = ''
+    // 先添加到标签列表，确保显示
+    tags.value.push(data)
+    // 然后添加到已选标签
+    if (!form.tags) form.tags = []
+    form.tags.push(data.id)
+  } catch (error) {
+    ElMessage.error('创建标签失败')
+    console.error(error)
+  } finally {
+    creatingTag.value = false
+  }
+}
+
 const fetchUsers = async () => {
   if (!isAdmin.value) return
   try {
@@ -492,6 +595,19 @@ onUnmounted(() => {
   font-size: 14px;
   font-weight: 500;
   color: #303133;
+}
+
+.select-with-button {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+}
+
+.select-with-button .el-select,
+.select-with-button .category-select,
+.select-with-button .tag-select {
+  width: calc(100% - 60px);
 }
 
 .editor-wrapper {
