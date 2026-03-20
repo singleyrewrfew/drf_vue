@@ -290,11 +290,52 @@ const handlePreview = (row) => {
 
 const handleCopyLink = (row) => {
   const fileUrl = getMediaUrl(row.file)
-  navigator.clipboard.writeText(fileUrl).then(() => {
-    ElMessage.success('链接已复制到剪贴板')
-  }).catch(() => {
-    ElMessage.error('复制失败，请手动复制')
-  })
+  
+  // 优先使用 Clipboard API
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(fileUrl).then(() => {
+      ElMessage.success('链接已复制到剪贴板')
+    }).catch(() => {
+      fallbackCopyText(fileUrl)
+    })
+  } else {
+    // 降级方案
+    fallbackCopyText(fileUrl)
+  }
+}
+
+// 降级复制方法
+const fallbackCopyText = (text) => {
+  const textArea = document.createElement('textarea')
+  textArea.value = text
+  textArea.style.position = 'fixed'
+  textArea.style.top = '0'
+  textArea.style.left = '0'
+  textArea.style.width = '2em'
+  textArea.style.height = '2em'
+  textArea.style.padding = '0'
+  textArea.style.border = 'none'
+  textArea.style.outline = 'none'
+  textArea.style.boxShadow = 'none'
+  textArea.style.background = 'transparent'
+  textArea.style.opacity = '0'
+  
+  document.body.appendChild(textArea)
+  textArea.focus()
+  textArea.select()
+  
+  try {
+    const successful = document.execCommand('copy')
+    if (successful) {
+      ElMessage.success('链接已复制到剪贴板')
+    } else {
+      ElMessage.error('复制失败，请手动复制')
+    }
+  } catch (err) {
+    ElMessage.error('浏览器不支持复制，请手动复制')
+  } finally {
+    document.body.removeChild(textArea)
+  }
 }
 
 const onVideoReady = () => {}
