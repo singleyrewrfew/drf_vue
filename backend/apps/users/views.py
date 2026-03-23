@@ -48,6 +48,10 @@ class UserViewSet(viewsets.ModelViewSet):
         - list: 仅管理员可查看所有用户
         - destroy: 仅管理员可删除用户
         - 其他: 需要认证
+
+        AllowAny()：允许任何用户访问（无需登录、无需权限）；
+        IsAdminUser()：仅允许 Django 后台的管理员用户（is_staff=True）访问；
+        IsAuthenticated()：仅允许已登录（认证通过）的用户访问。
         """
         if self.action == 'login':
             return [AllowAny()]
