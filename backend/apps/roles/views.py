@@ -18,8 +18,11 @@ class PermissionViewSet(viewsets.ModelViewSet):
         serializer_class: 序列化器类，用于处理权限数据的序列化和反序列化
         permission_classes: 权限类列表，要求用户必须认证且为管理员
     """
+    # 1. 查询集：获取所有 Permission 模型的对象
     queryset = Permission.objects.all()
+    # 2. 序列化器：定义权限数据的返回/接收格式
     serializer_class = PermissionSerializer
+    # 3. 权限控制：仅认证的管理员可访问所有操作
     permission_classes = [IsAuthenticated, IsAdminUser]
 
 
@@ -37,7 +40,9 @@ class RoleViewSet(viewsets.ModelViewSet):
     Methods:
         get_serializer_class: 根据当前动作动态返回对应的序列化器类
     """
+    # 1. 查询集：预加载permissions关联数据，避免N+1查询（核心性能优化）
     queryset = Role.objects.prefetch_related('permissions')
+    # 2. 权限控制：仅已认证的管理员可访问所有CRUD操作
     permission_classes = [IsAuthenticated, IsAdminUser]
 
     def get_serializer_class(self):
@@ -53,6 +58,7 @@ class RoleViewSet(viewsets.ModelViewSet):
         Raises:
             无
         """
+        # 列表页返回简化数据，其他操作（retrieve/create/update/destroy）返回完整数据
         if self.action == 'list':
             return RoleListSerializer
         return RoleSerializer
