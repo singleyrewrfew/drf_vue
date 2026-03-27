@@ -1,89 +1,93 @@
 <template>
-  <div class="scroll-buttons" v-show="visible">
-    <button class="scroll-btn" @click="scrollToTop" title="回到顶部">
-      <el-icon><ArrowUp /></el-icon>
-    </button>
-    <button class="scroll-btn" @click="scrollToBottom" title="滚动到底部">
-      <el-icon><ArrowDown /></el-icon>
-    </button>
-  </div>
+    <div class="scroll-buttons" v-show="visible">
+        <button class="scroll-btn" @click="scrollToTop" title="回到顶部">
+            <el-icon>
+                <ArrowUp/>
+            </el-icon>
+        </button>
+        <button class="scroll-btn" @click="scrollToBottom" title="滚动到底部">
+            <el-icon>
+                <ArrowDown/>
+            </el-icon>
+        </button>
+    </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
-import { ArrowUp, ArrowDown } from '@element-plus/icons-vue'
+import {ref, onMounted, onUnmounted} from 'vue'
+import {ArrowUp, ArrowDown} from '@element-plus/icons-vue'
 
 const visible = ref(false)
 
 const findScrollElement = () => {
-  const pageContent = document.querySelector('.page-content')
-  if (pageContent && pageContent.scrollHeight > pageContent.clientHeight) {
-    return pageContent
-  }
-  return document.documentElement
+    const pageContent = document.querySelector('.page-content')
+    if (pageContent && pageContent.scrollHeight > pageContent.clientHeight) {
+        return pageContent
+    }
+    return document.documentElement
 }
 
 const checkScroll = () => {
-  const el = findScrollElement()
-  visible.value = el.scrollTop > 100
+    const el = findScrollElement()
+    visible.value = el.scrollTop > 100
 }
 
 const scrollToTop = () => {
-  const el = findScrollElement()
-  el.scrollTo({ top: 0, behavior: 'smooth' })
+    const el = findScrollElement()
+    el.scrollTo({top: 0, behavior: 'smooth'})
 }
 
 const scrollToBottom = () => {
-  const el = findScrollElement()
-  el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+    const el = findScrollElement()
+    el.scrollTo({top: el.scrollHeight, behavior: 'smooth'})
 }
 
 onMounted(() => {
-  const el = findScrollElement()
-  el.addEventListener('scroll', checkScroll)
-  window.addEventListener('scroll', checkScroll, true)
-  checkScroll()
+    const el = findScrollElement()
+    el.addEventListener('scroll', checkScroll)
+    window.addEventListener('scroll', checkScroll, true)
+    checkScroll()
 })
 
 onUnmounted(() => {
-  const el = findScrollElement()
-  el.removeEventListener('scroll', checkScroll)
-  window.removeEventListener('scroll', checkScroll, true)
+    const el = findScrollElement()
+    el.removeEventListener('scroll', checkScroll)
+    window.removeEventListener('scroll', checkScroll, true)
 })
 </script>
 
 <style scoped>
 .scroll-buttons {
-  position: fixed;
-  right: 16px;
-  bottom: calc(var(--tab-bar-height) + var(--safe-area-bottom) + 16px);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  z-index: var(--z-sticky);
+    position: fixed;
+    right: 16px;
+    bottom: calc(var(--tab-bar-height) + var(--safe-area-bottom) + 16px);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: var(--z-sticky);
 }
 
 .scroll-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--card-bg);
-  box-shadow: var(--shadow-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-secondary);
-  transition: all var(--transition-fast);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--card-bg);
+    box-shadow: var(--shadow-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    transition: all var(--transition-fast);
 }
 
 .scroll-btn:active {
-  transform: scale(0.95);
-  background: var(--bg-secondary);
+    transform: scale(0.95);
+    background: var(--bg-secondary);
 }
 
 :global(.dark) .scroll-btn,
 :global([data-theme="dark"]) .scroll-btn {
-  background: var(--bg-tertiary);
-  color: var(--text-secondary);
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
 }
 </style>
