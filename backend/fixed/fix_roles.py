@@ -1,3 +1,9 @@
+"""
+- ✅ 创建默认的"普通用户"角色
+- ✅ 为没有角色的用户分配默认角色
+- ✅ 显示修复结果
+"""
+
 import os
 import sys
 import django
