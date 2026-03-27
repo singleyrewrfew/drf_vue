@@ -1,26 +1,31 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8"/>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>CMS 内容管理系统</title>
     <script>
-      (function() {
-        var savedTheme = localStorage.getItem('theme') || 'light';
-        document.documentElement.setAttribute('data-theme', savedTheme);
-        if (savedTheme === 'dark') {
-          document.documentElement.style.backgroundColor = '#1A1A1A';
-        }
-      })();
+        (function () {
+            var savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            if (savedTheme === 'dark') {
+                document.documentElement.style.backgroundColor = '#1A1A1A';
+            }
+        })();
     </script>
     <style>
-      html { background-color: #F3F3F4; }
-      html[data-theme="dark"] { background-color: #1A1A1A; }
+        html {
+            background-color: #F3F3F4;
+        }
+
+        html[data-theme="dark"] {
+            background-color: #1A1A1A;
+        }
     </style>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.js"></script>
-  </body>
+</head>
+<body>
+<div id="app"></div>
+<script type="module" src="/src/main.js"></script>
+</body>
 </html>
