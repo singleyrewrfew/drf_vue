@@ -4,10 +4,9 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
-
+from rest_framework.parsers import FormParser, MultiPartParser
 from apps.users.permissions import IsEditorUser, IsOwnerOrAdmin
 from utils.mixins import SlugOrUUIDMixin
-
 from .models import Content
 from .serializers import ContentCreateUpdateSerializer, ContentListSerializer, ContentSerializer
 
@@ -259,3 +258,55 @@ class ContentViewSet(SlugOrUUIDMixin, viewsets.ModelViewSet):
         queryset = queryset.order_by('-is_top', '-created_at')
         
         return queryset
+
+    @extend_schema(request=None, responses=ContentSerializer)
+    @action(detail=True, methods=['post'])
+    def upload_cover(self, request, pk=None):
+        """
+        上传封面图
+        
+        封面图会保存到 covers/ 目录，而不是 media/{uploader.id}/ 目录
+        这样可以与 Content 模型的 upload_to='covers/' 配置保持一致。
+        
+        Args:
+            request: HTTP 请求对象，包含上传的文件数据
+            pk: 内容的主键或 UUID
+        
+        Returns:
+            Response: 包含上传后封面图数据的响应对象，HTTP 状态码为 201
+        
+        Raises:
+            无
+        """
+        if 'file' not in request.FILES:
+            return Response({'error': '请上传文件'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        file = request.FILES['file']
+        
+        # 验证文件类型
+        allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+        if file.content_type not in allowed_types:
+            return Response({'error': '只支持 JPG/PNG/GIF/WEBP 格式的图片'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # 验证文件大小（最大 10MB）
+        if file.size > 10 * 1024 * 1024:
+            return Response({'error': '图片大小不能超过 10MB'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # 保存文件到 covers/ 目录
+        from django.core.files.storage import default_storage
+        import uuid
+        
+        # 生成唯一文件名
+        ext = file.name.split('.')[-1]
+        filename = f'{uuid.uuid4().hex}.{ext}'
+        
+        # 保存文件
+        file_path = default_storage.save(f'covers/{filename}', file)
+        
+        # 返回文件 URL
+        file_url = f'/media/covers/{filename}'
+        
+        return Response({
+            'url': file_url,
+            'filename': filename
+        }, status=status.HTTP_201_CREATED)

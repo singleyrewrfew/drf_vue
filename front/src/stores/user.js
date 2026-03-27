@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import api from '@/api'
+import * as userApi from '@/api/user'
 
 export const useUserStore = defineStore('user', () => {
   const token = ref(localStorage.getItem('front_token') || '')
@@ -10,7 +10,7 @@ export const useUserStore = defineStore('user', () => {
   const isLoggedIn = computed(() => !!token.value)
 
   const login = async (credentials) => {
-    const { data } = await api.post('/auth/login/', credentials)
+    const { data } = await userApi.login(credentials)
     token.value = data.access
     user.value = data.user
     localStorage.setItem('front_token', data.access)
@@ -21,7 +21,7 @@ export const useUserStore = defineStore('user', () => {
   }
 
   const register = async (userData) => {
-    const { data } = await api.post('/auth/', userData)
+    const { data } = await userApi.register(userData)
     return data
   }
 
@@ -30,7 +30,7 @@ export const useUserStore = defineStore('user', () => {
     try {
       const refreshToken = localStorage.getItem('front_refresh')
       if (refreshToken) {
-        await api.post('/auth/logout/', { refresh: refreshToken })
+        await userApi.logout({ refresh: refreshToken })
       }
     } catch (e) {
       console.error(e)
@@ -43,7 +43,7 @@ export const useUserStore = defineStore('user', () => {
   }
 
   const fetchProfile = async () => {
-    const { data } = await api.get('/auth/profile/')
+    const { data } = await userApi.getProfile()
     user.value = data
     localStorage.setItem('front_user', JSON.stringify(data))
   }
