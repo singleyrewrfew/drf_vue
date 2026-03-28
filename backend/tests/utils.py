@@ -26,6 +26,12 @@ class MockUser:
         self._permissions = kwargs.get('permissions', [])
         self._role_code = kwargs.get('role_code', 'user')
     
+    def __eq__(self, other):
+        """支持对象比较（基于 ID）"""
+        if not isinstance(other, MockUser):
+            return False
+        return self.id == other.id
+    
     def has_permission(self, permission_code):
         """检查权限"""
         if self.is_superuser:
@@ -35,7 +41,7 @@ class MockUser:
     @property
     def is_admin(self):
         """是否为管理员"""
-        return self.is_superuser or self._role_code == 'admin'
+        return self.is_superuser or self._role_code == 'admin' or self.is_staff
     
     @property
     def is_editor(self):
@@ -61,7 +67,7 @@ class MockContent:
         self.updated_at = kwargs.get('updated_at')
         self.published_at = kwargs.get('published_at')
     
-    def save(self):
+    def save(self, *args, **kwargs):
         """保存方法"""
         pass
     
@@ -136,6 +142,7 @@ def create_test_content(author, **kwargs):
         Content: 内容实例
     """
     from apps.contents.models import Content
+    from utils.slug_utils import generate_unique_slug
     
     defaults = {
         'title': 'Test Content',
@@ -145,6 +152,10 @@ def create_test_content(author, **kwargs):
         'author': author
     }
     defaults.update(kwargs)
+    
+    # 自动生成唯一 slug
+    if 'slug' not in defaults:
+        defaults['slug'] = generate_unique_slug(Content, defaults.get('title', 'test-content'))
     
     content = Content.objects.create(**defaults)
     return content

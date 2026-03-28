@@ -78,7 +78,7 @@ class TestContentService:
     def test_can_user_edit_as_admin(self):
         """测试管理员可以编辑内容"""
         author = MockUser(id=1)
-        admin = MockUser(id=2, is_admin=True)
+        admin = MockUser(id=2, role_code='admin')  # role_code 会自动转为_role_code
         content = MockContent(author=author)
         
         result = ContentService.can_user_edit(content, admin)
@@ -107,7 +107,7 @@ class TestContentService:
     def test_can_user_delete_as_admin(self):
         """测试管理员可以删除内容"""
         author = MockUser(id=1)
-        admin = MockUser(id=2, is_admin=True)
+        admin = MockUser(id=2, role_code='admin')
         content = MockContent(author=author)
         
         result = ContentService.can_user_delete(content, admin)

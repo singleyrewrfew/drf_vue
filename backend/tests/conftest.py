@@ -1,23 +1,33 @@
 """
 Pytest Configuration
 
-测试配置和fixtures
+测试配置和 fixtures
 """
+import os
 import pytest
+
+# 设置 Django 环境变量
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+
+import django
 from django.conf import settings
 from django.test import RequestFactory
 from rest_framework.test import APIClient
 
+# 初始化 Django
+django.setup()
 
-@pytest.fixture(scope='session')
-def django_db_setup():
+
+@pytest.fixture
+def authenticated_api_client(api_client, user):
     """
-    数据库设置
+    已认证的 API 客户端
     """
-    settings.DATABASES['default'] = {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': ':memory:',
-    }
+    from rest_framework_simplejwt.tokens import RefreshToken
+    
+    refresh = RefreshToken.for_user(user)
+    api_client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
+    return api_client
 
 
 @pytest.fixture
@@ -83,3 +93,16 @@ def tag_data():
     return {
         'name': 'Test Tag'
     }
+
+
+@pytest.fixture
+def user(db):
+    """
+    创建测试用户（需要数据库）
+    """
+    from apps.users.models import User
+    return User.objects.create_user(
+        username='testuser',
+        email='test@example.com',
+        password='testpass123'
+    )
