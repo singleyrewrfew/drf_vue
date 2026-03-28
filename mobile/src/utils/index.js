@@ -1,11 +1,16 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'
-
-const MEDIA_BASE_URL = API_BASE_URL.replace('/api', '')
+const MEDIA_BASE_URL = import.meta.env.VITE_MEDIA_BASE_URL || API_BASE_URL.replace('/api', '')
 
 export const getMediaUrl = (path) => {
   if (!path) return ''
   if (path.startsWith('http')) return path
-  return `${MEDIA_BASE_URL}${path}`
+  
+  // 处理路径中已包含 /media/ 的情况
+  if (path.startsWith('/media/')) {
+    return `${MEDIA_BASE_URL}${path}`
+  }
+  
+  return `${MEDIA_BASE_URL}/media/${path}`
 }
 
 export const getCoverUrl = (coverImage, placeholder = true) => {

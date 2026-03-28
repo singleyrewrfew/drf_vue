@@ -252,7 +252,7 @@ const fetchData = async () => {
     try {
         const offset = (currentPage.value - 1) * pageSize.value
         const [featuredRes, latestRes, hotRes, catRes, tagRes] = await Promise.all([
-            getContents({status: 'published', is_top: true, limit: 5}),
+            getContents({status: 'published', limit: 5}), // 置顶文章
             getContents({status: 'published', offset: offset, limit: pageSize.value}),
             getContents({status: 'published', ordering: '-view_count', limit: 8}),
             getCategories(),

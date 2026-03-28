@@ -676,12 +676,16 @@ onMounted(fetchArticle)
 }
 
 .article-cover {
-    margin: 16px 0;
+    margin: 16px;
+    border-radius: var(--radius-md);
+    overflow: hidden;
 }
 
 .article-cover img {
     width: 100%;
     display: block;
+    aspect-ratio: 16/9;
+    object-fit: cover;
 }
 
 .article-body {

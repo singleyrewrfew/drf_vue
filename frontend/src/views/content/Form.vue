@@ -46,7 +46,7 @@
                             </el-button>
                         </el-upload>
                     </div>
-                    <div class="editor-wrapper">
+                    <div class="editor-wrapper" :class="editorThemeClass">
                         <MdEditor
                             v-if="editorLoaded"
                             v-model="form.content"
@@ -194,7 +194,7 @@
 </template>
 
 <script setup>
-import {ref, reactive, computed, onMounted, onUnmounted} from 'vue'
+import {ref, reactive, computed, onMounted, onUnmounted, watch} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {Plus, Loading, Upload} from '@element-plus/icons-vue'
@@ -203,13 +203,18 @@ import 'md-editor-v3/lib/style.css'
 import {createContent, updateContent, getContent} from '@/api/content'
 import api from '@/api'
 import {useUserStore} from '@/stores/user'
+import {useThemeStore} from '@/stores/theme'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const themeStore = useThemeStore()
 
 const isEdit = computed(() => !!route.params.id)
 const isAdmin = computed(() => userStore.user?.role_code === 'admin' || userStore.user?.is_superuser)
+const editorThemeClass = computed(() => ({
+    'md-editor-dark': themeStore.theme === 'dark'
+}))
 const formRef = ref()
 const loading = ref(false)
 const categories = ref([])
@@ -233,6 +238,13 @@ const newTagSlug = ref('')
 const creatingCategory = ref(false)
 const creatingTag = ref(false)
 
+// 根据主题设置编辑器和代码主题
+const updateEditorTheme = () => {
+    const isDark = themeStore.theme === 'dark'
+    previewTheme.value = isDark ? 'mk-cute' : 'github'
+    codeTheme.value = isDark ? 'one-dark' : 'github'
+}
+
 const form = reactive({
     title: '',
     slug: '',
@@ -251,8 +263,9 @@ const rules = {
     content: [{required: true, message: '请输入内容', trigger: 'blur'}],
 }
 
-const uploadUrl = computed(() => `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'}/media/`)
-const coverUploadUrl = computed(() => `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'}/contents/upload_cover/`)
+const uploadUrl = computed(() => `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'}/media/`)
+// 封面图上传使用通用媒体上传接口
+const coverUploadUrl = computed(() => `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'}/media/`)
 const uploadHeaders = computed(() => {
     const token = userStore.token
     console.log('上传 Token:', token ? '存在' : '为空')
@@ -403,14 +416,18 @@ const autoSave = async () => {
 }
 
 const getMediaBaseUrl = () => {
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
     return apiBaseUrl.replace(/\/api\/?$/, '')
 }
 
-const handleCoverSuccess = (response) => {
+const handleCoverSuccess = (response, file) => {
+    // response 是 Media 对象，包含 url 字段
     if (response.url) {
         const baseUrl = getMediaBaseUrl()
         form.cover_image = response.url.startsWith('http') ? response.url : `${baseUrl}${response.url}`
+        ElMessage.success('封面图上传成功')
+    } else {
+        ElMessage.error('封面图上传失败')
     }
 }
 
@@ -586,9 +603,17 @@ onMounted(async () => {
         fetchContent(),
     ])
 
+    // 初始化编辑器主题
+    updateEditorTheme()
+    
     setTimeout(() => {
         editorLoaded.value = true
     }, 100)
+})
+
+// 监听主题变化
+watch(() => themeStore.theme, () => {
+    updateEditorTheme()
 })
 
 onUnmounted(() => {
@@ -625,7 +650,7 @@ onUnmounted(() => {
 .editor-label {
     font-size: 14px;
     font-weight: 500;
-    color: #303133;
+    color: var(--text-primary);
 }
 
 .select-with-button {
@@ -652,9 +677,9 @@ onUnmounted(() => {
     align-items: center;
     justify-content: center;
     gap: 12px;
-    color: #909399;
-    background: #f5f7fa;
-    border-radius: 8px;
+    color: var(--text-tertiary);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
 }
 
 .editor-loading .el-icon {
@@ -662,8 +687,8 @@ onUnmounted(() => {
 }
 
 .cover-uploader {
-    border: 1px dashed #d9d9d9;
-    border-radius: 6px;
+    border: 1px dashed var(--border-color);
+    border-radius: var(--radius-sm);
     cursor: pointer;
     position: relative;
     overflow: hidden;
@@ -672,11 +697,12 @@ onUnmounted(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #f5f7fa;
+    background-color: var(--bg-tertiary);
+    transition: border-color var(--transition-fast);
 }
 
 .cover-uploader:hover {
-    border-color: #409eff;
+    border-color: var(--primary-color);
 }
 
 .cover-placeholder {
@@ -689,7 +715,7 @@ onUnmounted(() => {
 
 .cover-uploader-icon {
     font-size: 32px;
-    color: #8c939d;
+    color: var(--text-tertiary);
 }
 
 .cover-image {
@@ -701,13 +727,307 @@ onUnmounted(() => {
 
 .cover-tip {
     font-size: 12px;
-    color: #909399;
+    color: var(--text-tertiary);
     margin-top: 8px;
 }
 
 .form-tip {
     font-size: 12px;
-    color: #909399;
+    color: var(--text-tertiary);
     margin-left: 10px;
+}
+
+/* Markdown 编辑器主题适配 */
+[data-theme="dark"] .md-editor {
+    background: var(--bg-primary) !important;
+    border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .md-editor-preview-wrapper {
+    background: var(--bg-primary) !important;
+}
+
+[data-theme="dark"] .md-editor-preview-wrapper h1,
+[data-theme="dark"] .md-editor-preview-wrapper h2,
+[data-theme="dark"] .md-editor-preview-wrapper h3,
+[data-theme="dark"] .md-editor-preview-wrapper h4,
+[data-theme="dark"] .md-editor-preview-wrapper h5,
+[data-theme="dark"] .md-editor-preview-wrapper h6 {
+    color: var(--text-primary) !important;
+    border-bottom-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .md-editor-preview-wrapper p,
+[data-theme="dark"] .md-editor-preview-wrapper li,
+[data-theme="dark"] .md-editor-preview-wrapper blockquote {
+    color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .md-editor-preview-wrapper code {
+    background: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .md-editor-preview-wrapper pre {
+    background: var(--bg-secondary) !important;
+    border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .md-editor-preview-wrapper table td,
+[data-theme="dark"] .md-editor-preview-wrapper table th {
+    border-color: var(--border-color) !important;
+    background: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .md-editor-preview-wrapper table tr:nth-child(2n) {
+    background: var(--bg-tertiary) !important;
+}
+
+[data-theme="dark"] .md-editor-preview-wrapper hr {
+    background-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .md-editor-preview-wrapper a {
+    color: var(--primary-color) !important;
+}
+
+/* 编辑器工具栏主题适配 */
+[data-theme="dark"] .md-editor-toolbar {
+    background: var(--bg-primary) !important;
+    border-bottom-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .md-editor-toolbar-item {
+    color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .md-editor-toolbar-item:hover {
+    background: var(--bg-secondary) !important;
+    color: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .md-editor-toolbar-item.active {
+    background: var(--primary-bg) !important;
+    color: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .md-editor-divider {
+    background: var(--border-color) !important;
+}
+
+/* 编辑器输入区域主题适配 */
+[data-theme="dark"] .md-editor-input-wrapper {
+    background: var(--bg-primary) !important;
+}
+
+[data-theme="dark"] .md-editor-input-wrapper textarea {
+    color: var(--text-primary) !important;
+    background: var(--bg-primary) !important;
+}
+
+/* 代码块主题适配 */
+[data-theme="dark"] .md-editor-code-block-language {
+    color: var(--text-secondary) !important;
+}
+
+/* CodeMirror 滚动区域主题适配 */
+[data-theme="dark"] .cm-scroller {
+    background: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .cm-scroller .cm-content {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .cm-scroller .cm-line {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .cm-scroller ::selection {
+    background: var(--primary-bg-hover) !important;
+}
+
+[data-theme="dark"] .cm-activeLine {
+    background: var(--bg-tertiary) !important;
+}
+
+[data-theme="dark"] .cm-activeLineGutter {
+    background: var(--bg-secondary) !important;
+}
+
+[data-theme="dark"] .cm-gutters {
+    background: var(--bg-primary) !important;
+    border-right-color: var(--border-color) !important;
+    color: var(--text-tertiary) !important;
+}
+
+[data-theme="dark"] .cm-cursor {
+    border-left-color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .cm-matchingBracket {
+    background: var(--primary-bg) !important;
+}
+
+[data-theme="dark"] .cm-foldPlaceholder {
+    background: var(--bg-secondary) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-secondary) !important;
+}
+
+/* 强制覆盖 md-editor-v3 的编辑器主题 */
+[data-theme="dark"] .md-editor-input-wrapper .cm-editor {
+    background: var(--bg-primary) !important;
+}
+
+[data-theme="dark"] .md-editor-input-wrapper .cm-editor .cm-scroller {
+    background: var(--bg-primary) !important;
+}
+
+[data-theme="dark"] .md-editor-input-wrapper .cm-focused {
+    outline: none !important;
+}
+
+/* 亮色模式下的样式保证 */
+.md-editor-input-wrapper .cm-editor .cm-scroller {
+    background: #ffffff !important;
+}
+
+.md-editor-input-wrapper .cm-content {
+    color: #24292f !important;
+}
+
+/* 全局样式 - 强制主题适配 */
+.md-editor-dark {
+    --md-bk-color: #252526 !important;
+    --md-bk-color-outstand: #2d2d2d !important;
+    --md-bk-hover-color: #383838 !important;
+    --md-border-color: #3a3a3a !important;
+    --md-modal-color: #1e1e1e !important;
+    --md-bar-color: #2d2d2d !important;
+    --md-bar-border-color: #3a3a3a !important;
+    --md-icon-color: #b4b4b4 !important;
+    --md-icon-hover-color: #ffffff !important;
+    --md-text-color: #ffffff !important;
+    --md-text-active-color: #0078d4 !important;
+    --md-text-unchecked-color: #b4b4b4 !important;
+    --md-scrollbar-bg-color: transparent !important;
+    --md-scrollbar-thumb-color: #424242 !important;
+    --md-scrollbar-thumb-hover-color: #4f4f4f !important;
+}
+
+.md-editor-dark .cm-scroller {
+    --cm-readonly-bg: #252526 !important;
+    background-color: #252526 !important;
+}
+
+.md-editor-dark .cm-gutters {
+    background-color: #252526 !important;
+    border-right: 1px solid #3a3a3a !important;
+}
+
+.md-editor-dark .cm-lineNumbers {
+    color: #858585 !important;
+}
+
+.md-editor-dark .cm-activeLineGutter {
+    background-color: #2d2d2d !important;
+}
+
+.md-editor-dark .cm-cursorLayer {
+    caret-color: #ffffff !important;
+}
+
+.md-editor-dark .cm-selectionBackground,
+.md-editor-dark ::selection {
+    background: rgba(0, 120, 212, 0.3) !important;
+}
+
+.md-editor-dark .cm-focused .cm-cursor {
+    border-left-color: #ffffff !important;
+}
+</style>
+
+<style>
+/* 全局样式 - 用于覆盖 md-editor-v3 的主题 */
+[data-theme="dark"] .md-editor {
+    background: var(--bg-primary) !important;
+    border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .md-editor-toolbar {
+    background: var(--bg-primary) !important;
+    border-bottom-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .md-editor-toolbar-item {
+    color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .md-editor-toolbar-item:hover {
+    background: var(--bg-secondary) !important;
+    color: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .md-editor-divider {
+    background-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .md-editor-input-wrapper,
+[data-theme="dark"] .md-editor-input-wrapper * {
+    background: var(--bg-primary) !important;
+}
+
+[data-theme="dark"] .cm-scroller {
+    background: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .cm-content,
+[data-theme="dark"] .cm-line {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .cm-gutters {
+    background: var(--bg-primary) !important;
+    border-right-color: var(--border-color) !important;
+    color: var(--text-tertiary) !important;
+}
+
+[data-theme="dark"] .cm-cursor {
+    border-left-color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .cm-activeLine {
+    background: var(--bg-tertiary) !important;
+}
+
+[data-theme="dark"] .cm-activeLineGutter {
+    background: var(--bg-secondary) !important;
+}
+
+[data-theme="dark"] ::selection {
+    background: var(--primary-bg-hover) !important;
+}
+
+/* 强制应用暗色主题到 CodeMirror */
+.md-editor-dark .cm-editor,
+.md-editor-dark .cm-scroller,
+.md-editor-dark .cm-content,
+.md-editor-dark .cm-line {
+    background-color: #252526 !important;
+    color: #c5c5c5 !important;
+}
+
+.md-editor-dark .cm-gutters {
+    background-color: #1e1e1e !important;
+    border-right-color: #3a3a3a !important;
+    color: #858585 !important;
+}
+
+.md-editor-dark .cm-cursor {
+    border-left-color: #ffffff !important;
 }
 </style>

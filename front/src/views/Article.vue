@@ -27,373 +27,39 @@
                             </div>
                         </template>
                         <template v-else>
-                            <article class="article">
-                                <header class="article-header">
-                                    <div class="article-category" v-if="article.category_name">
-                                        <el-tag type="success" effect="plain" @click="handleCategoryClick">
-                                            {{ article.category_name }}
-                                        </el-tag>
-                                    </div>
-                                    <h1>{{ article.title }}</h1>
-                                    <div class="article-meta">
-                                        <div class="author-info">
-                                            <el-avatar :size="40" :src="getAvatarUrl(article.author_avatar)">
-                                                {{ article.author_name?.charAt(0)?.toUpperCase() }}
-                                            </el-avatar>
-                                            <div class="author-detail">
-                                                <span class="author-name">{{ article.author_name }}</span>
-                                                <span class="publish-time">{{ formatDate(article.created_at) }}</span>
-                                            </div>
-                                        </div>
-                                        <div class="article-stats">
-                                            <span><el-icon><View/></el-icon> {{ article.view_count }} 阅读</span>
-                                        </div>
-                                    </div>
-                                    <div v-if="article.tags?.length" class="article-tags">
-                                        <el-tag
-                                            v-for="tag in article.tags"
-                                            :key="tag.id"
-                                            size="small"
-                                            effect="plain"
-                                            @click="$router.push(`/tag/${tag.slug || tag.id}`)"
-                                        >
-                                            #{{ tag.name }}
-                                        </el-tag>
-                                    </div>
-                                </header>
-
-                                <div v-if="article.cover_image" class="article-cover">
-                                    <img :src="getCoverUrl(article.cover_image)" :alt="article.title"/>
-                                </div>
-
-                                <div class="article-content markdown-body" v-html="renderedContent"></div>
-
-                                <div v-if="!fullContentLoaded && article.content_preview" class="full-content-loading">
-                                    <el-skeleton :rows="10" animated/>
-                                </div>
-                            </article>
+                            <!-- 文章头部 -->
+                            <ArticleHeader 
+                                :article="article"
+                                @category-click="handleCategoryClick"
+                                @tag-click="(tag) => $router.push(`/tag/${tag.slug || tag.id}`)"
+                            />
+                            
+                            <!-- 文章内容 -->
+                            <ArticleContent
+                                :content="article.content"
+                                :cover-image="getCoverUrl(article.cover_image)"
+                                :title="article.title"
+                                :is-loading="!fullContentLoaded"
+                            />
                         </template>
 
-                        <div v-if="prevArticle || nextArticle" class="article-nav">
-                            <el-button v-if="prevArticle" text @click="$router.push(getArticleUrl(prevArticle))">
-                                <el-icon>
-                                    <ArrowLeft/>
-                                </el-icon>
-                                上一篇
-                            </el-button>
-                            <el-button v-if="nextArticle" text @click="$router.push(getArticleUrl(nextArticle))">
-                                下一篇
-                                <el-icon>
-                                    <ArrowRight/>
-                                </el-icon>
-                            </el-button>
-                        </div>
+                        <!-- 文章导航 -->
+                        <ArticleNav
+                            :prev-article="prevArticle"
+                            :next-article="nextArticle"
+                        />
 
-                        <div class="comments-section">
-                            <div class="section-title">
-                                <el-icon>
-                                    <ChatDotRound/>
-                                </el-icon>
-                                <span>评论 ({{ comments.length }})</span>
-                            </div>
-
-                            <div v-if="userStore.isLoggedIn" class="comment-form">
-                                <div class="comment-form-wrapper">
-                                    <el-avatar :size="36" :src="getAvatarUrl(userStore.user?.avatar)">
-                                        {{ userStore.user?.username?.charAt(0).toUpperCase() }}
-                                    </el-avatar>
-                                    <div class="comment-form-content">
-                                        <el-input
-                                            v-model="commentContent"
-                                            type="textarea"
-                                            :rows="3"
-                                            placeholder="理性发言，友善互动..."
-                                            :autosize="{ minRows: 3, maxRows: 8 }"
-                                            resize="none"
-                                            class="comment-textarea"
-                                        />
-                                        <div class="comment-form-footer">
-                                            <div class="comment-form-tools">
-                                                <el-popover placement="top-start" :width="300" trigger="click">
-                                                    <template #reference>
-                                                        <el-button link class="tool-btn">
-                                                            <svg width="1.2em" height="1.2em" viewBox="0 0 24 24"
-                                                                 fill="currentColor">
-                                                                <path
-                                                                    d="M14.413 14.223a.785.785 0 0 1 1.45.601A4.174 4.174 0 0 1 12 17.4a4.19 4.19 0 0 1-2.957-1.221 4.174 4.174 0 0 1-.906-1.355.785.785 0 1 1 1.449-.601 2.604 2.604 0 0 0 1.413 1.41 2.621 2.621 0 0 0 2.849-.566c.242-.242.434-.529.565-.844ZM8.6 8.77a1.308 1.308 0 1 1 0 2.615 1.308 1.308 0 0 1 0-2.615ZM15.4 8.77a1.308 1.308 0 1 1 0 2.615 1.308 1.308 0 0 1 0-2.615Z"></path>
-                                                                <path fill-rule="evenodd"
-                                                                      d="M12 1.573c5.758 0 10.427 4.669 10.427 10.427S17.758 22.427 12 22.427 1.573 17.758 1.573 12 6.242 1.573 12 1.573Zm0 1.746a8.681 8.681 0 1 0 .001 17.362A8.681 8.681 0 0 0 12 3.32Z"
-                                                                      clip-rule="evenodd"></path>
-                                                            </svg>
-                                                        </el-button>
-                                                    </template>
-                                                    <div class="emoji-picker">
-                                                        <div class="emoji-list">
-                              <span v-for="emoji in emojis" :key="emoji" class="emoji-item" @click="insertEmoji(emoji)">
-                                {{ emoji }}
-                              </span>
-                                                        </div>
-                                                    </div>
-                                                </el-popover>
-                                            </div>
-                                            <div class="comment-form-actions">
-                                                <span class="char-count">{{ commentContent.length }}/500</span>
-                                                <el-button type="primary" @click="submitComment" :loading="submitting"
-                                                           :disabled="!commentContent.trim()">
-                                                    发布
-                                                </el-button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div v-else class="login-tip">
-                                <p>登录后才能评论</p>
-                                <el-button type="primary" @click="$router.push('/login')">立即登录</el-button>
-                            </div>
-
-                            <div class="comment-list">
-                                <div v-for="comment in displayComments" :key="comment.id" class="comment-item">
-                                    <el-avatar :size="40" :src="getAvatarUrl(comment.user_avatar)">
-                                        {{ comment.user_name?.charAt(0)?.toUpperCase() }}
-                                    </el-avatar>
-                                    <div class="comment-body">
-                                        <div class="comment-main">
-                                            <div class="comment-header">
-                                                <span class="comment-author">{{ comment.user_name }}</span>
-                                                <span class="comment-time">{{
-                                                        formatRelativeTime(comment.created_at)
-                                                    }}</span>
-                                            </div>
-                                            <p class="comment-text">{{ comment.content }}</p>
-                                            <div class="comment-actions">
-                        <span
-                            class="action-btn"
-                            :class="{ liked: comment.is_liked }"
-                            @click="handleLike(comment)"
-                        >
-                          <el-icon><Pointer/></el-icon>
-                          <span>{{ comment.like_count || '' }}</span>
-                        </span>
-                                                <span class="action-btn"
-                                                      @click="openReplyForm(comment.id, comment.user_name, comment.user)">
-                          <el-icon><ChatDotRound/></el-icon>
-                          <span>回复</span>
-                        </span>
-                                            </div>
-                                        </div>
-                                        <div v-if="replyToParent === comment.id" class="reply-form">
-                                            <div class="reply-form-header">
-                                                <span>回复 <span class="reply-target">@{{ replyToName }}</span></span>
-                                                <el-button link size="small" @click="closeReplyForm">取消</el-button>
-                                            </div>
-                                            <el-input
-                                                v-model="replyContent"
-                                                type="textarea"
-                                                :rows="2"
-                                                placeholder="写下你的回复..."
-                                                :autosize="{ minRows: 2, maxRows: 6 }"
-                                                resize="none"
-                                                @keyup.ctrl.enter="submitReply(comment.id)"
-                                            />
-                                            <div class="reply-form-actions">
-                                                <span class="reply-tip">Ctrl + Enter 发送</span>
-                                                <el-button type="primary" size="small" @click="submitReply(comment.id)"
-                                                           :loading="submittingReply">
-                                                    发送
-                                                </el-button>
-                                            </div>
-                                        </div>
-                                        <div v-if="comment.reply_count > 0" class="reply-section">
-                                            <div
-                                                class="reply-toggle"
-                                                @click="toggleReplies(comment.id)"
-                                            >
-                                                <span>{{
-                                                        expandedReplies.includes(comment.id) ? '收起回复' : `${comment.reply_count} 条回复`
-                                                    }}</span>
-                                                <el-icon :class="{ rotated: expandedReplies.includes(comment.id) }">
-                                                    <ArrowRight/>
-                                                </el-icon>
-                                            </div>
-                                            <div v-if="expandedReplies.includes(comment.id) && comment.replies?.length"
-                                                 class="reply-list">
-                                                <div v-for="reply in comment.replies" :key="reply.id"
-                                                     class="reply-item">
-                                                    <el-avatar :size="24" :src="getAvatarUrl(reply.user_avatar)">
-                                                        {{ reply.user_name?.charAt(0)?.toUpperCase() }}
-                                                    </el-avatar>
-                                                    <div class="reply-body">
-                                                        <div class="reply-header">
-                                                            <span class="reply-author">{{ reply.user_name }}</span>
-                                                            <template v-if="reply.reply_to_name">
-                                                                <el-icon class="reply-arrow">
-                                                                    <ArrowRight/>
-                                                                </el-icon>
-                                                                <span class="reply-to-user">{{
-                                                                        reply.reply_to_name
-                                                                    }}</span>
-                                                            </template>
-                                                            <span class="reply-time">{{
-                                                                    formatRelativeTime(reply.created_at)
-                                                                }}</span>
-                                                        </div>
-                                                        <p class="reply-text">{{ reply.content }}</p>
-                                                        <div class="reply-actions">
-                              <span
-                                  class="action-btn small"
-                                  :class="{ liked: reply.is_liked }"
-                                  @click="handleLike(reply, comment.id)"
-                              >
-                                <el-icon><Pointer/></el-icon>
-                                <span>{{ reply.like_count || '' }}</span>
-                              </span>
-                                                            <span class="action-btn small"
-                                                                  @click="openReplyForm(comment.id, reply.user_name, reply.user_id)">
-                                <el-icon><ChatDotRound/></el-icon>
-                                <span>回复</span>
-                              </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div v-if="comments.length > 2" class="show-more-comments">
-                                    <el-button
-                                        type="primary"
-                                        plain
-                                        @click="showCommentsDialog = true"
-                                    >
-                                        查看全部 {{ comments.length }} 条评论
-                                    </el-button>
-                                </div>
-                                <el-empty v-if="comments.length === 0" description="暂无评论，快来抢沙发吧~"/>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 评论对话框 -->
-                    <el-dialog
-                        v-model="showCommentsDialog"
-                        title="全部评论"
-                        width="800px"
-                        destroy-on-close
-                    >
-                        <div class="dialog-comment-list">
-                            <div v-for="comment in comments" :key="comment.id" class="dialog-comment-item">
-                                <el-avatar :size="40" :src="getAvatarUrl(comment.user_avatar)">
-                                    {{ comment.user_name?.charAt(0)?.toUpperCase() }}
-                                </el-avatar>
-                                <div class="dialog-comment-body">
-                                    <div class="dialog-comment-main">
-                                        <div class="dialog-comment-header">
-                                            <span class="dialog-comment-author">{{ comment.user_name }}</span>
-                                            <span class="dialog-comment-time">{{
-                                                    formatRelativeTime(comment.created_at)
-                                                }}</span>
-                                        </div>
-                                        <p class="dialog-comment-text">{{ comment.content }}</p>
-                                        <div class="dialog-comment-actions">
-                      <span
-                          class="dialog-action-btn"
-                          :class="{ liked: comment.is_liked }"
-                          @click="handleLike(comment)"
-                      >
-                        <el-icon><Pointer/></el-icon>
-                        <span>{{ comment.like_count || '' }}</span>
-                      </span>
-                                            <span class="dialog-action-btn"
-                                                  @click="openReplyForm(comment.id, comment.user_name, comment.user)">
-                        <el-icon><ChatDotRound/></el-icon>
-                        <span>回复</span>
-                      </span>
-                                        </div>
-                                    </div>
-                                    <div v-if="replyToParent === comment.id" class="dialog-reply-form">
-                                        <div class="dialog-reply-form-header">
-                                            <span>回复 <span class="dialog-reply-target">@{{
-                                                    replyToName
-                                                }}</span></span>
-                                            <el-button link size="small" @click="closeReplyForm">取消</el-button>
-                                        </div>
-                                        <el-input
-                                            v-model="replyContent"
-                                            type="textarea"
-                                            :rows="2"
-                                            placeholder="写下你的回复..."
-                                            :autosize="{ minRows: 2, maxRows: 6 }"
-                                            resize="none"
-                                            @keyup.ctrl.enter="submitReply(comment.id)"
-                                        />
-                                        <div class="dialog-reply-form-actions">
-                                            <span class="dialog-reply-tip">Ctrl + Enter 发送</span>
-                                            <el-button type="primary" size="small" @click="submitReply(comment.id)"
-                                                       :loading="submittingReply">
-                                                发送
-                                            </el-button>
-                                        </div>
-                                    </div>
-                                    <div v-if="comment.reply_count > 0" class="dialog-reply-section">
-                                        <div
-                                            class="dialog-reply-toggle"
-                                            @click="toggleReplies(comment.id)"
-                                        >
-                                            <span>{{
-                                                    expandedReplies.includes(comment.id) ? '收起回复' : `${comment.reply_count} 条回复`
-                                                }}</span>
-                                            <el-icon :class="{ rotated: expandedReplies.includes(comment.id) }">
-                                                <ArrowRight/>
-                                            </el-icon>
-                                        </div>
-                                        <div v-if="expandedReplies.includes(comment.id) && comment.replies?.length"
-                                             class="dialog-reply-list">
-                                            <div v-for="reply in comment.replies" :key="reply.id"
-                                                 class="dialog-reply-item">
-                                                <el-avatar :size="24" :src="getAvatarUrl(reply.user_avatar)">
-                                                    {{ reply.user_name?.charAt(0)?.toUpperCase() }}
-                                                </el-avatar>
-                                                <div class="dialog-reply-body">
-                                                    <div class="dialog-reply-header">
-                                                        <span class="dialog-reply-author">{{ reply.user_name }}</span>
-                                                        <template v-if="reply.reply_to_name">
-                                                            <el-icon class="dialog-reply-arrow">
-                                                                <ArrowRight/>
-                                                            </el-icon>
-                                                            <span class="dialog-reply-to-user">{{
-                                                                    reply.reply_to_name
-                                                                }}</span>
-                                                        </template>
-                                                        <span class="dialog-reply-time">{{
-                                                                formatRelativeTime(reply.created_at)
-                                                            }}</span>
-                                                    </div>
-                                                    <p class="dialog-reply-text">{{ reply.content }}</p>
-                                                    <div class="dialog-reply-actions">
-                            <span
-                                class="dialog-action-btn small"
-                                :class="{ liked: reply.is_liked }"
-                                @click="handleLike(reply, comment.id)"
-                            >
-                              <el-icon><Pointer/></el-icon>
-                              <span>{{ reply.like_count || '' }}</span>
-                            </span>
-                                                        <span class="dialog-action-btn small"
-                                                              @click="openReplyForm(comment.id, reply.user_name, reply.user_id)">
-                              <el-icon><ChatDotRound/></el-icon>
-                              <span>回复</span>
-                            </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <el-empty v-if="comments.length === 0" description="暂无评论"/>
-                        </div>
-                    </el-dialog>
+                        <!-- 评论区 -->
+                        <CommentsSection
+                            v-if="article.id"
+                            ref="commentsSectionRef"
+                            :comments="comments"
+                            :article-id="article.id"
+                            @submit="handleCommentSubmit"
+                            @like="handleLikeComment"
+                            @reply="handleReply"
+                        />
+                    </div><!-- /.article-main -->
                 </el-col>
 
                 <el-col :span="7">
@@ -512,6 +178,13 @@ import hljs from 'highlight.js'
 import 'highlight.js/styles/github-dark.css'
 import {useUserStore} from '@/stores/user'
 import {getContent, getContents, getComments, createComment, likeComment} from '@/api/content'
+import {
+    ArticleHeader,
+    ArticleContent,
+    ArticleNav,
+    CommentsSection
+} from '@/components/article'
+import {getCoverUrl, getAvatarUrl, formatDate, formatRelativeTime} from '@/utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -548,26 +221,75 @@ const showCommentsDialog = ref(false)
 const showTocDrawer = ref(false)
 const activeHeadingId = ref('')
 
-const getCoverUrl = (coverImage) => {
-    if (!coverImage) return ''
-    if (coverImage.startsWith('http')) return coverImage
-    return `http://localhost:8001${coverImage}`
-}
-
-const getAvatarUrl = (avatar) => {
-    if (!avatar) return ''
-    if (avatar.startsWith('http')) return avatar
-    return `http://localhost:8001${avatar}`
-}
-
-const getArticleUrl = (article) => {
-    return `/article/${article.slug || article.id}`
-}
-
 const handleCategoryClick = () => {
     const idOrSlug = article.value.category_slug || article.value.category
     if (idOrSlug) {
         router.push(`/category/${idOrSlug}`)
+    }
+}
+
+// 处理评论相关
+const commentsSectionRef = ref(null)
+
+const handleCommentSubmit = ({ content, parentId }) => {
+    if (parentId === null) {
+        submitCommentMain(content)
+    } else {
+        submitReplyMain(parentId, content)
+    }
+}
+
+const submitCommentMain = async (content) => {
+    if (!content.trim()) return
+    
+    try {
+        await createComment({
+            content_type: 'contents.Content',
+            object_id: article.value.id,
+            content: content,
+            parent: null
+        })
+        
+        await loadComments()
+        ElMessage.success('评论成功')
+    } catch (error) {
+        console.error('Failed to submit comment:', error)
+        ElMessage.error('评论失败')
+    }
+}
+
+const submitReplyMain = async (parentId, content) => {
+    if (!content.trim()) return
+    
+    try {
+        await createComment({
+            content_type: 'contents.Content',
+            object_id: article.value.id,
+            content: content,
+            parent: parentId
+        })
+        
+        await loadComments()
+        ElMessage.success('回复成功')
+    } catch (error) {
+        console.error('Failed to submit reply:', error)
+        ElMessage.error('回复失败')
+    }
+}
+
+const handleLikeComment = async (comment) => {
+    try {
+        await likeComment(comment.id)
+        comment.is_liked = !comment.is_liked
+        comment.like_count = (comment.like_count || 0) + (comment.is_liked ? 1 : -1)
+    } catch (error) {
+        console.error('Failed to like comment:', error)
+    }
+}
+
+const handleReply = (commentId, userName, userId) => {
+    if (commentsSectionRef.value) {
+        commentsSectionRef.value.openReplyForm(commentId, userName, userId)
     }
 }
 
@@ -587,31 +309,6 @@ const handleTocClick = (id) => {
     showTocDrawer.value = false
     activeHeadingId.value = id
     scrollToHeading(id)
-}
-
-const formatRelativeTime = (dateStr) => {
-    if (!dateStr) return ''
-    const date = new Date(dateStr)
-    const now = new Date()
-    const diff = now - date
-    const seconds = Math.floor(diff / 1000)
-    const minutes = Math.floor(seconds / 60)
-    const hours = Math.floor(minutes / 60)
-    const days = Math.floor(hours / 24)
-
-    if (seconds < 60) return '刚刚'
-    if (minutes < 60) return `${minutes} 分钟前`
-    if (hours < 24) return `${hours} 小时前`
-    if (days < 7) return `${days} 天前`
-    if (days < 30) return `${Math.floor(days / 7)} 周前`
-    if (days < 365) return `${Math.floor(days / 30)} 个月前`
-    return `${Math.floor(days / 365)} 年前`
-}
-
-const formatDate = (dateStr) => {
-    if (!dateStr) return ''
-    const date = new Date(dateStr)
-    return date.toLocaleDateString('zh-CN')
 }
 
 const headings = ref([])
@@ -753,6 +450,9 @@ const fetchComments = async () => {
         console.error(e)
     }
 }
+
+// 别名，用于 CommentsSection 组件
+const loadComments = fetchComments
 
 const fetchRelatedArticles = async () => {
     try {

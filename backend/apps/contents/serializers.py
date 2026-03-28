@@ -8,7 +8,7 @@ from .models import Content
 
 
 def extract_media_path(url):
-    """从 URL 中提取媒体文件相对路径"""
+    """从 URL 中提取媒体文件相对路径（去掉 /media/ 前缀）"""
     if not url:
         return None
     if url.startswith('http://') or url.startswith('https://'):
@@ -16,10 +16,13 @@ def extract_media_path(url):
             from urllib.parse import urlparse
             path = urlparse(url).path
             if path.startswith('/media/'):
-                return path[7:]
+                return path[7:]  # 去掉 /media/
             return path.lstrip('/')
         except Exception:
             return None
+    # 如果是相对路径 (如 /media/xxx),去掉 /media/ 前缀
+    if url.startswith('/media/'):
+        return url[7:]
     return url
 
 
