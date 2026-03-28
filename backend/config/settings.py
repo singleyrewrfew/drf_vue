@@ -61,7 +61,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',  # 认证中间件
     'django.contrib.messages.middleware.MessageMiddleware',    # 消息中间件
     'django.middleware.clickjacking.XFrameOptionsMiddleware',  # 点击劫持保护
-    'middleware.BackendAccessMiddleware',                 # 自定义后台访问中间件
+    'middleware.BackendAccessMiddleware.BackendAccessMiddleware',  # 自定义后台访问中间件
 ]
 
 # 根 URL 配置文件
