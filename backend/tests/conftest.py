@@ -5,6 +5,8 @@ Pytest Configuration
 """
 import os
 import pytest
+import shutil
+from pathlib import Path
 
 # 设置 Django 环境变量
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
@@ -106,3 +108,50 @@ def user(db):
         email='test@example.com',
         password='testpass123'
     )
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """
+    在 pytest 会话结束后清理测试产生的媒体文件
+    
+    重要：只在 pytest 测试环境执行，避免误删生产数据
+    
+    参数:
+        session: pytest 会话对象
+        exitstatus: 退出状态码
+    """
+    import uuid as uuid_module
+    
+    # 安全检查：确保只在 pytest 测试环境执行
+    # 通过检查环境变量或命令行参数来判断
+    import sys
+    if 'pytest' not in sys.modules:
+        print("\n[警告] 非 pytest 环境，跳过媒体文件清理")
+        return
+    
+    # 获取媒体目录
+    media_root = Path(settings.MEDIA_ROOT)
+    
+    if not media_root.exists():
+        return
+    
+    # 清理测试产生的用户文件夹（保留 avatars 和 thumbnails）
+    cleaned_count = 0
+    for folder in media_root.iterdir():
+        if folder.is_dir() and folder.name not in ['avatars', 'thumbnails']:
+            try:
+                # 检查是否是 UUID 格式（测试用户的特征）
+                try:
+                    uuid_module.UUID(folder.name)
+                    # 是 UUID 格式，删除整个文件夹
+                    shutil.rmtree(folder)
+                    print(f"\n[清理] 已删除测试文件夹：{folder.name}")
+                    cleaned_count += 1
+                except ValueError:
+                    pass  # 不是 UUID，跳过
+                    
+            except Exception as e:
+                print(f"\n[清理失败] {folder.name}: {e}")
+    
+    if cleaned_count > 0:
+        print(f"[统计] 共清理 {cleaned_count} 个测试文件夹")

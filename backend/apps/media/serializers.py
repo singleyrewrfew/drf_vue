@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.conf import settings
 from django.core.exceptions import ValidationError
+import hashlib
 
 from .models import Media
 
@@ -67,13 +68,45 @@ class MediaUploadSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
+        """
+        创建媒体记录并验证文件完整性
+        
+        参数:
+            validated_data: 已验证的数据字典
+        
+        返回:
+            Media: 创建的媒体对象
+        
+        异常:
+            serializers.ValidationError: 当文件完整性校验失败时
+        """
         file = validated_data['file']
         uploader = self.context['request'].user
+        
+        # 预先计算文件哈希值
+        file.seek(0)
+        expected_hash = hashlib.md5(file.read()).hexdigest()
+        file.seek(0)
+        
+        # 使用 get_or_create_by_file 方法（会自动处理去重）
         media, created = Media.objects.get_or_create_by_file(file, uploader)
+        
         if not created:
+            # 如果是重复文件，更新文件名
             media.filename = file.name
             media.save()
         
+        # 验证文件完整性（仅针对新上传的文件）
+        if created and media.file:
+            media.file.seek(0)
+            actual_hash = hashlib.md5(media.file.read()).hexdigest()
+            
+            if actual_hash != expected_hash:
+                # 文件损坏，回滚并抛出异常
+                media.delete()
+                raise serializers.ValidationError('文件上传过程中损坏，请重新上传')
+        
+        # 如果是视频，异步生成缩略图
         if media.is_video:
             media.generate_thumbnails_async()
         

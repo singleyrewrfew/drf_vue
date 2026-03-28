@@ -5,7 +5,7 @@ import subprocess
 import threading
 import uuid
 
-from django.db import models
+from django.db import models, transaction
 from django.conf import settings
 from apps.core.models import User
 
@@ -100,14 +100,28 @@ def generate_video_thumbnails(video_path, output_dir, interval=5):
 
 
 class MediaManager(models.Manager):
+    @transaction.atomic
     def get_or_create_by_file(self, file, uploader):
+        """
+        获取或创建媒体文件（线程安全版本）
+        
+        使用数据库事务和 select_for_update 确保并发场景下的数据一致性
+        
+        参数:
+            file: 上传的文件对象
+            uploader: 上传者用户对象
+        
+        返回:
+            tuple: (Media 实例，是否新创建)
+        """
+        # 计算文件哈希值
         file.seek(0)
         file_hash = hashlib.md5(file.read()).hexdigest()
         file.seek(0)
         file_size = file.size
 
-        # 首先检查当前用户是否已上传过相同文件
-        existing_for_uploader = self.filter(
+        # 使用数据库锁检查当前用户是否已上传过相同文件
+        existing_for_uploader = self.select_for_update().filter(
             file_hash=file_hash,
             file_size=file_size,
             uploader=uploader
@@ -117,8 +131,8 @@ class MediaManager(models.Manager):
             # 如果当前用户已上传过相同文件，直接返回现有记录
             return existing_for_uploader, False
 
-        # 检查是否有其他用户上传过相同文件（全局去重）
-        existing_global = self.filter(
+        # 使用数据库锁检查是否有其他用户上传过相同文件（全局去重）
+        existing_global = self.select_for_update().filter(
             file_hash=file_hash,
             file_size=file_size
         ).first()
@@ -134,6 +148,8 @@ class MediaManager(models.Manager):
                 reference=existing_global  # 指向原始文件
             )
             media.save()
+            # 增加原始文件的引用计数
+            existing_global.increment_reference_count()
             return media, False  # 返回引用记录
 
         # 如果是新文件，创建新记录
@@ -159,6 +175,7 @@ class Media(models.Model):
     uploader = models.ForeignKey(User, on_delete=models.CASCADE, related_name='media_files', verbose_name='上传者')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='上传时间')
     reference = models.ForeignKey('self', on_delete=models.CASCADE, related_name='references', null=True, blank=True, verbose_name='引用文件')
+    reference_count = models.PositiveIntegerField(default=0, verbose_name='引用计数', editable=False)
     thumbnails = models.ImageField(upload_to=thumbnails_upload_to, blank=True, null=True, verbose_name='缩略图')
     thumbnails_count = models.PositiveIntegerField(default=0, verbose_name='缩略图数量')
     thumbnail_status = models.CharField(max_length=20, choices=THUMBNAIL_STATUS_CHOICES, default='pending', verbose_name='缩略图状态')
@@ -178,6 +195,17 @@ class Media(models.Model):
 
     def __str__(self):
         return self.filename
+
+    def increment_reference_count(self):
+        """增加引用计数"""
+        self.reference_count += 1
+        self.save(update_fields=['reference_count'])
+
+    def decrement_reference_count(self):
+        """减少引用计数"""
+        if self.reference_count > 0:
+            self.reference_count -= 1
+            self.save(update_fields=['reference_count'])
 
     @property
     def url(self):
@@ -252,7 +280,12 @@ class Media(models.Model):
             return False
 
     def generate_thumbnails_async(self):
-        """异步生成视频缩略图"""
+        """
+        异步生成视频缩略图
+        
+        使用后台线程异步处理视频缩略图生成，避免阻塞请求响应。
+        包含完整的错误处理和状态更新机制。
+        """
         if not self.is_video:
             return
         
@@ -261,25 +294,42 @@ class Media(models.Model):
         
         def _generate():
             import django
-            from django.db import connection
+            from django.db import connection, transaction
             
+            # 确保 Django 已初始化
             if not django.apps.apps.ready:
                 django.setup()
             
             try:
                 from apps.media.models import Media
                 print(f"[Thumbnail] Fetching media {media_id} from database")
-                media = Media.objects.get(id=media_id)
-                print(f"[Thumbnail] Media found, current status: {media.thumbnail_status}")
-                result = media.generate_thumbnails()
-                print(f"[Thumbnail] Generation result: {result}, new status: {media.thumbnail_status}")
+                
+                # 使用事务获取媒体记录
+                with transaction.atomic():
+                    media = Media.objects.select_for_update(skip_locked=True).get(id=media_id)
+                    print(f"[Thumbnail] Media found, current status: {media.thumbnail_status}")
+                    
+                    result = media.generate_thumbnails()
+                    print(f"[Thumbnail] Generation result: {result}, new status: {media.thumbnail_status}")
+                    
+            except Media.DoesNotExist:
+                print(f"[Thumbnail] Media {media_id} not found")
             except Exception as e:
                 print(f"[Thumbnail] Async thumbnail generation error: {e}")
                 import traceback
                 traceback.print_exc()
+                
+                # 尝试更新状态为失败
+                try:
+                    media = Media.objects.get(id=media_id)
+                    media.thumbnail_status = 'failed'
+                    media.save(update_fields=['thumbnail_status'])
+                except Exception:
+                    pass
             finally:
+                # 关闭数据库连接
                 connection.close()
         
-        thread = threading.Thread(target=_generate)
-        thread.daemon = True
+        # 启动后台线程
+        thread = threading.Thread(target=_generate, daemon=True)
         thread.start()

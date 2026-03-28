@@ -104,7 +104,7 @@ class MediaViewSet(viewsets.ModelViewSet):
         执行媒体文件删除操作
         
         删除媒体对象及其关联的物理文件。采用智能清理策略：
-        - 只有当记录没有引用且是原始文件时，才删除实际文件
+        - 使用引用计数机制，只有当记录没有引用且是原始文件时，才删除实际文件
         - 检查是否有其他记录引用该文件，避免误删共享文件
         - 同时删除关联的缩略图目录
         - 如果删除过程出现异常则忽略，确保数据库记录被删除
@@ -118,25 +118,30 @@ class MediaViewSet(viewsets.ModelViewSet):
         Raises:
             无
         """
-        # 只有当没有引用或者是原始文件时，才删除实际文件
-        if not instance.reference and instance.file:
-            # 检查是否有其他记录引用这个文件
-            has_references = Media.objects.filter(reference=instance).exists()
-            if not has_references:
-                try:
-                    file_path = instance.file.path
-                    if os.path.isfile(file_path):
-                        os.remove(file_path)
-                except Exception:
-                    pass
-            
-            try:
+        # 如果是引用记录，减少原始文件的引用计数
+        if instance.reference:
+            original = instance.reference
+            original.decrement_reference_count()
+        else:
+            # 原始文件的删除逻辑
+            # 只有当引用计数为 0 且没有其他引用记录时，才删除物理文件
+            if instance.reference_count == 0 and not instance.references.exists():
+                if instance.file:
+                    try:
+                        file_path = instance.file.path
+                        if os.path.isfile(file_path):
+                            os.remove(file_path)
+                    except Exception:
+                        pass
+                
+                # 删除缩略图目录
                 if instance.thumbnails:
-                    thumbnails_dir = os.path.dirname(instance.thumbnails.path)
-                    if os.path.isdir(thumbnails_dir):
-                        shutil.rmtree(thumbnails_dir)
-            except Exception:
-                pass
+                    try:
+                        thumbnails_dir = os.path.dirname(instance.thumbnails.path)
+                        if os.path.isdir(thumbnails_dir):
+                            shutil.rmtree(thumbnails_dir)
+                    except Exception:
+                        pass
         
         instance.delete()
 
