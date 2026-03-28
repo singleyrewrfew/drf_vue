@@ -243,7 +243,6 @@ class TestMediaAPI:
         
         data = {
             'file': test_file,
-            'title': '上传测试图片'
         }
         
         response = authenticated_api_client.post('/api/media/', data)
@@ -251,7 +250,8 @@ class TestMediaAPI:
         # 可能返回 201（成功）或 400（验证失败）或其他
         if response.status_code == status.HTTP_201_CREATED:
             assert 'file' in response.data
-            assert response.data['title'] == '上传测试图片'
+            assert 'filename' in response.data
+            assert response.data['filename'] == 'upload_test.jpg'
         elif response.status_code == status.HTTP_400_BAD_REQUEST:
             print(f"Upload validation errors: {response.data}")
     

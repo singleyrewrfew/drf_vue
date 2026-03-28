@@ -5,14 +5,18 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 class BackendAccessMiddleware:
     """
     检查用户是否有后台访问权限的中间件
-    在每次请求时检查 is_staff 字段
+    
+    权限分级：
+    1. 公开路径 - 所有人可访问（登录、注册、公开内容列表）
+    2. 用户路径 - 认证用户可访问（上传媒体、管理个人内容）
+    3. 管理路径 - 仅管理员可访问（用户管理、系统设置）
     """
     
     def __init__(self, get_response):
         self.get_response = get_response
         
     def __call__(self, request):
-        # 只检查后台 API 请求（排除登录、注册等公开接口）
+        # 只检查后台 API 请求
         if request.path.startswith('/api/') and not self._is_public_path(request.path):
             try:
                 # 尝试从 JWT token 中获取用户
@@ -22,12 +26,15 @@ class BackendAccessMiddleware:
                 if user_auth_tuple:
                     user, token = user_auth_tuple
                     
-                    # 检查用户是否有后台访问权限
-                    if not user.is_staff and not user.is_superuser:
-                        return JsonResponse({
-                            'error': 'no_backend_access',
-                            'message': '您没有后台访问权限，请联系管理员'
-                        }, status=403)
+                    # 检查是否为管理路径
+                    if self._is_admin_path(request.path):
+                        # 管理路径需要 is_staff 或 is_superuser
+                        if not user.is_staff and not user.is_superuser:
+                            return JsonResponse({
+                                'error': 'permission_denied',
+                                'message': '需要管理员权限才能访问此接口'
+                            }, status=403)
+                    # 其他路径只需要认证即可，由 DRF 的权限类进一步检查
                         
             except Exception:
                 # 如果 token 无效，让 DRF 的权限系统处理
@@ -55,6 +62,20 @@ class BackendAccessMiddleware:
                 # 对于内容、分类、标签等，只允许 GET 请求
                 if path.startswith(('/api/contents/', '/api/categories/', '/api/tags/')):
                     return True
+                return True
+        
+        return False
+    
+    def _is_admin_path(self, path):
+        """判断是否为管理路径（需要 is_staff）"""
+        admin_paths = [
+            '/api/users/',  # 用户管理
+            '/api/roles/',  # 角色管理
+            '/api/core/',   # 系统核心配置
+        ]
+        
+        for admin_path in admin_paths:
+            if path.startswith(admin_path):
                 return True
         
         return False
