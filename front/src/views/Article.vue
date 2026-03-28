@@ -244,10 +244,8 @@ const submitCommentMain = async (content) => {
     
     try {
         await createComment({
-            content_type: 'contents.Content',
-            object_id: article.value.id,
-            content: content,
-            parent: null
+            article: route.params.id,
+            content: content
         })
         
         await loadComments()
@@ -263,8 +261,7 @@ const submitReplyMain = async (parentId, content) => {
     
     try {
         await createComment({
-            content_type: 'contents.Content',
-            object_id: article.value.id,
+            article: route.params.id,
             content: content,
             parent: parentId
         })
