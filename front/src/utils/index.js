@@ -1,39 +1,33 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
-
-const MEDIA_BASE_URL = (() => {
-  if (API_BASE_URL === '/api' || !API_BASE_URL.startsWith('http')) {
-    return 'http://localhost:8000'
-  }
-  return API_BASE_URL.replace(/\/api\/?$/, '')
-})()
+const MEDIA_BASE_URL = import.meta.env.VITE_MEDIA_BASE_URL || ''
 
 export const getMediaUrl = (path) => {
   if (!path) return ''
   if (path.startsWith('http')) return path
-  const baseUrl = API_BASE_URL === '/api' || !API_BASE_URL.startsWith('http') 
-    ? 'http://localhost:8000' 
-    : API_BASE_URL.replace(/\/api\/?$/, '')
-  return `${baseUrl}${path}`
+  if (path.startsWith('/media/')) {
+    return `${MEDIA_BASE_URL}${path}`
+  }
+  return `${MEDIA_BASE_URL}/media/${path}`
 }
 
 export const getCoverUrl = (coverImage, placeholder = true) => {
   if (!coverImage) {
-    return placeholder ? `https://picsum.photos/800/400?random=${Math.random()}` : ''
+    return placeholder ? `https://picsum.photos/800/400?random=${Math.random().toString(36).substring(7)}` : ''
   }
   if (coverImage.startsWith('http')) return coverImage
-  const baseUrl = API_BASE_URL === '/api' || !API_BASE_URL.startsWith('http') 
-    ? 'http://localhost:8000' 
-    : API_BASE_URL.replace(/\/api\/?$/, '')
-  return `${baseUrl}${coverImage}`
+  if (coverImage.startsWith('/media/')) {
+    return `${MEDIA_BASE_URL}${coverImage}`
+  }
+  return `${MEDIA_BASE_URL}/media/${coverImage}`
 }
 
 export const getAvatarUrl = (avatar) => {
   if (!avatar) return ''
   if (avatar.startsWith('http')) return avatar
-  const baseUrl = API_BASE_URL === '/api' || !API_BASE_URL.startsWith('http') 
-    ? 'http://localhost:8000' 
-    : API_BASE_URL.replace(/\/api\/?$/, '')
-  return `${baseUrl}${avatar}`
+  if (avatar.startsWith('/media/')) {
+    return `${MEDIA_BASE_URL}${avatar}`
+  }
+  return `${MEDIA_BASE_URL}/media/${avatar}`
 }
 
 export const getArticleUrl = (article) => {
@@ -62,17 +56,13 @@ export const formatRelativeTime = (dateStr) => {
   const hours = Math.floor(minutes / 60)
   const days = Math.floor(hours / 24)
 
-  if (days > 7) {
-    return formatDate(dateStr)
-  } else if (days > 0) {
-    return `${days}天前`
-  } else if (hours > 0) {
-    return `${hours}小时前`
-  } else if (minutes > 0) {
-    return `${minutes}分钟前`
-  } else {
-    return '刚刚'
-  }
+  if (seconds < 60) return '刚刚'
+  if (minutes < 60) return `${minutes} 分钟前`
+  if (hours < 24) return `${hours} 小时前`
+  if (days < 7) return `${days} 天前`
+  if (days < 30) return `${Math.floor(days / 7)} 周前`
+  if (days < 365) return `${Math.floor(days / 30)} 个月前`
+  return `${Math.floor(days / 365)} 年前`
 }
 
 export const truncateText = (text, maxLength = 100) => {

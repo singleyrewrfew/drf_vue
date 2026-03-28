@@ -1,22 +1,110 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watchEffect } from 'vue'
 import * as userApi from '@/api/user'
 
+const STORAGE_KEYS = {
+  TOKEN: 'front_token',
+  REFRESH: 'front_refresh',
+  USER: 'front_user',
+  OLD_TOKEN: 'token',
+  OLD_REFRESH: 'refresh'
+}
+
 export const useUserStore = defineStore('user', () => {
-  const token = ref(localStorage.getItem('front_token') || '')
-  const user = ref(JSON.parse(localStorage.getItem('front_user') || 'null'))
-  let profileCheckTimer = null
+  const token = ref('')
+  const refreshToken = ref('')
+  const user = ref(null)
 
   const isLoggedIn = computed(() => !!token.value)
+
+  const initFromStorage = () => {
+    let savedToken = localStorage.getItem(STORAGE_KEYS.TOKEN)
+    let savedRefresh = localStorage.getItem(STORAGE_KEYS.REFRESH)
+    
+    if (!savedToken) {
+      const oldToken = localStorage.getItem(STORAGE_KEYS.OLD_TOKEN)
+      if (oldToken) {
+        savedToken = oldToken
+        localStorage.setItem(STORAGE_KEYS.TOKEN, oldToken)
+        localStorage.removeItem(STORAGE_KEYS.OLD_TOKEN)
+      }
+    }
+    
+    if (!savedRefresh) {
+      const oldRefresh = localStorage.getItem(STORAGE_KEYS.OLD_REFRESH)
+      if (oldRefresh) {
+        savedRefresh = oldRefresh
+        localStorage.setItem(STORAGE_KEYS.REFRESH, oldRefresh)
+        localStorage.removeItem(STORAGE_KEYS.OLD_REFRESH)
+      }
+    }
+    
+    token.value = savedToken || ''
+    refreshToken.value = savedRefresh || ''
+    user.value = JSON.parse(localStorage.getItem(STORAGE_KEYS.USER) || 'null')
+  }
+
+  const saveToStorage = () => {
+    if (token.value) {
+      localStorage.setItem(STORAGE_KEYS.TOKEN, token.value)
+      localStorage.setItem(STORAGE_KEYS.REFRESH, refreshToken.value)
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user.value))
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.TOKEN)
+      localStorage.removeItem(STORAGE_KEYS.REFRESH)
+      localStorage.removeItem(STORAGE_KEYS.USER)
+    }
+  }
+
+  const clearStorage = () => {
+    token.value = ''
+    refreshToken.value = ''
+    user.value = null
+    localStorage.removeItem(STORAGE_KEYS.TOKEN)
+    localStorage.removeItem(STORAGE_KEYS.REFRESH)
+    localStorage.removeItem(STORAGE_KEYS.USER)
+  }
+
+  watchEffect((onCleanup) => {
+    if (!token.value) {
+      return
+    }
+
+    let isActive = true
+    let timerId = null
+
+    const checkProfile = async () => {
+      if (!isActive || !token.value) return
+      
+      try {
+        const { data } = await userApi.getProfile()
+        if (isActive && JSON.stringify(user.value) !== JSON.stringify(data)) {
+          user.value = data
+          localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data))
+        }
+      } catch (error) {
+        console.error('Profile check error:', error)
+      }
+    }
+
+    checkProfile()
+    timerId = setInterval(checkProfile, 30000)
+
+    onCleanup(() => {
+      isActive = false
+      if (timerId) {
+        clearInterval(timerId)
+        timerId = null
+      }
+    })
+  })
 
   const login = async (credentials) => {
     const { data } = await userApi.login(credentials)
     token.value = data.access
+    refreshToken.value = data.refresh
     user.value = data.user
-    localStorage.setItem('front_token', data.access)
-    localStorage.setItem('front_refresh', data.refresh)
-    localStorage.setItem('front_user', JSON.stringify(data.user))
-    startProfileCheck()
+    saveToStorage()
     return data
   }
 
@@ -26,69 +114,51 @@ export const useUserStore = defineStore('user', () => {
   }
 
   const logout = async () => {
-    stopProfileCheck()
     try {
-      const refreshToken = localStorage.getItem('front_refresh')
-      if (refreshToken) {
-        await userApi.logout({ refresh: refreshToken })
+      if (refreshToken.value) {
+        await userApi.logout({ refresh: refreshToken.value })
       }
     } catch (e) {
       console.error(e)
     }
-    token.value = ''
-    user.value = null
-    localStorage.removeItem('front_token')
-    localStorage.removeItem('front_refresh')
-    localStorage.removeItem('front_user')
+    clearStorage()
   }
 
   const fetchProfile = async () => {
     const { data } = await userApi.getProfile()
     user.value = data
-    localStorage.setItem('front_user', JSON.stringify(data))
+    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data))
   }
 
-  const startProfileCheck = () => {
-    if (profileCheckTimer) {
-      clearInterval(profileCheckTimer)
+  const refreshAccessToken = async () => {
+    if (!refreshToken.value) {
+      throw new Error('No refresh token')
     }
     
-    profileCheckTimer = setInterval(async () => {
-      if (token.value) {
-        try {
-          const { data } = await api.get('/auth/profile/')
-          
-          if (JSON.stringify(user.value) !== JSON.stringify(data)) {
-            user.value = data
-            localStorage.setItem('front_user', JSON.stringify(data))
-          }
-        } catch (error) {
-          console.error('Profile check error:', error)
-        }
+    try {
+      const { data } = await userApi.refreshToken({ refresh: refreshToken.value })
+      token.value = data.access
+      if (data.refresh) {
+        refreshToken.value = data.refresh
       }
-    }, 30000)
-  }
-
-  const stopProfileCheck = () => {
-    if (profileCheckTimer) {
-      clearInterval(profileCheckTimer)
-      profileCheckTimer = null
+      saveToStorage()
+    } catch (error) {
+      clearStorage()
+      throw error
     }
   }
 
-  if (token.value) {
-    startProfileCheck()
-  }
+  initFromStorage()
 
   return {
     token,
+    refreshToken,
     user,
     isLoggedIn,
     login,
     register,
     logout,
     fetchProfile,
-    startProfileCheck,
-    stopProfileCheck,
+    refreshAccessToken
   }
 })

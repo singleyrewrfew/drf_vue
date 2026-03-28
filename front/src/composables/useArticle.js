@@ -4,13 +4,13 @@ import { useUserStore } from '@/stores/user'
 import { getContent, getContents, getComments, createComment, likeComment } from '@/api/content'
 import { marked } from 'marked'
 import hljs from 'highlight.js'
+import { getCoverUrl, getAvatarUrl, getArticleUrl, formatDate, formatRelativeTime } from '@/utils'
 
 export function useArticle() {
     const route = useRoute()
     const router = useRouter()
     const userStore = useUserStore()
     
-    // 状态
     const loading = ref(false)
     const article = ref({})
     const fullContentLoaded = ref(false)
@@ -32,14 +32,12 @@ export function useArticle() {
     const activeHeadingId = ref('')
     const headings = ref([])
     
-    // Emoji 列表
     const emojis = [
         '😀', '😂', '😍', '🥰', '😎', '🤔', '👍', '👎', '❤️', '💔',
         '🎉', '🔥', '✨', '🌟', '⭐', '💯', '💪', '🙏', '😭', '😱',
         '🤣', '😊', '🥺', '👏', '🙄', '😴', '😋', '😜', '🤪', '😇'
     ]
     
-    // 计算属性
     const displayComments = computed(() => {
         if (showAllComments.value) {
             return comments.value
@@ -69,23 +67,6 @@ export function useArticle() {
         extractHeadings(html)
         return html
     })
-    
-    // 方法
-    const getCoverUrl = (coverImage) => {
-        if (!coverImage) return ''
-        if (coverImage.startsWith('http')) return coverImage
-        return `http://localhost:8001${coverImage}`
-    }
-    
-    const getAvatarUrl = (avatar) => {
-        if (!avatar) return ''
-        if (avatar.startsWith('http')) return avatar
-        return `http://localhost:8001${avatar}`
-    }
-    
-    const getArticleUrl = (articleItem) => {
-        return `/article/${articleItem.slug || articleItem.id}`
-    }
     
     const handleCategoryClick = () => {
         const idOrSlug = article.value.category_slug || article.value.category
@@ -129,31 +110,6 @@ export function useArticle() {
         scrollToHeading(id)
     }
     
-    const formatRelativeTime = (dateStr) => {
-        if (!dateStr) return ''
-        const date = new Date(dateStr)
-        const now = new Date()
-        const diff = now - date
-        const seconds = Math.floor(diff / 1000)
-        const minutes = Math.floor(seconds / 60)
-        const hours = Math.floor(minutes / 60)
-        const days = Math.floor(hours / 24)
-        
-        if (seconds < 60) return '刚刚'
-        if (minutes < 60) return `${minutes} 分钟前`
-        if (hours < 24) return `${hours} 小时前`
-        if (days < 7) return `${days} 天前`
-        if (days < 30) return `${Math.floor(days / 7)} 周前`
-        if (days < 365) return `${Math.floor(days / 30)} 个月前`
-        return `${Math.floor(days / 365)} 年前`
-    }
-    
-    const formatDate = (dateStr) => {
-        if (!dateStr) return ''
-        const date = new Date(dateStr)
-        return date.toLocaleDateString('zh-CN')
-    }
-    
     const loadArticle = async () => {
         loading.value = true
         try {
@@ -161,7 +117,6 @@ export function useArticle() {
             article.value = data
             await initArticleContent()
             
-            // 加载上一篇/下一篇
             const params = {
                 category: data.category,
                 exclude: data.id,
@@ -180,7 +135,6 @@ export function useArticle() {
                 nextArticle.value = nextData.results[0]
             }
             
-            // 加载相关文章
             const relatedData = await getContents({
                 category: data.category,
                 exclude: data.id,
@@ -189,7 +143,6 @@ export function useArticle() {
             })
             relatedArticles.value = relatedData.results || []
             
-            // 加载评论
             await loadComments()
         } catch (error) {
             console.error('Failed to load article:', error)
@@ -227,9 +180,7 @@ export function useArticle() {
         
         let html = marked.parse(article.value.content)
         extractHeadings(html)
-        headings.value
         
-        // 如果当前是预览内容且内容长度等于 5000，异步加载完整内容
         if (article.value.content === article.value.content_preview &&
             article.value.content.length === 5000 &&
             !fullContentLoaded.value) {
@@ -330,7 +281,6 @@ export function useArticle() {
     }
     
     return {
-        // 状态
         loading,
         article,
         fullContentLoaded,
@@ -353,11 +303,9 @@ export function useArticle() {
         headings,
         emojis,
         
-        // 计算属性
         displayComments,
         renderedContent,
         
-        // 方法
         loadArticle,
         loadComments,
         initArticleContent,

@@ -5,7 +5,12 @@
     @click="handleClick"
   >
     <div v-if="showImage && article.cover_image" class="article-cover">
-      <img :src="getCoverUrl(article.cover_image)" :alt="article.title" />
+      <img 
+        :src="getCoverUrl(article.cover_image)" 
+        :alt="article.title"
+        loading="lazy"
+        decoding="async"
+      />
       <div class="cover-overlay"></div>
       <div v-if="showTopTag && article.is_top" class="article-badges">
         <el-tag type="danger" size="small" effect="dark" class="top-tag">
