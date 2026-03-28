@@ -1,8 +1,6 @@
-from django.contrib.auth import get_user_model
 from rest_framework import serializers
+from apps.core.models import User
 
-# 获取自定义用户模型
-User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
     """

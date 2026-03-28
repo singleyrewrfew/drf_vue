@@ -62,8 +62,7 @@ class CommentCreateSerializer(serializers.ModelSerializer):
         validated_data['user'] = self.context['request'].user
         reply_to_id = validated_data.pop('reply_to_id', None)
         if reply_to_id:
-            from django.contrib.auth import get_user_model
-            User = get_user_model()
+            from apps.core.models import User
             try:
                 validated_data['reply_to'] = User.objects.get(id=reply_to_id)
             except User.DoesNotExist:

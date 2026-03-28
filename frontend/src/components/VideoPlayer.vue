@@ -75,7 +75,22 @@ const initPlayer = () => {
     }
 
     if (props.thumbnails && props.thumbnailsCount > 0) {
-        const thumbnailsUrl = props.thumbnails.startsWith('http') ? props.thumbnails : `${baseUrl}${props.thumbnails}`
+        let thumbnailsUrl = props.thumbnails
+        
+        if (!thumbnailsUrl.startsWith('http')) {
+            const baseUrl = getMediaBaseUrl()
+            if (thumbnailsUrl.startsWith('/media/')) {
+                thumbnailsUrl = `${baseUrl}${thumbnailsUrl}`
+            } else {
+                thumbnailsUrl = `${baseUrl}/media/${thumbnailsUrl}`
+            }
+        }
+
+        console.log('[VideoPlayer] Thumbnails config:', {
+            url: thumbnailsUrl,
+            number: props.thumbnailsCount,
+            original: props.thumbnails
+        })
 
         options.thumbnails = {
             url: thumbnailsUrl,
@@ -84,6 +99,11 @@ const initPlayer = () => {
             height: 90,
             column: 10,
         }
+    } else {
+        console.log('[VideoPlayer] No thumbnails:', {
+            thumbnails: props.thumbnails,
+            count: props.thumbnailsCount
+        })
     }
 
     artInstance = new Artplayer(options)

@@ -98,8 +98,7 @@ class ContentViewSet(SlugOrUUIDMixin, viewsets.ModelViewSet):
         """
         author_id = self.request.data.get('author')
         if author_id and (self.request.user.is_admin or self.request.user.is_superuser):
-            from django.contrib.auth import get_user_model
-            User = get_user_model()
+            from apps.core.models import User
             try:
                 author = User.objects.get(id=author_id)
                 serializer.save(author=author)

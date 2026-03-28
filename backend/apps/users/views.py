@@ -1,4 +1,3 @@
-from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models import Count, Sum
 from rest_framework import status, viewsets
@@ -9,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from apps.comments.models import Comment
 from apps.contents.models import Content
+from apps.core.models import User
 from apps.media.models import Media
 from .permissions import IsAdminUser
 from .serializers import (
@@ -18,8 +18,6 @@ from .serializers import (
     UserUpdateSerializer,
 )
 
-# 获取自定义用户模型
-User = get_user_model()
 
 class UserViewSet(viewsets.ModelViewSet):
     """

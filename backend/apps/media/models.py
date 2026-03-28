@@ -5,11 +5,9 @@ import subprocess
 import threading
 import uuid
 
-from django.contrib.auth import get_user_model
 from django.db import models
 from django.conf import settings
-
-User = get_user_model()
+from apps.core.models import User
 
 
 def get_ffmpeg_executable(name):

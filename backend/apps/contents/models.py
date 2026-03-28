@@ -1,12 +1,10 @@
 import uuid
 
-from django.contrib.auth import get_user_model
 from django.db import models
 
 from apps.categories.models import Category
+from apps.core.models import User
 from apps.tags.models import Tag
-
-User = get_user_model()
 
 
 class Content(models.Model):

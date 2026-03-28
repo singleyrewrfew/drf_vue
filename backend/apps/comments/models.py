@@ -1,11 +1,9 @@
 import uuid
 
-from django.contrib.auth import get_user_model
 from django.db import models
 
 from apps.contents.models import Content
-
-User = get_user_model()
+from apps.core.models import User
 
 
 class Comment(models.Model):

@@ -1,9 +1,7 @@
 from django.contrib import admin
-from django.contrib.auth import get_user_model
+from apps.core.models import User
 
 from .models import Permission, Role
-
-User = get_user_model()
 
 
 @admin.register(Permission)
