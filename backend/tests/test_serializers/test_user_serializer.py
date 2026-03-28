@@ -26,20 +26,24 @@ class TestUserSerializer:
         # 使用 get_or_create 避免重复创建
         role, created = Role.objects.get_or_create(code='user', defaults={'name': '普通用户'})
         
-        # 创建用户
-        user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='testpass123',
-            role=role
+        # 创建唯一用户名的测试用户
+        user, _ = User.objects.get_or_create(
+            username='testuser_serializer_output',
+            defaults={
+                'email': 'test@example.com',
+                'role': role
+            }
         )
+        if not user.role:
+            user.role = role
+            user.save()
         
         # 序列化用户
         serializer = UserSerializer(user)
         data = serializer.data
         
         # 验证输出字段
-        assert data['username'] == 'testuser'
+        assert data['username'] == 'testuser_serializer_output'
         assert data['email'] == 'test@example.com'
         assert data['role_name'] == '普通用户'
         assert data['role_code'] == 'user'
@@ -49,12 +53,17 @@ class TestUserSerializer:
     def test_user_serializer_readonly_fields(self, db):
         """测试只读字段不能被修改"""
         role, created = Role.objects.get_or_create(code='user', defaults={'name': '普通用户'})
-        user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='testpass123',
-            role=role
+        
+        user, _ = User.objects.get_or_create(
+            username='testuser_readonly',
+            defaults={
+                'email': 'test_readonly@example.com',
+                'role': role
+            }
         )
+        if not user.role:
+            user.role = role
+            user.save()
         
         # 尝试修改只读字段
         serializer = UserSerializer(user, data={
@@ -161,10 +170,11 @@ class TestUserUpdateSerializer:
     
     def test_update_email(self, db):
         """测试更新邮箱"""
-        user = User.objects.create_user(
-            username='testuser',
-            email='old@example.com',
-            password='pass123'
+        user, _ = User.objects.get_or_create(
+            username='testuser_update_email',
+            defaults={
+                'email': 'old@example.com',
+            }
         )
         
         data = {'email': 'new@example.com'}
@@ -176,11 +186,12 @@ class TestUserUpdateSerializer:
     
     def test_update_is_staff(self, db):
         """测试更新 is_staff"""
-        user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='pass123',
-            is_staff=False
+        user, _ = User.objects.get_or_create(
+            username='testuser_update_staff',
+            defaults={
+                'email': 'test_staff@example.com',
+                'is_staff': False
+            }
         )
         
         data = {'is_staff': True}

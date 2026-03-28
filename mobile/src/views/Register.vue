@@ -1,5 +1,6 @@
 <template>
     <div class="page">
+        <AuthBackground />
         <PageHeader title="注册"/>
 
         <div class="page-content">
@@ -62,6 +63,7 @@ import {useRouter} from 'vue-router'
 import {ElMessage} from 'element-plus'
 import {register} from '@/api/user'
 import PageHeader from '@/components/PageHeader.vue'
+import AuthBackground from '@/components/AuthBackground.vue'
 
 const router = useRouter()
 

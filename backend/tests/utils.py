@@ -114,13 +114,20 @@ def create_test_user(**kwargs):
     
     Args:
         **kwargs: 用户属性
+        username_prefix: 可选的用户名前缀，用于生成唯一用户名
     
     Returns:
         User: 用户实例
     """
+    import uuid
+    
+    # 如果没有指定用户名，生成唯一的用户名
+    if 'username' not in kwargs:
+        prefix = kwargs.pop('username_prefix', 'testuser')
+        kwargs['username'] = f'{prefix}_{uuid.uuid4().hex[:8]}'
+    
     defaults = {
-        'username': 'testuser',
-        'email': 'test@example.com',
+        'email': kwargs.get('username', 'testuser') + '@example.com',
         'password': 'testpass123',
         'is_active': True
     }

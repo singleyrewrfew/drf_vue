@@ -20,13 +20,45 @@ if env_file.exists():
     load_dotenv(env_file)
 
 # Django 安全密钥，用于加密签名
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-x7k#m9p@q2r$t5v&w8y*z1b!c4d6e7f9g0h2j3k4l5m6n7o8p9')
+# 生产环境必须通过 DJANGO_SECRET_KEY 环境变量设置
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
-# 调试模式
-DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'True'
+# 如果未设置 SECRET_KEY，根据环境决定行为
+if not SECRET_KEY:
+    if DEBUG:
+        # 开发环境 fallback（仅本地开发使用）
+        SECRET_KEY = 'dev-only-insecure-key-change-in-production'
+        import warnings
+        warnings.warn(
+            "⚠️  WARNING: Using development SECRET_KEY. Set DJANGO_SECRET_KEY for production!",
+            RuntimeWarning,
+            stacklevel=2
+        )
+    else:
+        # 生产环境未设置则启动失败
+        from django.core.exceptions import ImproperlyConfigured
+        raise ImproperlyConfigured(
+            "DJANGO_SECRET_KEY environment variable is required for production deployment. "
+            "Please set it in your .env file or environment variables."
+        )
 
-# 允许的主机列表
-ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+# 调试模式：默认关闭，开发环境需显式开启
+DEBUG = os.getenv('DJANGO_DEBUG', 'False') == 'True'
+
+# 如果开启 DEBUG 模式，添加安全警告
+if DEBUG:
+    import warnings
+    warnings.warn(
+        "⚠️  WARNING: DEBUG mode is enabled! This should never be used in production.",
+        RuntimeWarning,
+        stacklevel=2
+    )
+    # 限制允许的主机（开发环境可额外配置）
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1'] + \
+                   os.getenv('DJANGO_DEBUG_ALLOWED_HOSTS', '').split(',')
+else:
+    # 生产环境使用环境变量配置
+    ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', '').split(',')
 
 # 已安装的应用列表
 INSTALLED_APPS = [
@@ -124,7 +156,12 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = 'media/'
 
 # 媒体文件存储目录
-MEDIA_ROOT = BASE_DIR / 'media'
+# 测试环境使用独立目录，避免与生产数据冲突
+import sys
+if 'pytest' in sys.modules:
+    MEDIA_ROOT = BASE_DIR / 'media_test'
+else:
+    MEDIA_ROOT = BASE_DIR / 'media'
 
 # 默认自增主键类型
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -174,14 +211,25 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-# CORS 配置：允许所有来源（仅开发环境）
-CORS_ALLOW_ALL_ORIGINS = DEBUG
+# CORS 配置：始终使用白名单策略（不再使用 CORS_ALLOW_ALL_ORIGINS）
+CORS_ALLOWED_ORIGINS = [
+    origin.strip() 
+    for origin in os.getenv('CORS_ALLOWED_ORIGINS', '').split(',') 
+    if origin.strip()
+]
 
-# CORS 配置：允许的来源列表（从环境变量读取）
-CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', '').split(',') if os.getenv('CORS_ALLOWED_ORIGINS') else []
+# 开发环境可临时放宽（需显式配置）
+if DEBUG and os.getenv('CORS_ALLOW_ALL_FOR_DEV', 'False') == 'True':
+    CORS_ALLOW_ALL_ORIGINS = True
+    print("⚠️  WARNING: CORS allows all origins for development!")
 
 # CORS 配置：允许携带凭证
 CORS_ALLOW_CREDENTIALS = True
+
+# 额外的安全响应头
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
 
 # API 文档配置
 SPECTACULAR_SETTINGS = {

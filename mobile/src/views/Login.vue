@@ -1,5 +1,6 @@
 <template>
     <div class="page">
+        <AuthBackground />
         <PageHeader title="登录"/>
 
         <div class="page-content">
@@ -44,6 +45,7 @@ import {useRouter} from 'vue-router'
 import {ElMessage} from 'element-plus'
 import {useUserStore} from '@/stores/user'
 import PageHeader from '@/components/PageHeader.vue'
+import AuthBackground from '@/components/AuthBackground.vue'
 
 const router = useRouter()
 const userStore = useUserStore()

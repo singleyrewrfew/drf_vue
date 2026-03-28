@@ -8,6 +8,7 @@ import uuid
 from django.db import models, transaction
 from django.conf import settings
 from apps.core.models import User
+from apps.base.models import BaseModel
 
 
 def get_ffmpeg_executable(name):
@@ -44,7 +45,20 @@ THUMBNAIL_STATUS_CHOICES = [
 
 
 def upload_to(instance, filename):
-    ext = filename.split('.')[-1]
+    """
+    生成文件上传路径
+    
+    按用户 ID 和文件类型分类存储，结构为：
+    {用户 ID}/{UUID}.{扩展名}
+    
+    参数:
+        instance: Media 实例
+        filename: 原始文件名
+    
+    返回:
+        str: 上传路径
+    """
+    ext = filename.split('.')[-1].lower() if '.' in filename else ''
     return f'{instance.uploader.id}/{uuid.uuid4().hex}.{ext}'
 
 
@@ -165,15 +179,22 @@ class MediaManager(models.Manager):
         return media, True
 
 
-class Media(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+class Media(BaseModel):
+    """
+    媒体文件模型
+    
+    继承 BaseModel，提供：
+    - UUID 主键
+    - created_at 自动时间戳
+    """
+    # 注意：id, created_at 由 BaseModel 提供
     file = models.FileField(upload_to=upload_to, verbose_name='文件', blank=True, null=True)
     filename = models.CharField(max_length=200, verbose_name='文件名')
     file_type = models.CharField(max_length=50, verbose_name='文件类型')
     file_size = models.PositiveIntegerField(verbose_name='文件大小 (字节)')
     file_hash = models.CharField(max_length=32, blank=True, verbose_name='文件 MD5')
     uploader = models.ForeignKey(User, on_delete=models.CASCADE, related_name='media_files', verbose_name='上传者')
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='上传时间')
+    # 注意：created_at 由 BaseModel 提供
     reference = models.ForeignKey('self', on_delete=models.CASCADE, related_name='references', null=True, blank=True, verbose_name='引用文件')
     reference_count = models.PositiveIntegerField(default=0, verbose_name='引用计数', editable=False)
     thumbnails = models.ImageField(upload_to=thumbnails_upload_to, blank=True, null=True, verbose_name='缩略图')

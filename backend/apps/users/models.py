@@ -1,10 +1,18 @@
 import uuid
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from apps.base.models import BaseModel
 
-class User(AbstractUser):
-    # 主键：使用 UUID 而不是自增 ID，更安全且避免暴露数据量
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+class User(AbstractUser, BaseModel):
+    """
+    自定义用户模型
+    
+    继承 Django AbstractUser 和 BaseModel，提供：
+    - UUID 主键
+    - 自动时间戳
+    - 头像、角色等扩展字段
+    """
     
     # 头像字段：允许上传图片，可以为空
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True, verbose_name='头像')
@@ -12,11 +20,7 @@ class User(AbstractUser):
     # 外键：关联到角色表，删除角色时用户角色设为 NULL
     role = models.ForeignKey('roles.Role', on_delete=models.SET_NULL, null=True, blank=True, related_name='users', verbose_name='角色')
     
-    # 创建时间：自动记录用户创建时间
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
-    
-    # 更新时间：自动记录用户信息更新时间
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')
+    # 注意：id, created_at, updated_at 由 BaseModel 提供
     
     class Meta:
         # 数据库表名

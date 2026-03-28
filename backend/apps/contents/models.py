@@ -5,16 +5,24 @@ from django.db import models
 from apps.categories.models import Category
 from apps.core.models import User
 from apps.tags.models import Tag
+from apps.base.models import BaseModel
 
 
-class Content(models.Model):
+class Content(BaseModel):
+    """
+    内容模型
+    
+    继承 BaseModel，提供：
+    - UUID 主键
+    - created_at/updated_at 自动时间戳
+    """
     STATUS_CHOICES = [
         ('draft', '草稿'),
         ('published', '已发布'),
         ('archived', '已归档'),
     ]
-
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    
+    # 注意：id, created_at, updated_at 由 BaseModel 提供
     title = models.CharField(max_length=200, verbose_name='标题')
     slug = models.SlugField(max_length=200, unique=True, blank=True, verbose_name='URL别名')
     summary = models.TextField(blank=True, verbose_name='摘要')
@@ -27,8 +35,7 @@ class Content(models.Model):
     view_count = models.PositiveIntegerField(default=0, verbose_name='浏览量')
     is_top = models.BooleanField(default=False, verbose_name='是否置顶')
     published_at = models.DateTimeField(blank=True, null=True, verbose_name='发布时间')
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')
+    # 注意：created_at, updated_at 由 BaseModel 提供
 
     class Meta:
         db_table = 'contents'

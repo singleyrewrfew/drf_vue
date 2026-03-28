@@ -101,57 +101,102 @@ def tag_data():
 def user(db):
     """
     创建测试用户（需要数据库）
+    
+    注意：测试用户的用户名固定为 'testuser'，用于在清理逻辑中识别
     """
     from apps.users.models import User
-    return User.objects.create_user(
+    # 使用 get_or_create 避免重复创建导致的唯一性冲突
+    user, created = User.objects.get_or_create(
         username='testuser',
-        email='test@example.com',
-        password='testpass123'
+        defaults={
+            'email': 'test@example.com',
+        }
     )
+    if not created:
+        # 如果用户已存在，设置密码
+        user.set_password('testpass123')
+        user.save()
+    return user
+
+
+@pytest.fixture(scope='session', autouse=True)
+def setup_test_media_directory():
+    """
+    在测试会话开始前设置干净的测试媒体目录
+    
+    重要：
+    - 测试环境使用独立的 media_test 目录
+    - 每次测试开始前自动清理旧的测试数据
+    - 不会影响生产环境的 media 目录
+    
+    参数:
+        session: pytest 会话对象
+    """
+    import sys
+    
+    # 安全检查：确保只在 pytest 测试环境执行
+    if 'pytest' not in sys.modules:
+        print("\n[警告] 非 pytest 环境，跳过测试媒体目录设置")
+        return
+    
+    # 获取测试媒体目录
+    from django.conf import settings
+    test_media_root = Path(settings.MEDIA_ROOT)
+    
+    # 确保只操作测试目录（media_test）
+    if not str(test_media_root).endswith('media_test'):
+        print(f"\n[警告] 媒体目录不是测试目录：{test_media_root}，跳过设置")
+        return
+    
+    # 如果已存在，先清理
+    if test_media_root.exists():
+        try:
+            shutil.rmtree(test_media_root)
+            print(f"\n[清理] 已删除旧的测试媒体目录：{test_media_root}")
+        except Exception as e:
+            print(f"\n[清理失败] {test_media_root}: {e}")
+    
+    # 创建新的测试媒体目录
+    try:
+        test_media_root.mkdir(parents=True, exist_ok=True)
+        print(f"\n[准备] 已创建测试媒体目录：{test_media_root}")
+    except Exception as e:
+        print(f"\n[错误] 创建测试目录失败：{e}")
+
+
+@pytest.fixture(scope='session')
+def django_db_setup():
+    """
+    配置 Django 数据库访问（用于 pytest_sessionfinish 中的数据库查询）
+    
+    注意：这里只配置，不执行清理，清理逻辑在 pytest_sessionfinish 中
+    """
+    pass
 
 
 def pytest_sessionfinish(session, exitstatus):
     """
-    在 pytest 会话结束后清理测试产生的媒体文件
+    在 pytest 会话结束后输出提示信息
     
-    重要：只在 pytest 测试环境执行，避免误删生产数据
+    注意：
+    - 测试媒体目录已在开始时清理，结束时保留以便调试
+    - 如需手动清理，可删除 backend/media_test 目录
     
     参数:
         session: pytest 会话对象
         exitstatus: 退出状态码
     """
-    import uuid as uuid_module
+    import sys
     
     # 安全检查：确保只在 pytest 测试环境执行
-    # 通过检查环境变量或命令行参数来判断
-    import sys
     if 'pytest' not in sys.modules:
-        print("\n[警告] 非 pytest 环境，跳过媒体文件清理")
         return
     
-    # 获取媒体目录
-    media_root = Path(settings.MEDIA_ROOT)
+    # 获取测试媒体目录
+    from django.conf import settings
+    test_media_root = Path(settings.MEDIA_ROOT)
     
-    if not media_root.exists():
-        return
-    
-    # 清理测试产生的用户文件夹（保留 avatars 和 thumbnails）
-    cleaned_count = 0
-    for folder in media_root.iterdir():
-        if folder.is_dir() and folder.name not in ['avatars', 'thumbnails']:
-            try:
-                # 检查是否是 UUID 格式（测试用户的特征）
-                try:
-                    uuid_module.UUID(folder.name)
-                    # 是 UUID 格式，删除整个文件夹
-                    shutil.rmtree(folder)
-                    print(f"\n[清理] 已删除测试文件夹：{folder.name}")
-                    cleaned_count += 1
-                except ValueError:
-                    pass  # 不是 UUID，跳过
-                    
-            except Exception as e:
-                print(f"\n[清理失败] {folder.name}: {e}")
-    
-    if cleaned_count > 0:
-        print(f"[统计] 共清理 {cleaned_count} 个测试文件夹")
+    # 确保只处理测试目录（media_test）
+    if str(test_media_root).endswith('media_test') and test_media_root.exists():
+        print(f"\n[提示] 测试媒体目录已保留：{test_media_root}")
+        print("       如需清理，请手动删除该目录")

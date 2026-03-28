@@ -4,10 +4,18 @@ from django.db import models
 
 from apps.contents.models import Content
 from apps.core.models import User
+from apps.base.models import BaseModel
 
 
-class Comment(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+class Comment(BaseModel):
+    """
+    评论模型
+    
+    继承 BaseModel，提供：
+    - UUID 主键
+    - created_at 自动时间戳
+    """
+    # 注意：id, created_at 由 BaseModel 提供
     content = models.TextField(verbose_name='评论内容')
     article = models.ForeignKey(Content, on_delete=models.CASCADE, related_name='comments', verbose_name='关联文章')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments', verbose_name='评论用户')
@@ -15,7 +23,7 @@ class Comment(models.Model):
     reply_to = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True, related_name='replied_comments', verbose_name='回复对象')
     is_approved = models.BooleanField(default=True, verbose_name='是否审核通过')
     like_count = models.PositiveIntegerField(default=0, verbose_name='点赞数')
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
+    # 注意：created_at 由 BaseModel 提供
 
     class Meta:
         db_table = 'comments'
@@ -37,11 +45,18 @@ class Comment(models.Model):
         return self.parent is not None
 
 
-class CommentLike(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+class CommentLike(BaseModel):
+    """
+    评论点赞模型
+    
+    继承 BaseModel，提供：
+    - UUID 主键
+    - created_at 自动时间戳
+    """
+    # 注意：id, created_at 由 BaseModel 提供
     comment = models.ForeignKey(Comment, on_delete=models.CASCADE, related_name='likes', verbose_name='评论')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comment_likes', verbose_name='用户')
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
+    # 注意：created_at 由 BaseModel 提供
 
     class Meta:
         db_table = 'comment_likes'

@@ -118,32 +118,66 @@ class MediaViewSet(viewsets.ModelViewSet):
         Raises:
             无
         """
+        import time
+        
         # 如果是引用记录，减少原始文件的引用计数
         if instance.reference:
             original = instance.reference
             original.decrement_reference_count()
+            print(f"[删除] 引用记录 {instance.id}，已减少原始文件 {original.id} 的引用计数至 {original.reference_count}")
         else:
             # 原始文件的删除逻辑
             # 只有当引用计数为 0 且没有其他引用记录时，才删除物理文件
+            print(f"[删除] 原始文件 {instance.id}，当前引用计数：{instance.reference_count}，引用记录数：{instance.references.count()}")
+            
             if instance.reference_count == 0 and not instance.references.exists():
+                # 删除物理文件
                 if instance.file:
                     try:
                         file_path = instance.file.path
-                        if os.path.isfile(file_path):
-                            os.remove(file_path)
-                    except Exception:
-                        pass
+                        print(f"[删除] 文件路径：{file_path}")
+                        
+                        # Windows 下文件可能被占用，尝试多次删除
+                        max_retries = 3
+                        for attempt in range(max_retries):
+                            try:
+                                if os.path.isfile(file_path):
+                                    os.remove(file_path)
+                                    print(f"[删除] 已删除物理文件：{file_path}")
+                                    break
+                                else:
+                                    print(f"[警告] 文件不存在：{file_path}")
+                                    break
+                            except PermissionError as e:
+                                if attempt < max_retries - 1:
+                                    print(f"[重试] 文件被占用，{attempt + 1}/{max_retries} 次重试，等待 1 秒...")
+                                    time.sleep(1)
+                                else:
+                                    print(f"[错误] 删除文件失败（被占用）：{e}")
+                                    print(f"[提示] 请关闭正在使用该文件的程序（如视频播放器、FFmpeg 等）")
+                            except Exception as e:
+                                print(f"[错误] 删除文件失败：{e}")
+                                break
+                    except Exception as e:
+                        print(f"[错误] 删除文件失败：{e}")
                 
                 # 删除缩略图目录
                 if instance.thumbnails:
                     try:
                         thumbnails_dir = os.path.dirname(instance.thumbnails.path)
+                        print(f"[删除] 缩略图目录：{thumbnails_dir}")
                         if os.path.isdir(thumbnails_dir):
                             shutil.rmtree(thumbnails_dir)
-                    except Exception:
-                        pass
+                            print(f"[删除] 已删除缩略图目录：{thumbnails_dir}")
+                        else:
+                            print(f"[警告] 缩略图目录不存在：{thumbnails_dir}")
+                    except Exception as e:
+                        print(f"[错误] 删除缩略图失败：{e}")
+            else:
+                print(f"[跳过] 保留物理文件（引用计数：{instance.reference_count}，引用记录：{instance.references.count()})")
         
         instance.delete()
+        print(f"[删除] 已删除数据库记录：{instance.id}")
 
     @extend_schema(request=MediaUploadSerializer, responses=MediaSerializer)
     def create(self, request, *args, **kwargs):

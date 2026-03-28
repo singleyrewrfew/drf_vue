@@ -1,9 +1,10 @@
 import uuid
 from django.db import models
 from utils.slug_utils import generate_unique_slug
+from apps.base.models import BaseModel
 
 
-class Tag(models.Model):
+class Tag(BaseModel):
     """
     标签模型
     
@@ -11,15 +12,16 @@ class Tag(models.Model):
     - 存储标签信息
     - 自动生成 URL 友好的 slug
     - 支持中文标签名称
+    
+    继承 BaseModel，提供：
+    - UUID 主键
+    - created_at 自动时间戳
     """
-    # 主键：使用 UUID
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    # 注意：id, created_at 由 BaseModel 提供
     # 标签名称：唯一，最大长度 30
     name = models.CharField(max_length=30, unique=True, verbose_name='标签名称')
     # URL 别名：唯一，用于 URL 路由
-    slug = models.SlugField(max_length=30, unique=True, blank=True, verbose_name='URL别名')
-    # 创建时间：自动记录
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
+    slug = models.SlugField(max_length=30, unique=True, blank=True, verbose_name='URL 别名')
     
     class Meta:
         # 数据库表名
