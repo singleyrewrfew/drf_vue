@@ -1,19 +1,15 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
-// 处理媒体资源的基础 URL
 const MEDIA_BASE_URL = (() => {
-  // 如果是相对路径 (如 /api),则使用完整后端地址
   if (API_BASE_URL === '/api' || !API_BASE_URL.startsWith('http')) {
-    return 'http://localhost:8000' // 默认后端服务器地址
+    return 'http://localhost:8000'
   }
-  // 如果是完整 URL (如 http://localhost:8000/api),去掉 /api 部分
   return API_BASE_URL.replace(/\/api\/?$/, '')
 })()
+
 export const getMediaUrl = (path) => {
   if (!path) return ''
-  // 如果已经是完整 URL(以 http 开头),直接返回
   if (path.startsWith('http')) return path
-  // 后端返回的路径已经包含 /media/,直接拼接 base URL 即可
   const baseUrl = API_BASE_URL === '/api' || !API_BASE_URL.startsWith('http') 
     ? 'http://localhost:8000' 
     : API_BASE_URL.replace(/\/api\/?$/, '')
@@ -24,9 +20,7 @@ export const getCoverUrl = (coverImage, placeholder = true) => {
   if (!coverImage) {
     return placeholder ? `https://picsum.photos/800/400?random=${Math.random()}` : ''
   }
-  // 如果已经是完整 URL(以 http 开头),直接返回
   if (coverImage.startsWith('http')) return coverImage
-  // 后端返回的路径已经包含 /media/,直接拼接 base URL 即可
   const baseUrl = API_BASE_URL === '/api' || !API_BASE_URL.startsWith('http') 
     ? 'http://localhost:8000' 
     : API_BASE_URL.replace(/\/api\/?$/, '')
@@ -35,9 +29,7 @@ export const getCoverUrl = (coverImage, placeholder = true) => {
 
 export const getAvatarUrl = (avatar) => {
   if (!avatar) return ''
-  // 如果已经是完整 URL(以 http 开头),直接返回
   if (avatar.startsWith('http')) return avatar
-  // 后端返回的路径已经包含 /media/,直接拼接 base URL 即可
   const baseUrl = API_BASE_URL === '/api' || !API_BASE_URL.startsWith('http') 
     ? 'http://localhost:8000' 
     : API_BASE_URL.replace(/\/api\/?$/, '')
@@ -87,4 +79,106 @@ export const truncateText = (text, maxLength = 100) => {
   if (!text) return ''
   if (text.length <= maxLength) return text
   return text.slice(0, maxLength) + '...'
+}
+
+export const debounce = (fn, delay = 300) => {
+  let timer = null
+  return function (...args) {
+    if (timer) clearTimeout(timer)
+    timer = setTimeout(() => {
+      fn.apply(this, args)
+    }, delay)
+  }
+}
+
+export const throttle = (fn, delay = 300) => {
+  let lastTime = 0
+  return function (...args) {
+    const now = Date.now()
+    if (now - lastTime >= delay) {
+      lastTime = now
+      fn.apply(this, args)
+    }
+  }
+}
+
+export const deepClone = (obj) => {
+  if (obj === null || typeof obj !== 'object') return obj
+  if (obj instanceof Date) return new Date(obj.getTime())
+  if (obj instanceof Array) return obj.map(item => deepClone(item))
+  if (typeof obj === 'object') {
+    const cloned = {}
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        cloned[key] = deepClone(obj[key])
+      }
+    }
+    return cloned
+  }
+  return obj
+}
+
+export const serializeParams = (params) => {
+  if (!params || typeof params !== 'object') return ''
+  const searchParams = new URLSearchParams()
+  Object.keys(params).forEach(key => {
+    const value = params[key]
+    if (value !== null && value !== undefined && value !== '') {
+      if (Array.isArray(value)) {
+        value.forEach(item => searchParams.append(key, item))
+      } else {
+        searchParams.append(key, value)
+      }
+    }
+  })
+  return searchParams.toString()
+}
+
+export const parseQuery = (queryString) => {
+  if (!queryString) return {}
+  const params = new URLSearchParams(queryString)
+  const result = {}
+  for (const [key, value] of params) {
+    if (result[key]) {
+      if (Array.isArray(result[key])) {
+        result[key].push(value)
+      } else {
+        result[key] = [result[key], value]
+      }
+    } else {
+      result[key] = value
+    }
+  }
+  return result
+}
+
+export const generateId = () => {
+  return Math.random().toString(36).substring(2, 9)
+}
+
+export const sleep = (ms) => {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+export const isExternalLink = (url) => {
+  if (!url) return false
+  return url.startsWith('http://') || url.startsWith('https://')
+}
+
+export const highlightText = (text, keyword) => {
+  if (!text || !keyword) return text
+  const regex = new RegExp(`(${keyword})`, 'gi')
+  return text.replace(regex, '<mark>$1</mark>')
+}
+
+export const stripHtml = (html) => {
+  if (!html) return ''
+  return html.replace(/<[^>]*>/g, '')
+}
+
+export const getReadingTime = (content, wordsPerMinute = 200) => {
+  if (!content) return 0
+  const text = stripHtml(content)
+  const wordCount = text.length
+  return Math.ceil(wordCount / wordsPerMinute)
 }

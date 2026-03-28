@@ -1,0 +1,5 @@
+export { default as SidebarContainer } from './SidebarContainer.vue'
+export { default as SidebarHotArticles } from './SidebarHotArticles.vue'
+export { default as SidebarCategories } from './SidebarCategories.vue'
+export { default as SidebarTags } from './SidebarTags.vue'
+export { default as SidebarAuthors } from './SidebarAuthors.vue'
