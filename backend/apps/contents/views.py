@@ -4,7 +4,7 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
-from rest_framework.parsers import FormParser, MultiPartParser
+
 from apps.users.permissions import IsEditorUser, IsOwnerOrAdmin
 from utils.mixins import SlugOrUUIDMixin
 from .models import Content
