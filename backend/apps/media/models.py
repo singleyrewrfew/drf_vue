@@ -1,4 +1,5 @@
 import hashlib
+import logging
 import os
 import shutil
 import subprocess
@@ -9,6 +10,8 @@ from django.db import models, transaction
 from django.conf import settings
 from apps.core.models import User
 from apps.base.models import BaseModel
+
+logger = logging.getLogger(__name__)
 
 
 def get_ffmpeg_executable(name):
@@ -87,7 +90,7 @@ def generate_video_thumbnails(video_path, output_dir, interval=5):
         )
         duration = float(result.stdout.strip())
     except Exception as e:
-        print(f"Error getting video duration: {e}")
+        logger.error(f"Error getting video duration: {e}")
         return None, 0
     
     num_thumbnails = max(1, int(duration / interval))
@@ -104,7 +107,7 @@ def generate_video_thumbnails(video_path, output_dir, interval=5):
             timeout=300
         )
     except Exception as e:
-        print(f"Error generating thumbnails: {e}")
+        logger.error(f"Error generating thumbnails: {e}")
         return None, 0
     
     if not os.path.exists(thumbnails_image):
@@ -119,7 +122,8 @@ class MediaManager(models.Manager):
         """
         获取或创建媒体文件（线程安全版本）
         
-        使用数据库事务和 select_for_update 确保并发场景下的数据一致性
+        使用数据库事务和 select_for_update 确保并发场景下的数据一致性。
+        只有在文件成功保存后才插入数据库记录。
         
         参数:
             file: 上传的文件对象
@@ -127,6 +131,9 @@ class MediaManager(models.Manager):
         
         返回:
             tuple: (Media 实例，是否新创建)
+        
+        异常:
+            Exception: 如果文件保存失败，会抛出异常并回滚事务
         """
         # 计算文件哈希值
         file.seek(0)
@@ -143,6 +150,7 @@ class MediaManager(models.Manager):
 
         if existing_for_uploader:
             # 如果当前用户已上传过相同文件，直接返回现有记录
+            logger.debug(f"File already uploaded by user: {existing_for_uploader.id}")
             return existing_for_uploader, False
 
         # 使用数据库锁检查是否有其他用户上传过相同文件（全局去重）
@@ -164,9 +172,12 @@ class MediaManager(models.Manager):
             media.save()
             # 增加原始文件的引用计数
             existing_global.increment_reference_count()
+            logger.debug(f"Created reference record: {media.id} -> {existing_global.id}")
             return media, False  # 返回引用记录
 
         # 如果是新文件，创建新记录
+        # 注意：Django 的 FileField 会在 model.save() 时自动保存文件
+        # 如果文件保存失败，save() 会抛出异常，事务会自动回滚
         media = self.model(
             file=file,
             filename=file.name,
@@ -175,7 +186,10 @@ class MediaManager(models.Manager):
             file_hash=file_hash,
             uploader=uploader
         )
+        
+        # 保存文件（如果失败会抛出异常，事务回滚）
         media.save()
+        logger.info(f"Created new media record: {media.id}, file saved successfully")
         return media, True
 
 
@@ -304,14 +318,15 @@ class Media(BaseModel):
         """
         异步生成视频缩略图
         
-        使用后台线程异步处理视频缩略图生成，避免阻塞请求响应。
-        包含完整的错误处理和状态更新机制。
+        使用任务管理器处理视频缩略图生成，提供完整的错误处理和状态更新机制。
         """
         if not self.is_video:
             return
         
+        from utils.task_manager import task_manager, TaskInfo
+        
         media_id = self.id
-        print(f"[Thumbnail] Starting async thumbnail generation for media {media_id}")
+        logger.info(f"[Thumbnail] Submitting async thumbnail generation task for media {media_id}")
         
         def _generate():
             import django
@@ -323,20 +338,20 @@ class Media(BaseModel):
             
             try:
                 from apps.media.models import Media
-                print(f"[Thumbnail] Fetching media {media_id} from database")
+                logger.debug(f"[Thumbnail] Fetching media {media_id} from database")
                 
                 # 使用事务获取媒体记录
                 with transaction.atomic():
                     media = Media.objects.select_for_update(skip_locked=True).get(id=media_id)
-                    print(f"[Thumbnail] Media found, current status: {media.thumbnail_status}")
+                    logger.debug(f"[Thumbnail] Media found, current status: {media.thumbnail_status}")
                     
                     result = media.generate_thumbnails()
-                    print(f"[Thumbnail] Generation result: {result}, new status: {media.thumbnail_status}")
+                    logger.debug(f"[Thumbnail] Generation result: {result}, new status: {media.thumbnail_status}")
                     
             except Media.DoesNotExist:
-                print(f"[Thumbnail] Media {media_id} not found")
+                logger.error(f"[Thumbnail] Media {media_id} not found")
             except Exception as e:
-                print(f"[Thumbnail] Async thumbnail generation error: {e}")
+                logger.error(f"[Thumbnail] Async thumbnail generation error: {e}")
                 import traceback
                 traceback.print_exc()
                 
@@ -351,6 +366,12 @@ class Media(BaseModel):
                 # 关闭数据库连接
                 connection.close()
         
-        # 启动后台线程
-        thread = threading.Thread(target=_generate, daemon=True)
-        thread.start()
+        # 使用任务管理器提交任务
+        task_manager.submit(
+            func=_generate,
+            task_name=f"generate_thumbnails_{media_id}",
+            max_retries=2,
+            callback=lambda task_info: logger.info(
+                f"[Thumbnail] Task {task_info.task_id} completed with status: {task_info.status.value}"
+            )
+        )

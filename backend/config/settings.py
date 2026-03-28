@@ -94,6 +94,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',    # 消息中间件
     'django.middleware.clickjacking.XFrameOptionsMiddleware',  # 点击劫持保护
     'middleware.BackendAccessMiddleware.BackendAccessMiddleware',  # 自定义后台访问中间件
+    'middleware.exception_handler.ExceptionHandlerMiddleware',  # 统一异常处理中间件（必须在最后）
 ]
 
 # 根 URL 配置文件
@@ -185,6 +186,9 @@ if 'pytest' in sys.modules:
     MEDIA_ROOT = BASE_DIR / 'media_test'
 else:
     MEDIA_ROOT = BASE_DIR / 'media'
+
+# 文件上传临时目录
+UPLOAD_TEMP_DIR = os.getenv('UPLOAD_TEMP_DIR', MEDIA_ROOT / 'upload_temp')
 
 # 默认自增主键类型
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

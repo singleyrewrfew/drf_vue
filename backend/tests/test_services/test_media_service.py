@@ -201,6 +201,9 @@ class TestMediaQuerySet:
         """测试按创建时间排序"""
         uploader = User.objects.create_user(username='uploader', password='pass123')
         
+        # 记录初始数量
+        initial_count = Media.objects.count()
+        
         # 创建多个媒体对象
         for i in range(3):
             test_file = SimpleUploadedFile(
@@ -216,9 +219,13 @@ class TestMediaQuerySet:
                 uploader=uploader
             )
         
+        # 验证增加了 3 个
+        assert Media.objects.count() == initial_count + 3
+        
         # 按创建时间倒序
         media_list = Media.objects.order_by('-created_at')
-        assert media_list.count() == 3
+        # 验证至少包含我们刚创建的 3 个
+        assert media_list.count() >= 3
 
 
 @pytest.mark.integration

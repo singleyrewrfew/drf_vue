@@ -301,50 +301,96 @@ def stream_media_file(request, file_path, content_type, filename):
                       - 如果有 Range 请求且有效，返回 206 Partial Content
                       - 如果 Range 无效，返回 416 Range Not Satisfiable
                       - 如果没有 Range 请求，返回 200 OK 和完整文件
+                      - 如果文件不存在，返回 404
+                      - 如果无访问权限，返回 403
     
     Raises:
         无
     """
-    file_size = os.path.getsize(file_path)
-    range_header = request.headers.get('Range', '')
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    try:
+        # 检查文件是否存在
+        if not os.path.exists(file_path):
+            logger.warning(f"File not found: {file_path}")
+            return HttpResponse(
+                {'error': '文件不存在'},
+                status=status.HTTP_404_NOT_FOUND,
+                content_type='application/json'
+            )
+        
+        # 检查文件是否可读
+        if not os.access(file_path, os.R_OK):
+            logger.error(f"Permission denied: {file_path}")
+            return HttpResponse(
+                {'error': '文件无法访问'},
+                status=status.HTTP_403_FORBIDDEN,
+                content_type='application/json'
+            )
+        
+        file_size = os.path.getsize(file_path)
+        range_header = request.headers.get('Range', '')
 
-    if range_header:
-        range_match = range_header.replace('bytes=', '').split('-')
-        start = int(range_match[0]) if range_match[0] else 0
-        end = int(range_match[1]) if range_match[1] else file_size - 1
+        if range_header:
+            range_match = range_header.replace('bytes=', '').split('-')
+            start = int(range_match[0]) if range_match[0] else 0
+            end = int(range_match[1]) if range_match[1] else file_size - 1
 
-        if start >= file_size or end >= file_size:
-            return HttpResponse(status=416)
+            if start >= file_size or end >= file_size:
+                return HttpResponse(status=416)
 
-        length = end - start + 1
+            length = end - start + 1
 
-        def file_iterator():
-            with open(file_path, 'rb') as f:
-                f.seek(start)
-                remaining = length
-                chunk_size = 8192
-                while remaining > 0:
-                    read_size = min(chunk_size, remaining)
-                    data = f.read(read_size)
-                    if not data:
-                        break
-                    yield data
-                    remaining -= len(data)
+            def file_iterator():
+                with open(file_path, 'rb') as f:
+                    f.seek(start)
+                    remaining = length
+                    chunk_size = 8192
+                    while remaining > 0:
+                        read_size = min(chunk_size, remaining)
+                        data = f.read(read_size)
+                        if not data:
+                            break
+                        yield data
+                        remaining -= len(data)
 
-        response = HttpResponse(
-            file_iterator(),
-            status=206,
-            content_type=content_type,
+            response = HttpResponse(
+                file_iterator(),
+                status=206,
+                content_type=content_type,
+            )
+            response['Content-Length'] = str(length)
+            response['Content-Range'] = f'bytes {start}-{end}/{file_size}'
+        else:
+            response = FileResponse(
+                open(file_path, 'rb'),
+                content_type=content_type,
+            )
+            response['Content-Length'] = str(file_size)
+
+        response['Accept-Ranges'] = 'bytes'
+        response['Content-Disposition'] = f'inline; filename="{filename}"'
+        return response
+        
+    except PermissionError as e:
+        logger.error(f"Permission error accessing file {file_path}: {e}")
+        return HttpResponse(
+            {'error': '文件访问权限错误'},
+            status=status.HTTP_403_FORBIDDEN,
+            content_type='application/json'
         )
-        response['Content-Length'] = str(length)
-        response['Content-Range'] = f'bytes {start}-{end}/{file_size}'
-    else:
-        response = FileResponse(
-            open(file_path, 'rb'),
-            content_type=content_type,
+    except FileNotFoundError as e:
+        logger.error(f"File not found error: {file_path}, {e}")
+        return HttpResponse(
+            {'error': '文件不存在'},
+            status=status.HTTP_404_NOT_FOUND,
+            content_type='application/json'
         )
-        response['Content-Length'] = str(file_size)
-
-    response['Accept-Ranges'] = 'bytes'
-    response['Content-Disposition'] = f'inline; filename="{filename}"'
-    return response
+    except Exception as e:
+        logger.error(f"Unexpected error streaming file {file_path}: {type(e).__name__}: {e}", exc_info=True)
+        return HttpResponse(
+            {'error': '文件处理失败'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content_type='application/json'
+        )

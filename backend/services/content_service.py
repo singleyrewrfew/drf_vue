@@ -3,11 +3,15 @@ Content Service
 
 内容管理业务逻辑服务
 """
+import logging
 from django.utils import timezone
+from django.db import DatabaseError, IntegrityError, transaction
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from apps.contents.models import Content
 from services.base import ModelService, ServiceResult
+
+logger = logging.getLogger(__name__)
 
 
 class ContentService(ModelService):
@@ -41,11 +45,15 @@ class ContentService(ModelService):
         if content.status == 'published':
             raise ValidationError('内容已发布')
         
-        content.status = 'published'
-        content.published_at = timezone.now()
-        content.save()
-        
-        return content
+        try:
+            content.status = 'published'
+            content.published_at = timezone.now()
+            content.save()
+            logger.info(f"Content {content.id} published by user {user.id}")
+            return content
+        except (DatabaseError, IntegrityError) as e:
+            logger.error(f"Failed to publish content {content.id}: {type(e).__name__}: {e}", exc_info=True)
+            raise ValidationError('发布失败，请稍后重试')
     
     @staticmethod
     def archive_content(content: Content, user) -> Content:
@@ -65,10 +73,14 @@ class ContentService(ModelService):
         if not user.has_permission('content_archive') and not user.is_editor:
             raise PermissionDenied('无归档权限')
         
-        content.status = 'archived'
-        content.save()
-        
-        return content
+        try:
+            content.status = 'archived'
+            content.save()
+            logger.info(f"Content {content.id} archived by user {user.id}")
+            return content
+        except (DatabaseError, IntegrityError) as e:
+            logger.error(f"Failed to archive content {content.id}: {type(e).__name__}: {e}", exc_info=True)
+            raise ValidationError('归档失败，请稍后重试')
     
     @staticmethod
     def increment_view_count(content: Content) -> Content:
