@@ -10,12 +10,11 @@ Services Package
 4. 提供统一的业务接口
 """
 
-from services.base import BaseService, ModelService, ServiceResult
+from services.base import BaseService, ModelService
 from services.content_service import ContentService
 
 __all__ = [
     'BaseService',
     'ModelService',
-    'ServiceResult',
     'ContentService',
 ]

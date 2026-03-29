@@ -245,7 +245,7 @@ const updateEditorTheme = () => {
     codeTheme.value = isDark ? 'one-dark' : 'github'
 }
 
-const form = reactive({
+const form = ref({
     title: '',
     slug: '',
     summary: '',
@@ -263,9 +263,9 @@ const rules = {
     content: [{required: true, message: '请输入内容', trigger: 'blur'}],
 }
 
-const uploadUrl = computed(() => `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'}/media/`)
+const uploadUrl = computed(() => `${import.meta.env.VITE_API_BASE_URL || '/api'}/media/`)
 // 封面图上传使用通用媒体上传接口
-const coverUploadUrl = computed(() => `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'}/media/`)
+const coverUploadUrl = computed(() => `${import.meta.env.VITE_API_BASE_URL || '/api'}/media/`)
 const uploadHeaders = computed(() => {
     const token = userStore.token
     console.log('上传 Token:', token ? '存在' : '为空')
@@ -338,7 +338,7 @@ const toolbars = [
 ]
 
 const handleContentChange = () => {
-    if (form.content && form.content !== lastSaveContent.value && form.content.length > 100) {
+    if (form.value.content && form.value.content !== lastSaveContent.value && form.value.content.length > 100) {
         triggerAutoSave()
     }
 }
@@ -347,7 +347,7 @@ const handleFileChange = (file) => {
     const reader = new FileReader()
     reader.onload = (e) => {
         const content = e.target.result
-        if (form.content) {
+        if (form.value.content) {
             ElMessageBox.confirm(
                 '当前编辑器已有内容，是否覆盖？',
                 '确认导入',
@@ -357,14 +357,14 @@ const handleFileChange = (file) => {
                     type: 'warning',
                 }
             ).then(() => {
-                form.content = content
+                form.value.content = content
                 ElMessage.success('文件导入成功')
             }).catch(() => {
-                form.content = form.content + '\n\n' + content
+                form.value.content = form.value.content + '\n\n' + content
                 ElMessage.success('文件内容已追加')
             })
         } else {
-            form.content = content
+            form.value.content = content
             ElMessage.success('文件导入成功')
         }
     }
@@ -386,26 +386,26 @@ const triggerAutoSave = () => {
 }
 
 const autoSave = async () => {
-    if (!form.content || form.content === lastSaveContent.value) return
+    if (!form.value.content || form.value.content === lastSaveContent.value) return
 
     autoSaveStatus.value = 'saving'
     try {
         const submitData = {
-            title: form.title,
-            content: form.content,
-            summary: form.summary,
-            category: form.category,
-            tags: form.tags,
-            cover_image: form.cover_image,
-            status: form.status,
-            is_top: form.is_top,
+            title: form.value.title,
+            content: form.value.content,
+            summary: form.value.summary,
+            category: form.value.category,
+            tags: form.value.tags,
+            cover_image: form.value.cover_image,
+            status: form.value.status,
+            is_top: form.value.is_top,
         }
         if (!submitData.category) delete submitData.category
         if (!submitData.cover_image) delete submitData.cover_image
         if (submitData.tags.length === 0) delete submitData.tags
 
         await updateContent(route.params.id, submitData)
-        lastSaveContent.value = form.content
+        lastSaveContent.value = form.value.content
         autoSaveStatus.value = 'saved'
         setTimeout(() => {
             autoSaveStatus.value = ''
@@ -416,7 +416,7 @@ const autoSave = async () => {
 }
 
 const getMediaBaseUrl = () => {
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
     return apiBaseUrl.replace(/\/api\/?$/, '')
 }
 
@@ -424,7 +424,7 @@ const handleCoverSuccess = (response, file) => {
     // response 是 Media 对象，包含 url 字段
     if (response.url) {
         const baseUrl = getMediaBaseUrl()
-        form.cover_image = response.url.startsWith('http') ? response.url : `${baseUrl}${response.url}`
+        form.value.cover_image = response.url.startsWith('http') ? response.url : `${baseUrl}${response.url}`
         ElMessage.success('封面图上传成功')
     } else {
         ElMessage.error('封面图上传失败')
@@ -468,7 +468,7 @@ const createCategory = async () => {
         // 先添加到分类列表，确保显示
         categories.value = [...categories.value, data]
         // 然后设置选中的分类
-        form.category = data.id
+        form.value.category = data.id
     } catch (error) {
         ElMessage.error('创建分类失败')
         console.error(error)
@@ -496,8 +496,8 @@ const createTag = async () => {
         // 先添加到标签列表，确保显示
         tags.value = [...tags.value, data]
         // 然后添加到已选标签
-        if (!form.tags) form.tags = []
-        form.tags.push(data.id)
+        if (!form.value.tags) form.value.tags = []
+        form.value.tags.push(data.id)
     } catch (error) {
         ElMessage.error('创建标签失败')
         console.error(error)
@@ -521,7 +521,7 @@ const fetchContent = async () => {
     loading.value = true
     try {
         const {data} = await getContent(route.params.id)
-        Object.assign(form, {
+        Object.assign(form.value, {
             title: data.title,
             slug: data.slug,
             summary: data.summary,
@@ -546,7 +546,7 @@ const handleSubmit = async () => {
     await formRef.value.validate()
     loading.value = true
     try {
-        const submitData = {...form}
+        const submitData = {...form.value}
         if (!submitData.category) delete submitData.category
         if (!submitData.cover_image) delete submitData.cover_image
         if (submitData.tags.length === 0) delete submitData.tags
@@ -568,13 +568,13 @@ const handleSubmit = async () => {
 }
 
 const handleSaveDraft = async () => {
-    if (!form.title && !form.content) {
+    if (!form.value.title && !form.value.content) {
         ElMessage.warning('请至少填写标题或内容')
         return
     }
     loading.value = true
     try {
-        const submitData = {...form, status: 'draft'}
+        const submitData = {...form.value, status: 'draft'}
         if (!submitData.category) delete submitData.category
         if (!submitData.cover_image) delete submitData.cover_image
         if (submitData.tags.length === 0) delete submitData.tags

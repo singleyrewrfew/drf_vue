@@ -20,104 +20,31 @@
             transform: `scaleY(${indicatorStyle.scaleY})`,
             transformOrigin: indicatorStyle.transformOrigin
           }"></div>
-                    <div class="menu-section" v-show="!isCollapsed">
-                        <span class="menu-section-title">主菜单</span>
-                    </div>
-                    <router-link to="/dashboard" class="menu-item"
-                                 :class="{ active: activeMenu === '/dashboard', collapsed: isCollapsed }"
-                                 data-path="/dashboard" :title="isCollapsed ? '仪表盘' : ''">
-                        <div class="menu-item-icon">
-                            <el-icon>
-                                <Odometer/>
-                            </el-icon>
-                        </div>
-                        <span class="menu-item-text">仪表盘</span>
-                    </router-link>
-                    <router-link to="/contents" class="menu-item"
-                                 :class="{ active: activeMenu === '/contents', collapsed: isCollapsed }"
-                                 data-path="/contents" :title="isCollapsed ? '内容管理' : ''">
-                        <div class="menu-item-icon">
-                            <el-icon>
-                                <Document/>
-                            </el-icon>
-                        </div>
-                        <span class="menu-item-text">内容管理</span>
-                    </router-link>
-                    <router-link to="/categories" class="menu-item"
-                                 :class="{ active: activeMenu === '/categories', collapsed: isCollapsed }"
-                                 data-path="/categories" :title="isCollapsed ? '分类管理' : ''">
-                        <div class="menu-item-icon">
-                            <el-icon>
-                                <Folder/>
-                            </el-icon>
-                        </div>
-                        <span class="menu-item-text">分类管理</span>
-                    </router-link>
-                    <router-link to="/tags" class="menu-item"
-                                 :class="{ active: activeMenu === '/tags', collapsed: isCollapsed }" data-path="/tags"
-                                 :title="isCollapsed ? '标签管理' : ''">
-                        <div class="menu-item-icon">
-                            <el-icon>
-                                <PriceTag/>
-                            </el-icon>
-                        </div>
-                        <span class="menu-item-text">标签管理</span>
-                    </router-link>
-                    <router-link to="/media" class="menu-item"
-                                 :class="{ active: activeMenu === '/media', collapsed: isCollapsed }" data-path="/media"
-                                 :title="isCollapsed ? '媒体管理' : ''">
-                        <div class="menu-item-icon">
-                            <el-icon>
-                                <Picture/>
-                            </el-icon>
-                        </div>
-                        <span class="menu-item-text">媒体管理</span>
-                    </router-link>
-                    <router-link to="/comments" class="menu-item"
-                                 :class="{ active: activeMenu === '/comments', collapsed: isCollapsed }"
-                                 data-path="/comments" :title="isCollapsed ? '评论管理' : ''">
-                        <div class="menu-item-icon">
-                            <el-icon>
-                                <ChatDotRound/>
-                            </el-icon>
-                        </div>
-                        <span class="menu-item-text">评论管理</span>
-                    </router-link>
-
-                    <template v-if="userStore.isAdmin()">
-                        <div class="menu-section" v-show="!isCollapsed">
-                            <span class="menu-section-title">系统管理</span>
-                        </div>
-                        <router-link to="/users" class="menu-item"
-                                     :class="{ active: activeMenu === '/users', collapsed: isCollapsed }"
-                                     data-path="/users" :title="isCollapsed ? '用户管理' : ''">
-                            <div class="menu-item-icon">
-                                <el-icon>
-                                    <User/>
-                                </el-icon>
+                    
+                    <template v-for="(menuSection, sectionIndex) in MENU_CONFIG" :key="sectionIndex">
+                        <!-- 系统管理菜单需要管理员权限 -->
+                        <template v-if="!menuSection.requireAdmin || userStore.isAdmin()">
+                            <div class="menu-section" v-show="!isCollapsed">
+                                <span class="menu-section-title">{{ menuSection.section }}</span>
                             </div>
-                            <span class="menu-item-text">用户管理</span>
-                        </router-link>
-                        <router-link to="/roles" class="menu-item"
-                                     :class="{ active: activeMenu === '/roles', collapsed: isCollapsed }"
-                                     data-path="/roles" :title="isCollapsed ? '角色管理' : ''">
-                            <div class="menu-item-icon">
-                                <el-icon>
-                                    <Key/>
-                                </el-icon>
-                            </div>
-                            <span class="menu-item-text">角色管理</span>
-                        </router-link>
-                        <router-link to="/permissions" class="menu-item"
-                                     :class="{ active: activeMenu === '/permissions', collapsed: isCollapsed }"
-                                     data-path="/permissions" :title="isCollapsed ? '权限管理' : ''">
-                            <div class="menu-item-icon">
-                                <el-icon>
-                                    <Lock/>
-                                </el-icon>
-                            </div>
-                            <span class="menu-item-text">权限管理</span>
-                        </router-link>
+                            
+                            <router-link 
+                                v-for="item in menuSection.items" 
+                                :key="item.path"
+                                :to="item.path" 
+                                class="menu-item"
+                                :class="{ active: activeMenu === item.path, collapsed: isCollapsed }"
+                                :data-path="item.path" 
+                                :title="isCollapsed ? item.label : ''"
+                            >
+                                <div class="menu-item-icon">
+                                    <el-icon>
+                                        <component :is="item.icon"/>
+                                    </el-icon>
+                                </div>
+                                <span class="menu-item-text">{{ item.label }}</span>
+                            </router-link>
+                        </template>
                     </template>
                 </nav>
                 <div class="sidebar-footer">
@@ -205,6 +132,45 @@ import {
     Sunny
 } from '@element-plus/icons-vue'
 import {getAvatarUrl} from '@/utils'
+
+// 菜单配置
+const MENU_CONFIG = [
+  {
+    section: '主菜单',
+    items: [
+      { path: '/dashboard', icon: Odometer, label: '仪表盘' },
+      { path: '/contents', icon: Document, label: '内容管理' },
+      { path: '/categories', icon: Folder, label: '分类管理' },
+      { path: '/tags', icon: PriceTag, label: '标签管理' },
+      { path: '/media', icon: Picture, label: '媒体管理' },
+      { path: '/comments', icon: ChatDotRound, label: '评论管理' },
+    ]
+  },
+  {
+    section: '系统管理',
+    requireAdmin: true,
+    items: [
+      { path: '/users', icon: User, label: '用户管理' },
+      { path: '/roles', icon: Key, label: '角色管理' },
+      { path: '/permissions', icon: Lock, label: '权限管理' },
+    ]
+  }
+]
+
+// 页面标题映射
+const PAGE_TITLES = {
+  '/dashboard': '仪表盘',
+  '/contents': '内容管理',
+  '/contents/create': '新建内容',
+  '/categories': '分类管理',
+  '/tags': '标签管理',
+  '/media': '媒体管理',
+  '/comments': '评论管理',
+  '/users': '用户管理',
+  '/roles': '角色管理',
+  '/permissions': '权限管理',
+  '/profile': '个人设置'
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -343,24 +309,10 @@ onMounted(() => {
     updateIndicator(false)
 })
 
-const pageTitles = {
-    '/dashboard': '仪表盘',
-    '/contents': '内容管理',
-    '/contents/create': '新建内容',
-    '/categories': '分类管理',
-    '/tags': '标签管理',
-    '/media': '媒体管理',
-    '/comments': '评论管理',
-    '/users': '用户管理',
-    '/roles': '角色管理',
-    '/permissions': '权限管理',
-    '/profile': '个人设置'
-}
-
 const currentPageTitle = computed(() => {
-    const path = route.path
-    if (path.includes('/contents/edit/')) return '编辑内容'
-    return pageTitles[path] || 'CMS 管理'
+  const path = route.path
+  if (path.includes('/contents/edit/')) return '编辑内容'
+  return PAGE_TITLES[path] || 'CMS 管理'
 })
 
 const handleLogout = async () => {

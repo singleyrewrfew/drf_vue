@@ -23,17 +23,14 @@ if env_file.exists():
 # 生产环境必须通过 DJANGO_SECRET_KEY 环境变量设置
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
+# 调试模式：默认关闭，开发环境需显式开启
+DEBUG = os.getenv('DJANGO_DEBUG', 'False') == 'True'
+
 # 如果未设置 SECRET_KEY，根据环境决定行为
 if not SECRET_KEY:
     if DEBUG:
         # 开发环境 fallback（仅本地开发使用）
         SECRET_KEY = 'dev-only-insecure-key-change-in-production'
-        import warnings
-        warnings.warn(
-            "⚠️  WARNING: Using development SECRET_KEY. Set DJANGO_SECRET_KEY for production!",
-            RuntimeWarning,
-            stacklevel=2
-        )
     else:
         # 生产环境未设置则启动失败
         from django.core.exceptions import ImproperlyConfigured
@@ -42,18 +39,21 @@ if not SECRET_KEY:
             "Please set it in your .env file or environment variables."
         )
 
-# 调试模式：默认关闭，开发环境需显式开启
-DEBUG = os.getenv('DJANGO_DEBUG', 'False') == 'True'
+# 统一警告函数
+def _warn_if_debug(message: str):
+    """如果处于 DEBUG 模式则发出警告"""
+    if DEBUG:
+        import warnings
+        warnings.warn(f"⚠️  WARNING: {message}", RuntimeWarning, stacklevel=2)
 
-# 如果开启 DEBUG 模式，添加安全警告
+# 检查并警告
+if not os.getenv('DJANGO_SECRET_KEY') and DEBUG:
+    _warn_if_debug("Using development SECRET_KEY. Set DJANGO_SECRET_KEY for production!")
+
+_warn_if_debug("DEBUG mode is enabled! This should never be used in production.")
+
+# 限制允许的主机（开发环境可额外配置）
 if DEBUG:
-    import warnings
-    warnings.warn(
-        "⚠️  WARNING: DEBUG mode is enabled! This should never be used in production.",
-        RuntimeWarning,
-        stacklevel=2
-    )
-    # 限制允许的主机（开发环境可额外配置）
     ALLOWED_HOSTS = ['localhost', '127.0.0.1'] + \
                    os.getenv('DJANGO_DEBUG_ALLOWED_HOSTS', '').split(',')
 else:

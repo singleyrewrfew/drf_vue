@@ -60,8 +60,10 @@ import { getContents, getCategories, getTags } from '@/api/content'
 import { getPopularAuthors } from '@/api/user'
 import { PageHeader, ArticleList } from '@/components/common'
 import { SidebarCategories, SidebarTags, SidebarAuthors } from '@/components/sidebar'
+import { useUserStore } from '@/stores/user'
 
 const route = useRoute()
+const userStore = useUserStore()
 
 const loading = ref(false)
 const articles = ref([])
@@ -121,11 +123,20 @@ const fetchTags = async () => {
 }
 
 const fetchAuthors = async () => {
+  // 只有已登录用户才获取热门作者
+  if (!userStore.isLoggedIn) {
+    authors.value = []
+    return
+  }
+  
   try {
     const { data } = await getPopularAuthors()
     authors.value = data.results || data
   } catch (e) {
-    console.error('Failed to fetch authors:', e)
+    // 401 错误表示用户未登录，这是正常情况，不打印错误
+    if (e.response?.status !== 401) {
+      console.error('Failed to fetch authors:', e)
+    }
   }
 }
 

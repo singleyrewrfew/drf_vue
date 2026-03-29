@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 const MEDIA_BASE_URL = import.meta.env.VITE_MEDIA_BASE_URL || API_BASE_URL.replace('/api', '')
 
 export const getMediaUrl = (path) => {

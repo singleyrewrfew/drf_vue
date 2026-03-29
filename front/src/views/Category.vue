@@ -8,7 +8,7 @@
         :loading="loading"
         mode="horizontal"
         :page-size="pageSize"
-        :empty-text="该分类下暂无文章"
+        empty-text="该分类下暂无文章"
       />
 
       <div v-if="total > pageSize" class="pagination-container">

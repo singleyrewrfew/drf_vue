@@ -1,0 +1,1 @@
+import{W as e}from"./index-BfWl2eKD.js";const g=t=>e.get("/categories/",{params:t}),o=t=>e.post("/categories/",t),c=(t,a)=>e.put(`/categories/${t}/`,a),r=t=>e.delete(`/categories/${t}/`),p=t=>e.get("/tags/",{params:t}),n=t=>e.post("/tags/",t),d=(t,a)=>e.put(`/tags/${t}/`,a),i=t=>e.delete(`/tags/${t}/`);export{p as a,i as b,o as c,r as d,d as e,n as f,g,c as u};

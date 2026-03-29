@@ -145,7 +145,7 @@ const uploading = ref(false)
 const uploadProgress = ref(0)
 let refreshTimer = null
 
-const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'
+const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
 const uploadUrl = computed(() => `${baseUrl}/media/`)
 const uploadHeaders = computed(() => {
     const token = userStore.token

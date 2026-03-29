@@ -174,7 +174,7 @@ const handleEdit = (row) => {
 }
 
 const handleView = (row) => {
-    const frontUrl = import.meta.env.VITE_FRONT_URL || 'http://localhost:3000'
+    const frontUrl = import.meta.env.VITE_FRONT_URL || window.location.origin
     window.open(`${frontUrl}/article/${row.id}`, '_blank')
 }
 

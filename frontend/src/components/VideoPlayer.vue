@@ -31,7 +31,7 @@ const artRef = ref(null)
 let artInstance = null
 
 const getMediaBaseUrl = () => {
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
     return apiBaseUrl.replace(/\/api\/?$/, '')
 }
 

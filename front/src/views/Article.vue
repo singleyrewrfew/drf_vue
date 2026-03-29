@@ -161,16 +161,8 @@
 import {ref, computed, watch, onUnmounted, nextTick} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {
-    View,
-    ArrowLeft,
-    ArrowRight,
-    ChatDotRound,
     Document,
-    List,
-    Pointer,
-    Picture,
-    VideoCamera,
-    Link
+    List
 } from '@element-plus/icons-vue'
 import {ElMessage} from 'element-plus'
 import {marked} from 'marked'
@@ -184,7 +176,7 @@ import {
     ArticleNav,
     CommentsSection
 } from '@/components/article'
-import {getCoverUrl, getAvatarUrl, formatDate, formatRelativeTime} from '@/utils'
+import {getCoverUrl, getAvatarUrl, formatDate} from '@/utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -196,19 +188,13 @@ const fullContentLoaded = ref(false)
 const comments = ref([])
 const commentContent = ref('')
 const submitting = ref(false)
-const replyToParent = ref(null)
-const replyToName = ref('')
-const replyToUserId = ref(null)
-const replyContent = ref('')
-const submittingReply = ref(false)
-const expandedReplies = ref([])
 const prevArticle = ref(null)
 const nextArticle = ref(null)
 const relatedArticles = ref([])
 const showAllComments = ref(false)
 const imageInput = ref(null)
 
-const emojis = ['😀', '😂', '😍', '🥰', '😎', '🤔', '👍', '👎', '❤️', '💔', '🎉', '🔥', '✨', '🌟', '⭐', '💯', '💪', '🙏', '😭', '😱', '🤣', '😊', '🥺', '👏', '🙄', '😴', '😋', '😜', '🤪', '😇']
+const emojis = ['😀', '😂', '😍', '🥰', '😎', '🤔', '👍', '👎', '❤️', '💔', '🎉', '🔥', '✨', '🌟', '⭐', '💯', '💪', '🙏', '😭', '😱', '🤣', '😊', '🥺', '👏', '🙄', '😴'] // 精简到 25 个常用表情
 
 const displayComments = computed(() => {
     if (showAllComments.value) {
@@ -216,8 +202,6 @@ const displayComments = computed(() => {
     }
     return comments.value.slice(0, 2)
 })
-
-const showCommentsDialog = ref(false)
 const showTocDrawer = ref(false)
 const activeHeadingId = ref('')
 
@@ -228,7 +212,7 @@ const handleCategoryClick = () => {
     }
 }
 
-// 处理评论相关
+// 处理评论相关 - 已委托给 CommentsSection 组件
 const commentsSectionRef = ref(null)
 
 const handleCommentSubmit = ({ content, parentId }) => {
@@ -373,10 +357,10 @@ const initArticleContent = () => {
     const result = extractHeadings(html)
     headings.value = result.headings
 
-    // 文章渲染完成后，初始化图片懒加载
-    nextTick(() => {
-        initImageLazyLoad()
-    })
+    // 文章渲染完成后，初始化图片懒加载（已移除，使用浏览器原生懒加载）
+    // nextTick(() => {
+    //     initImageLazyLoad()
+    // })
 
     // 如果当前是预览内容且内容长度等于 5000，异步加载完整内容
     if (article.value.content === article.value.content_preview &&
@@ -513,49 +497,7 @@ const insertEmoji = (emoji) => {
     commentContent.value += emoji
 }
 
-// 图片懒加载
-const imageObserver = ref(null)
-
-const initImageLazyLoad = () => {
-    if (!('IntersectionObserver' in window)) {
-        // 不支持 IntersectionObserver 的浏览器直接加载所有图片
-        return
-    }
-
-    // 创建 IntersectionObserver 实例
-    imageObserver.value = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const img = entry.target
-                const dataSrc = img.getAttribute('data-src')
-                if (dataSrc) {
-                    img.src = dataSrc
-                    img.removeAttribute('data-src')
-                    img.classList.remove('lazy-loading')
-                    imageObserver.value.unobserve(img)
-                }
-            }
-        })
-    }, {
-        rootMargin: '50px 0px', // 提前 50px 开始加载
-        threshold: 0.01
-    })
-
-    // 查找文章内容中的所有图片
-    const articleContent = document.querySelector('.article-content')
-    if (articleContent) {
-        const images = articleContent.querySelectorAll('img')
-        images.forEach(img => {
-            const src = img.getAttribute('src')
-            if (src) {
-                img.setAttribute('data-src', src)
-                img.removeAttribute('src')
-                img.classList.add('lazy-loading')
-                imageObserver.value.observe(img)
-            }
-        })
-    }
-}
+// 图片懒加载和文章内容渲染已在 initArticleContent 中处理
 
 const submitComment = async () => {
     if (!commentContent.value.trim()) {
@@ -578,90 +520,13 @@ const submitComment = async () => {
     }
 }
 
-const openReplyForm = (parentId, userName, userId) => {
-    replyToParent.value = parentId
-    replyToName.value = userName
-    replyToUserId.value = userId
-    replyContent.value = ''
-}
-
-const closeReplyForm = () => {
-    replyToParent.value = null
-    replyToName.value = ''
-    replyToUserId.value = null
-    replyContent.value = ''
-}
-
-const toggleReplies = (commentId) => {
-    const index = expandedReplies.value.indexOf(commentId)
-    if (index > -1) {
-        expandedReplies.value.splice(index, 1)
-    } else {
-        expandedReplies.value.push(commentId)
-    }
-}
-
-const handleLike = async (comment, parentCommentId = null) => {
-    if (!userStore.isLoggedIn) {
-        ElMessage.warning('请先登录')
-        return
-    }
-    try {
-        const {data} = await likeComment(comment.id)
-        if (parentCommentId) {
-            const parentComment = comments.value.find(c => c.id === parentCommentId)
-            if (parentComment && parentComment.replies) {
-                const replyIndex = parentComment.replies.findIndex(r => r.id === comment.id)
-                if (replyIndex > -1) {
-                    parentComment.replies[replyIndex] = data
-                }
-            }
-        } else {
-            const commentIndex = comments.value.findIndex(c => c.id === comment.id)
-            if (commentIndex > -1) {
-                comments.value[commentIndex] = {...comments.value[commentIndex], ...data}
-            }
-        }
-    } catch (e) {
-        ElMessage.error('操作失败')
-    }
-}
-
-const submitReply = async (parentId) => {
-    if (!replyContent.value.trim()) {
-        ElMessage.warning('请输入回复内容')
-        return
-    }
-    submittingReply.value = true
-    try {
-        await createComment({
-            article: route.params.id,
-            content: replyContent.value,
-            parent: parentId,
-            reply_to_id: replyToUserId.value,
-        })
-        ElMessage.success('回复成功')
-        closeReplyForm()
-        fetchComments()
-    } catch (e) {
-        ElMessage.error('回复失败')
-    } finally {
-        submittingReply.value = false
-    }
-}
-
 watch(() => route.params.id, () => {
     if (route.params.id) {
         fetchArticle()
     }
 }, {immediate: true})
 
-onUnmounted(() => {
-    // 清理图片观察者
-    if (imageObserver.value) {
-        imageObserver.value.disconnect()
-    }
-})
+// 注意：图片懒加载功能已移除，使用浏览器原生懒加载
 </script>
 
 <style scoped>

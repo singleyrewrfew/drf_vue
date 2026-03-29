@@ -77,6 +77,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { User, View, Calendar, Document, ArrowRight, Star } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { getContents, getCategories, getTags } from '@/api/content'
@@ -84,6 +85,8 @@ import { ArticleList } from '@/components/common'
 import { SidebarHotArticles, SidebarCategories, SidebarTags } from '@/components/sidebar'
 import WinPagination from '@/components/WinPagination.vue'
 import { getCoverUrl, getArticleUrl, formatDate } from '@/utils'
+
+const router = useRouter()
 
 const featuredContents = ref([])
 const latestArticles = ref([])
@@ -97,9 +100,7 @@ const loading = ref(true)
 const isInitialLoad = ref(true)
 
 const fetchData = async () => {
-  if (isInitialLoad.value) {
-    loading.value = true
-  }
+  loading.value = true
   try {
     const offset = (currentPage.value - 1) * pageSize.value
     const [featuredRes, latestRes, hotRes, catRes, tagRes] = await Promise.all([
@@ -121,6 +122,12 @@ const fetchData = async () => {
     if (e.response?.status !== 401) {
       ElMessage.error('加载数据失败，请刷新页面重试')
     }
+    // 重置状态以便下次加载
+    featuredContents.value = []
+    latestArticles.value = []
+    hotArticles.value = []
+    categories.value = []
+    tags.value = []
   } finally {
     loading.value = false
     isInitialLoad.value = false
@@ -140,6 +147,23 @@ const handleCurrentChange = (page) => {
 
 onMounted(() => {
   fetchData()
+})
+
+// 监听路由变化，确保从其他页面返回时重新加载数据
+router.afterEach((to, from) => {
+  if (to.path === '/' && from.path !== '/') {
+    // 从其他页面跳转到首页时重置状态
+    currentPage.value = 1
+    pageSize.value = 4
+    total.value = 0
+    featuredContents.value = []
+    latestArticles.value = []
+    hotArticles.value = []
+    categories.value = []
+    tags.value = []
+    isInitialLoad.value = true
+    fetchData()
+  }
 })
 </script>
 

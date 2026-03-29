@@ -338,7 +338,7 @@ const passwordRules = {
     ],
 }
 
-const uploadUrl = computed(() => `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'}/media/`)
+const uploadUrl = computed(() => `${import.meta.env.VITE_API_BASE_URL || '/api'}/media/`)
 const uploadHeaders = computed(() => {
     const token = userStore.token
     return {
@@ -374,7 +374,7 @@ const selectedMedia = ref(null)
 const getMediaUrl = (file) => {
     if (!file) return ''
     if (file.startsWith('http')) return file
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
     return `${baseUrl.replace('/api', '')}${file}`
 }
 

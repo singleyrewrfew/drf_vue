@@ -9,7 +9,7 @@ from django.db import DatabaseError, IntegrityError, transaction
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from apps.contents.models import Content
-from services.base import ModelService, ServiceResult
+from services.base import ModelService
 
 logger = logging.getLogger(__name__)
 
