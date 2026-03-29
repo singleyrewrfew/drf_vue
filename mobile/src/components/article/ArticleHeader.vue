@@ -14,7 +14,7 @@
     </div>
 
     <div v-if="article.cover_image" class="article-cover">
-        <img :src="getCoverUrl(article.cover_image)" alt="" loading="lazy"/>
+        <img :src="getCoverUrl(article.cover_image)" alt="" loading="lazy" />
     </div>
 </template>
 
@@ -24,8 +24,8 @@ import { getCoverUrl, getAvatarUrl, formatRelativeTime } from '@/utils'
 const props = defineProps({
     article: {
         type: Object,
-        required: true
-    }
+        required: true,
+    },
 })
 
 console.log('ArticleHeader received article:', props.article)

@@ -3,7 +3,7 @@
         <div v-if="type === 'card'" class="skeleton-card">
             <div class="skeleton skeleton-title"></div>
             <div class="skeleton skeleton-text"></div>
-            <div class="skeleton skeleton-text" style="width: 85%;"></div>
+            <div class="skeleton skeleton-text" style="width: 85%"></div>
             <div class="skeleton skeleton-meta"></div>
         </div>
 
@@ -30,8 +30,8 @@
             </div>
             <div class="skeleton skeleton-image-lg"></div>
             <div class="skeleton skeleton-text"></div>
-            <div class="skeleton skeleton-text" style="width: 90%;"></div>
-            <div class="skeleton skeleton-text" style="width: 75%;"></div>
+            <div class="skeleton skeleton-text" style="width: 90%"></div>
+            <div class="skeleton skeleton-text" style="width: 75%"></div>
         </div>
 
         <div v-else-if="type === 'list'" class="skeleton-list-item">
@@ -49,8 +49,8 @@ defineProps({
     type: {
         type: String,
         default: 'card',
-        validator: (v) => ['card', 'card-image', 'avatar', 'article', 'list'].includes(v)
-    }
+        validator: v => ['card', 'card-image', 'avatar', 'article', 'list'].includes(v),
+    },
 })
 </script>
 
@@ -60,25 +60,15 @@ defineProps({
 }
 
 .skeleton {
-    background: linear-gradient(
-        90deg,
-        #f0f0f0 25%,
-        #e0e0e0 37%,
-        #f0f0f0 63%
-    );
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 37%, #f0f0f0 63%);
     background-size: 400% 100%;
     animation: skeleton-loading 1.4s ease infinite;
     border-radius: var(--radius-sm);
 }
 
 :global(.dark) .skeleton,
-:global([data-theme="dark"]) .skeleton {
-    background: linear-gradient(
-        90deg,
-        #2a2a2a 25%,
-        #3a3a3a 37%,
-        #2a2a2a 63%
-    );
+:global([data-theme='dark']) .skeleton {
+    background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 37%, #2a2a2a 63%);
     background-size: 400% 100%;
 }
 

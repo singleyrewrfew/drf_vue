@@ -3,29 +3,29 @@
         <PageHeader title="详情">
             <template #right>
                 <button class="btn-icon" @click="shareArticle">
-                    <el-icon><Share/></el-icon>
+                    <el-icon><Share /></el-icon>
                 </button>
             </template>
         </PageHeader>
 
-        <div v-if="loading" class="page-content" style="padding: 0;">
-            <Skeleton type="article"/>
+        <div v-if="loading" class="page-content" style="padding: 0">
+            <Skeleton type="article" />
         </div>
 
-        <div v-else-if="article" class="page-content" style="padding: 0; position: relative;">
+        <div v-else-if="article" class="page-content" style="padding: 0; position: relative">
             <!-- 调试信息 -->
-            <div v-if="0" style="padding: 20px; background: #f00; color: #fff;">
+            <div v-if="0" style="padding: 20px; background: #f00; color: #fff">
                 Debug: article = {{ article }}
             </div>
-            
+
             <!-- 文章头部 -->
             <ArticleHeader :article="article" />
-            
+
             <!-- 文章内容 -->
-            <ArticleContent 
+            <ArticleContent
                 ref="articleContentRef"
-                :content="article.content" 
-                :tags="article.tags" 
+                :content="article.content"
+                :tags="article.tags"
             />
 
             <!-- 评论区 -->
@@ -39,32 +39,21 @@
             />
 
             <!-- 目录浮动按钮 -->
-            <button
-                v-if="tocItems.length"
-                class="toc-fab"
-                @click="showToc = true"
-                title="目录"
-            >
-                <el-icon><List/></el-icon>
+            <button v-if="tocItems.length" class="toc-fab" title="目录" @click="showToc = true">
+                <el-icon><List /></el-icon>
             </button>
         </div>
 
         <div v-else class="page-content">
             <div class="empty-state">
-                <el-icon class="empty-state-icon"><Document/></el-icon>
+                <el-icon class="empty-state-icon"><Document /></el-icon>
                 <p class="empty-state-text">内容不存在或已删除</p>
             </div>
         </div>
     </div>
 
     <!-- 目录抽屉 -->
-    <el-drawer
-        v-model="showToc"
-        direction="rtl"
-        size="70%"
-        title="目录"
-        :with-header="true"
-    >
+    <el-drawer v-model="showToc" direction="rtl" size="70%" title="目录" :with-header="true">
         <div class="toc-list">
             <a
                 v-for="item in tocItems"
@@ -87,7 +76,12 @@ import { Share, Document, List, ChatDotRound } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { marked } from 'marked'
 import hljs from 'highlight.js'
-import { getContent, getComments, createComment, likeComment as likeCommentApi } from '@/api/content'
+import {
+    getContent,
+    getComments,
+    createComment,
+    likeComment as likeCommentApi,
+} from '@/api/content'
 import { getCoverUrl, getAvatarUrl, formatRelativeTime } from '@/utils'
 import { useUserStore } from '@/stores/user'
 import Skeleton from '@/components/Skeleton.vue'
@@ -117,23 +111,24 @@ const tocItems = computed(() => {
 // 配置 marked 渲染器（保持原有逻辑）
 let headingIdCounter = 0
 const renderer = new marked.Renderer()
-renderer.image = ({href, title, text}) => `<img src="${href}" alt="${text || ''}" loading="lazy" />`
-renderer.code = ({text, lang}) => {
+renderer.image = ({ href, title, text }) =>
+    `<img src="${href}" alt="${text || ''}" loading="lazy" />`
+renderer.code = ({ text, lang }) => {
     const code = text || ''
     let language = lang || ''
     let highlighted
     if (language && hljs.getLanguage(language)) {
-        highlighted = hljs.highlight(code, {language}).value
+        highlighted = hljs.highlight(code, { language }).value
     } else {
         highlighted = hljs.highlightAuto(code).value
     }
     return `<pre class="code-block"><code class="hljs language-${language}">${highlighted}</code></pre>`
 }
-renderer.heading = ({text, depth}) => {
+renderer.heading = ({ text, depth }) => {
     const id = `heading-${headingIdCounter++}`
     return `<h${depth} id="${id}">${text}</h${depth}>`
 }
-marked.setOptions({renderer})
+marked.setOptions({ renderer })
 
 // 获取文章详情
 const fetchArticle = async () => {
@@ -143,7 +138,7 @@ const fetchArticle = async () => {
         // 统一响应格式：data.data 才是实际数据
         article.value = data.data || data
         console.log('解析后的 article:', article.value)
-        
+
         if (!article.value) {
             ElMessage.error('文章不存在')
         }
@@ -178,9 +173,9 @@ const handleCommentSubmit = async ({ article, content, parent, reply_to_id }) =>
             article,
             content,
             parent_comment: parent,
-            reply_to: reply_to_id
+            reply_to: reply_to_id,
         })
-        
+
         if (parent) {
             // 添加回复
             const parentComment = comments.value.find(c => c.id === parent)
@@ -193,7 +188,7 @@ const handleCommentSubmit = async ({ article, content, parent, reply_to_id }) =>
             // 添加主评论
             comments.value.unshift(data.data)
         }
-        
+
         ElMessage.success('评论成功')
     } catch (e) {
         console.error(e)
@@ -204,10 +199,10 @@ const handleCommentSubmit = async ({ article, content, parent, reply_to_id }) =>
 // 处理点赞
 const handleCommentLike = async (commentId, parentId = null) => {
     if (!requireAuth('点赞')) return
-    
+
     try {
         await likeCommentApi(commentId)
-        
+
         if (parentId) {
             const parentComment = comments.value.find(c => c.id === parentId)
             if (parentComment?.replies) {
@@ -235,7 +230,7 @@ const shareArticle = () => {
 }
 
 // 滚动到指定标题
-const scrollToHeading = (id) => {
+const scrollToHeading = id => {
     const element = document.getElementById(id)
     if (element) {
         element.scrollIntoView({ behavior: 'smooth', block: 'start' })

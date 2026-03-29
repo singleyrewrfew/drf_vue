@@ -1,13 +1,12 @@
 <template>
-    <router-link
-        :to="`/article/${article.slug || article.id}`"
-        class="feed-card"
-    >
+    <router-link :to="`/article/${article.slug || article.id}`" class="feed-card">
         <div class="feed-header">
             <span class="feed-author-name">{{ article.author_name || '匿名用户' }}</span>
             <span class="feed-dot">·</span>
             <span class="feed-time">{{ formatRelativeTime(article.created_at) }}</span>
-            <span v-if="article.category_name" class="feed-category">{{ article.category_name }}</span>
+            <span v-if="article.category_name" class="feed-category">{{
+                article.category_name
+            }}</span>
         </div>
 
         <div class="feed-body">
@@ -26,32 +25,32 @@
         </div>
 
         <div v-if="showStats" class="feed-footer">
-      <span v-if="article.views_count" class="feed-stat">
-        <el-icon><View/></el-icon>
-        {{ article.views_count }}
-      </span>
+            <span v-if="article.views_count" class="feed-stat">
+                <el-icon><View /></el-icon>
+                {{ article.views_count }}
+            </span>
             <span v-if="article.comments_count" class="feed-stat">
-        <el-icon><ChatDotRound/></el-icon>
-        {{ article.comments_count }}
-      </span>
+                <el-icon><ChatDotRound /></el-icon>
+                {{ article.comments_count }}
+            </span>
             <span v-if="article.likes_count" class="feed-stat">
-        <el-icon><Star/></el-icon>
-        {{ article.likes_count }}
-      </span>
+                <el-icon><Star /></el-icon>
+                {{ article.likes_count }}
+            </span>
         </div>
     </router-link>
 </template>
 
 <script setup>
-import {View, ChatDotRound, Star} from '@element-plus/icons-vue'
-import {getCoverUrl, truncateText, formatRelativeTime} from '@/utils'
+import { View, ChatDotRound, Star } from '@element-plus/icons-vue'
+import { getCoverUrl, truncateText, formatRelativeTime } from '@/utils'
 
 defineProps({
-    article: {type: Object, required: true},
-    showExcerpt: {type: Boolean, default: true},
-    showImage: {type: Boolean, default: true},
-    showStats: {type: Boolean, default: true},
-    excerptLength: {type: Number, default: 100}
+    article: { type: Object, required: true },
+    showExcerpt: { type: Boolean, default: true },
+    showImage: { type: Boolean, default: true },
+    showStats: { type: Boolean, default: true },
+    excerptLength: { type: Number, default: 100 },
 })
 </script>
 

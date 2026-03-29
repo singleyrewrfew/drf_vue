@@ -1,31 +1,27 @@
 <template>
     <div class="page">
-        <PageHeader :title="category?.name || '分类'"/>
+        <PageHeader :title="category?.name || '分类'" />
 
         <div class="page-content">
             <div v-if="loading" class="feed-list">
-                <Skeleton v-for="i in 5" :key="i" type="card-image"/>
+                <Skeleton v-for="i in 5" :key="i" type="card-image" />
             </div>
 
             <template v-else-if="articles.length">
                 <div class="feed-list">
-                    <ArticleCard
-                        v-for="article in articles"
-                        :key="article.id"
-                        :article="article"
-                    />
+                    <ArticleCard v-for="article in articles" :key="article.id" :article="article" />
                 </div>
             </template>
 
-            <EmptyState v-else/>
+            <EmptyState v-else />
         </div>
     </div>
 </template>
 
 <script setup>
-import {ref, onMounted, watch} from 'vue'
-import {useRoute} from 'vue-router'
-import {getCategory, getContents} from '@/api/content'
+import { ref, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { getCategory, getContents } from '@/api/content'
 import Skeleton from '@/components/Skeleton.vue'
 import ArticleCard from '@/components/ArticleCard.vue'
 import EmptyState from '@/components/EmptyState.vue'
@@ -42,7 +38,7 @@ const fetchData = async () => {
         const id = route.params.id_or_slug
         const [categoryRes, articlesRes] = await Promise.all([
             getCategory(id),
-            getContents({category: id, page_size: 20})
+            getContents({ category: id, page_size: 20 }),
         ])
         category.value = categoryRes.data
         articles.value = articlesRes.data.results || articlesRes.data

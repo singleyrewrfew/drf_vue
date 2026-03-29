@@ -3,25 +3,25 @@
         <div class="header-left">
             <button v-if="showBack" class="btn-back" @click="handleBack">
                 <el-icon>
-                    <ArrowLeft/>
+                    <ArrowLeft />
                 </el-icon>
             </button>
-            <slot name="left"/>
+            <slot name="left" />
         </div>
         <h1 class="page-title">{{ title }}</h1>
         <div class="header-right">
-            <slot name="right"/>
+            <slot name="right" />
         </div>
     </header>
 </template>
 
 <script setup>
-import {useRouter} from 'vue-router'
-import {ArrowLeft} from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
+import { ArrowLeft } from '@element-plus/icons-vue'
 
 const props = defineProps({
-    title: {type: String, default: ''},
-    showBack: {type: Boolean, default: true}
+    title: { type: String, default: '' },
+    showBack: { type: Boolean, default: true },
 })
 
 const router = useRouter()

@@ -21,29 +21,29 @@ import hljs from 'highlight.js'
 const props = defineProps({
     content: {
         type: String,
-        required: true
+        required: true,
     },
     tags: {
         type: Array,
-        default: () => []
-    }
+        default: () => [],
+    },
 })
 
 // 配置 marked 渲染器
 let headingIdCounter = 0
 const renderer = new marked.Renderer()
 
-renderer.image = ({href, title, text}) => {
+renderer.image = ({ href, title, text }) => {
     return `<img src="${href}" alt="${text || ''}" loading="lazy" />`
 }
 
-renderer.code = ({text, lang}) => {
+renderer.code = ({ text, lang }) => {
     const code = text || ''
     let language = lang || ''
     let highlighted
 
     if (language && hljs.getLanguage(language)) {
-        highlighted = hljs.highlight(code, {language}).value
+        highlighted = hljs.highlight(code, { language }).value
     } else {
         highlighted = hljs.highlightAuto(code).value
         language = highlighted.language || 'plaintext'
@@ -52,12 +52,12 @@ renderer.code = ({text, lang}) => {
     return `<pre class="code-block"><code class="hljs language-${language}">${highlighted}</code></pre>`
 }
 
-renderer.heading = ({text, depth}) => {
+renderer.heading = ({ text, depth }) => {
     const id = `heading-${headingIdCounter++}`
     return `<h${depth} id="${id}">${text}</h${depth}>`
 }
 
-marked.setOptions({renderer})
+marked.setOptions({ renderer })
 
 const renderedContent = computed(() => {
     if (!props.content) {
@@ -78,14 +78,14 @@ const tocItems = computed(() => {
         items.push({
             level: parseInt(match[1]),
             id: match[2],
-            text: match[3]
+            text: match[3],
         })
     }
     return items
 })
 
 defineExpose({
-    tocItems
+    tocItems,
 })
 </script>
 
@@ -123,14 +123,30 @@ defineExpose({
     color: var(--text-primary);
 }
 
-.markdown-body :deep(h1) { font-size: 20px; }
-.markdown-body :deep(h2) { font-size: 18px; }
-.markdown-body :deep(h3) { font-size: 16px; }
-.markdown-body :deep(h4) { font-size: 15px; }
+.markdown-body :deep(h1) {
+    font-size: 20px;
+}
+.markdown-body :deep(h2) {
+    font-size: 18px;
+}
+.markdown-body :deep(h3) {
+    font-size: 16px;
+}
+.markdown-body :deep(h4) {
+    font-size: 15px;
+}
 
-.markdown-body :deep(p) { margin-bottom: 16px; }
-.markdown-body :deep(a) { color: var(--primary-color); }
-.markdown-body :deep(img) { max-width: 100%; border-radius: var(--radius-md); margin: 12px 0; }
+.markdown-body :deep(p) {
+    margin-bottom: 16px;
+}
+.markdown-body :deep(a) {
+    color: var(--primary-color);
+}
+.markdown-body :deep(img) {
+    max-width: 100%;
+    border-radius: var(--radius-md);
+    margin: 12px 0;
+}
 
 .markdown-body :deep(.code-block) {
     background: #282c34;

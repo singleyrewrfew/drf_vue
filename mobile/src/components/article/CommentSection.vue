@@ -1,7 +1,7 @@
 <template>
     <div class="comment-section">
         <div class="section-title">
-            <el-icon><ChatDotRound/></el-icon>
+            <el-icon><ChatDotRound /></el-icon>
             <span>评论 ({{ comments.length }})</span>
         </div>
 
@@ -24,15 +24,31 @@
                             <el-popover placement="top-start" :width="280" trigger="click">
                                 <template #reference>
                                     <button class="tool-btn">
-                                        <svg width="1.2em" height="1.2em" viewBox="0 0 24 24" fill="currentColor">
-                                            <path d="M14.413 14.223a.785.785 0 0 1 1.45.601A4.174 4.174 0 0 1 12 17.4a4.19 4.19 0 0 1-2.957-1.221 4.174 4.174 0 0 1-.906-1.355.785.785 0 1 1 1.449-.601 2.604 2.604 0 0 0 1.413 1.41 2.621 2.621 0 0 0 2.849-.566c.242-.242.434-.529.565-.844ZM8.6 8.77a1.308 1.308 0 1 1 0 2.615 1.308 1.308 0 0 1 0-2.615ZM15.4 8.77a1.308 1.308 0 1 1 0 2.615 1.308 1.308 0 0 1 0-2.615Z"></path>
-                                            <path fill-rule="evenodd" d="M12 1.573c5.758 0 10.427 4.669 10.427 10.427S17.758 22.427 12 22.427 1.573 17.758 1.573 12 6.242 1.573 12 1.573Zm0 1.746a8.681 8.681 0 1 0 .001 17.362A8.681 8.681 0 0 0 12 3.32Z" clip-rule="evenodd"></path>
+                                        <svg
+                                            width="1.2em"
+                                            height="1.2em"
+                                            viewBox="0 0 24 24"
+                                            fill="currentColor"
+                                        >
+                                            <path
+                                                d="M14.413 14.223a.785.785 0 0 1 1.45.601A4.174 4.174 0 0 1 12 17.4a4.19 4.19 0 0 1-2.957-1.221 4.174 4.174 0 0 1-.906-1.355.785.785 0 1 1 1.449-.601 2.604 2.604 0 0 0 1.413 1.41 2.621 2.621 0 0 0 2.849-.566c.242-.242.434-.529.565-.844ZM8.6 8.77a1.308 1.308 0 1 1 0 2.615 1.308 1.308 0 0 1 0-2.615ZM15.4 8.77a1.308 1.308 0 1 1 0 2.615 1.308 1.308 0 0 1 0-2.615Z"
+                                            ></path>
+                                            <path
+                                                fill-rule="evenodd"
+                                                d="M12 1.573c5.758 0 10.427 4.669 10.427 10.427S17.758 22.427 12 22.427 1.573 17.758 1.573 12 6.242 1.573 12 1.573Zm0 1.746a8.681 8.681 0 1 0 .001 17.362A8.681 8.681 0 0 0 12 3.32Z"
+                                                clip-rule="evenodd"
+                                            ></path>
                                         </svg>
                                     </button>
                                 </template>
                                 <div class="emoji-picker">
                                     <div class="emoji-list">
-                                        <span v-for="emoji in emojis" :key="emoji" class="emoji-item" @click="insertEmoji(emoji)">
+                                        <span
+                                            v-for="emoji in emojis"
+                                            :key="emoji"
+                                            class="emoji-item"
+                                            @click="insertEmoji(emoji)"
+                                        >
                                             {{ emoji }}
                                         </span>
                                     </div>
@@ -60,11 +76,7 @@
 
         <!-- 评论列表 -->
         <div class="comment-list">
-            <div
-                v-for="comment in comments"
-                :key="comment.id"
-                class="comment-item"
-            >
+            <div v-for="comment in comments" :key="comment.id" class="comment-item">
                 <el-avatar :size="40" :src="getAvatarUrl(comment.user_avatar)">
                     {{ comment.user_name?.charAt(0)?.toUpperCase() }}
                 </el-avatar>
@@ -72,7 +84,9 @@
                     <div class="comment-main">
                         <div class="comment-header">
                             <span class="comment-author">{{ comment.user_name }}</span>
-                            <span class="comment-time">{{ formatRelativeTime(comment.created_at) }}</span>
+                            <span class="comment-time">{{
+                                formatRelativeTime(comment.created_at)
+                            }}</span>
                         </div>
                         <p class="comment-text">{{ comment.content }}</p>
                         <div class="comment-actions">
@@ -83,11 +97,11 @@
                                 :class="{ liked: comment.is_liked }"
                                 @click="$emit('like', comment.id)"
                             >
-                                <el-icon><Star/></el-icon>
+                                <el-icon><Star /></el-icon>
                                 <span>{{ comment.like_count ?? '赞' }}</span>
                             </button>
                             <button class="action-btn" @click="openReplyForm(comment)">
-                                <el-icon><ChatDotRound/></el-icon>
+                                <el-icon><ChatDotRound /></el-icon>
                                 <span>回复</span>
                             </button>
                         </div>
@@ -95,7 +109,9 @@
                         <!-- 回复表单 -->
                         <div v-if="replyToParent === comment.id" class="reply-form">
                             <div class="reply-form-header">
-                                <span>回复 <span class="reply-target">@{{ replyToName }}</span></span>
+                                <span
+                                    >回复 <span class="reply-target">@{{ replyToName }}</span></span
+                                >
                                 <button class="cancel-btn" @click="closeReplyForm">取消</button>
                             </div>
                             <textarea
@@ -120,14 +136,27 @@
                         <!-- 回复列表 -->
                         <div v-if="comment.reply_count > 0" class="reply-section">
                             <div class="reply-toggle" @click="toggleReplies(comment.id)">
-                                <span>{{ expandedReplies.includes(comment.id) ? '收起回复' : `${comment.reply_count} 条回复` }}</span>
+                                <span>{{
+                                    expandedReplies.includes(comment.id)
+                                        ? '收起回复'
+                                        : `${comment.reply_count} 条回复`
+                                }}</span>
                                 <el-icon :class="{ rotated: expandedReplies.includes(comment.id) }">
-                                    <ArrowRight/>
+                                    <ArrowRight />
                                 </el-icon>
                             </div>
 
-                            <div v-if="expandedReplies.includes(comment.id) && comment.replies?.length" class="reply-list">
-                                <div v-for="reply in comment.replies" :key="reply.id" class="reply-item">
+                            <div
+                                v-if="
+                                    expandedReplies.includes(comment.id) && comment.replies?.length
+                                "
+                                class="reply-list"
+                            >
+                                <div
+                                    v-for="reply in comment.replies"
+                                    :key="reply.id"
+                                    class="reply-item"
+                                >
                                     <el-avatar :size="28" :src="getAvatarUrl(reply.user_avatar)">
                                         {{ reply.user_name?.charAt(0)?.toUpperCase() }}
                                     </el-avatar>
@@ -135,10 +164,16 @@
                                         <div class="reply-header">
                                             <span class="reply-author">{{ reply.user_name }}</span>
                                             <template v-if="reply.reply_to_name">
-                                                <el-icon class="reply-arrow"><ArrowRight/></el-icon>
-                                                <span class="reply-to-user">{{ reply.reply_to_name }}</span>
+                                                <el-icon class="reply-arrow"
+                                                    ><ArrowRight
+                                                /></el-icon>
+                                                <span class="reply-to-user">{{
+                                                    reply.reply_to_name
+                                                }}</span>
                                             </template>
-                                            <span class="reply-time">{{ formatRelativeTime(reply.created_at) }}</span>
+                                            <span class="reply-time">{{
+                                                formatRelativeTime(reply.created_at)
+                                            }}</span>
                                         </div>
                                         <p class="reply-text">{{ reply.content }}</p>
                                         <div class="reply-actions">
@@ -147,11 +182,14 @@
                                                 :class="{ liked: reply.is_liked }"
                                                 @click="$emit('like', reply.id, comment.id)"
                                             >
-                                                <el-icon><Star/></el-icon>
+                                                <el-icon><Star /></el-icon>
                                                 <span>{{ reply.like_count || '' }}</span>
                                             </button>
-                                            <button class="action-btn small" @click="openReplyForm(reply, comment.id)">
-                                                <el-icon><ChatDotRound/></el-icon>
+                                            <button
+                                                class="action-btn small"
+                                                @click="openReplyForm(reply, comment.id)"
+                                            >
+                                                <el-icon><ChatDotRound /></el-icon>
                                                 <span>回复</span>
                                             </button>
                                         </div>
@@ -162,9 +200,7 @@
                     </div>
                 </div>
             </div>
-            <div v-if="comments.length === 0" class="empty-comments">
-                暂无评论，快来抢沙发吧~
-            </div>
+            <div v-if="comments.length === 0" class="empty-comments">暂无评论，快来抢沙发吧~</div>
         </div>
     </div>
 </template>
@@ -178,20 +214,20 @@ import { useCommentAuth } from '@/composables/useCommentAuth'
 const props = defineProps({
     comments: {
         type: Array,
-        default: () => []
+        default: () => [],
     },
     articleId: {
         type: [String, Number],
-        required: true
+        required: true,
     },
     isLoggedIn: {
         type: Boolean,
-        default: false
+        default: false,
     },
     userAvatar: {
         type: String,
-        default: ''
-    }
+        default: '',
+    },
 })
 
 const emit = defineEmits(['submit', 'like', 'update:comments'])
@@ -211,7 +247,7 @@ const emojis = ['😀', '😂', '😍', '🤔', '👍', '🎉', '❤️', '🔥'
 
 const userInitial = computed(() => props.userAvatar?.charAt(0)?.toUpperCase() || 'U')
 
-const insertEmoji = (emoji) => {
+const insertEmoji = emoji => {
     newCommentText.value += emoji
 }
 
@@ -237,7 +273,7 @@ const closeReplyForm = () => {
     replyContent.value = ''
 }
 
-const toggleReplies = (commentId) => {
+const toggleReplies = commentId => {
     const index = expandedReplies.value.indexOf(commentId)
     if (index > -1) {
         expandedReplies.value.splice(index, 1)
@@ -248,18 +284,18 @@ const toggleReplies = (commentId) => {
 
 const submitComment = async () => {
     if (!newCommentText.value.trim() || submitting.value) return
-    
+
     if (!props.isLoggedIn) {
         requireAuth('评论')
         return
     }
-    
+
     submitting.value = true
     try {
         emit('submit', {
             article: props.articleId,
             content: newCommentText.value.trim(),
-            parent: null
+            parent: null,
         })
         newCommentText.value = ''
     } catch (e) {
@@ -269,21 +305,21 @@ const submitComment = async () => {
     }
 }
 
-const submitReply = async (parentId) => {
+const submitReply = async parentId => {
     if (!replyContent.value.trim() || submittingReply.value) return
-    
+
     if (!props.isLoggedIn) {
         requireAuth('回复')
         return
     }
-    
+
     submittingReply.value = true
     try {
         emit('submit', {
             article: props.articleId,
             content: replyContent.value.trim(),
             parent: parentId,
-            reply_to_id: replyToUserId.value
+            reply_to_id: replyToUserId.value,
         })
         closeReplyForm()
     } catch (e) {
@@ -293,9 +329,13 @@ const submitReply = async (parentId) => {
     }
 }
 
-watch(() => props.comments, () => {
-    // 监听评论变化
-}, { deep: true })
+watch(
+    () => props.comments,
+    () => {
+        // 监听评论变化
+    },
+    { deep: true }
+)
 </script>
 
 <style scoped>

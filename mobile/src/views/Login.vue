@@ -1,7 +1,7 @@
 <template>
     <div class="page">
         <AuthBackground />
-        <PageHeader title="登录"/>
+        <PageHeader title="登录" />
 
         <div class="page-content">
             <div class="login-form">
@@ -46,10 +46,10 @@
 </template>
 
 <script setup>
-import {ref, reactive} from 'vue'
-import {useRouter} from 'vue-router'
-import {ElMessage} from 'element-plus'
-import {useUserStore} from '@/stores/user'
+import { ref, reactive } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import { useUserStore } from '@/stores/user'
 import PageHeader from '@/components/PageHeader.vue'
 import AuthBackground from '@/components/AuthBackground.vue'
 
@@ -59,12 +59,12 @@ const userStore = useUserStore()
 const loading = ref(false)
 const form = reactive({
     username: '',
-    password: ''
+    password: '',
 })
 
 const errors = reactive({
     username: '',
-    password: ''
+    password: '',
 })
 
 const validateUsername = () => {
@@ -97,11 +97,11 @@ const handleLogin = async () => {
     // 先验证所有字段
     const isUsernameValid = validateUsername()
     const isPasswordValid = validatePassword()
-    
+
     if (!isUsernameValid || !isPasswordValid) {
         return
     }
-    
+
     loading.value = true
     try {
         await userStore.login(form)

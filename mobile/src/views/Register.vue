@@ -1,16 +1,12 @@
 <template>
     <div class="page">
         <AuthBackground />
-        <PageHeader title="注册"/>
+        <PageHeader title="注册" />
 
         <div class="page-content">
             <div class="register-form">
                 <div class="form-group">
-                    <input
-                        v-model="form.username"
-                        class="form-input"
-                        placeholder="用户名"
-                    />
+                    <input v-model="form.username" class="form-input" placeholder="用户名" />
                 </div>
 
                 <div class="form-group">
@@ -58,10 +54,10 @@
 </template>
 
 <script setup>
-import {ref, reactive, computed} from 'vue'
-import {useRouter} from 'vue-router'
-import {ElMessage} from 'element-plus'
-import {register} from '@/api/user'
+import { ref, reactive, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import { register } from '@/api/user'
 import PageHeader from '@/components/PageHeader.vue'
 import AuthBackground from '@/components/AuthBackground.vue'
 
@@ -72,7 +68,7 @@ const form = reactive({
     username: '',
     email: '',
     password: '',
-    password2: ''
+    password2: '',
 })
 
 const isFormValid = computed(() => {
@@ -90,7 +86,7 @@ const handleRegister = async () => {
         await register({
             username: form.username,
             email: form.email,
-            password: form.password
+            password: form.password,
         })
         ElMessage.success('注册成功，请登录')
         router.push('/login')

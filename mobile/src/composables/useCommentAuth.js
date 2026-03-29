@@ -7,34 +7,34 @@ import { message } from '@/utils/message'
 import { useRouter } from 'vue-router'
 
 export function useCommentAuth() {
-  const userStore = useUserStore()
-  const router = useRouter()
+    const userStore = useUserStore()
+    const router = useRouter()
 
-  const requireAuth = (action = '操作') => {
-    if (!userStore.isLoggedIn) {
-      message.authRequired(action, () => {
-        router.push('/login')
-      })
-      return false
+    const requireAuth = (action = '操作') => {
+        if (!userStore.isLoggedIn) {
+            message.authRequired(action, () => {
+                router.push('/login')
+            })
+            return false
+        }
+        return true
     }
-    return true
-  }
 
-  const checkLikeAuth = (callback) => {
-    if (requireAuth('点赞')) {
-      callback()
+    const checkLikeAuth = callback => {
+        if (requireAuth('点赞')) {
+            callback()
+        }
     }
-  }
 
-  const checkCommentAuth = (callback) => {
-    if (requireAuth('评论')) {
-      callback()
+    const checkCommentAuth = callback => {
+        if (requireAuth('评论')) {
+            callback()
+        }
     }
-  }
 
-  return {
-    requireAuth,
-    checkLikeAuth,
-    checkCommentAuth
-  }
+    return {
+        requireAuth,
+        checkLikeAuth,
+        checkCommentAuth,
+    }
 }

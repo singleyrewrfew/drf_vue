@@ -1,6 +1,6 @@
 <template>
     <div class="page">
-        <PageHeader title="编辑资料"/>
+        <PageHeader title="编辑资料" />
 
         <div class="page-content">
             <div class="edit-section">
@@ -61,17 +61,21 @@
             </div>
         </div>
 
-        <el-action-sheet v-model="showAvatarOptions" :actions="avatarActions" @select="handleAvatarAction"/>
+        <el-action-sheet
+            v-model="showAvatarOptions"
+            :actions="avatarActions"
+            @select="handleAvatarAction"
+        />
     </div>
 </template>
 
 <script setup>
-import {ref, reactive, onMounted} from 'vue'
-import {useRouter} from 'vue-router'
-import {ElMessage} from 'element-plus'
-import {updateProfile} from '@/api/user'
-import {getAvatarUrl} from '@/utils'
-import {useUserStore} from '@/stores/user'
+import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import { updateProfile } from '@/api/user'
+import { getAvatarUrl } from '@/utils'
+import { useUserStore } from '@/stores/user'
 import PageHeader from '@/components/PageHeader.vue'
 
 const router = useRouter()
@@ -84,16 +88,16 @@ const form = reactive({
     username: '',
     email: '',
     nickname: '',
-    bio: ''
+    bio: '',
 })
 
 const avatarActions = [
-    {name: '拍照', value: 'camera'},
-    {name: '从相册选择', value: 'gallery'},
-    {name: '取消', value: 'cancel'}
+    { name: '拍照', value: 'camera' },
+    { name: '从相册选择', value: 'gallery' },
+    { name: '取消', value: 'cancel' },
 ]
 
-const handleAvatarAction = (action) => {
+const handleAvatarAction = action => {
     if (action.value === 'camera') {
         ElMessage.info('拍照功能开发中')
     } else if (action.value === 'gallery') {

@@ -4,7 +4,7 @@
             <template #right>
                 <button class="btn-icon" @click="$router.push('/search')">
                     <el-icon>
-                        <Search/>
+                        <Search />
                     </el-icon>
                 </button>
             </template>
@@ -12,22 +12,18 @@
 
         <div class="page-content">
             <div v-if="loading && !articles.length" class="feed-list">
-                <Skeleton v-for="i in 5" :key="i" type="card-image"/>
+                <Skeleton v-for="i in 5" :key="i" type="card-image" />
             </div>
 
             <template v-else-if="articles.length">
                 <div class="feed-list">
-                    <ArticleCard
-                        v-for="article in articles"
-                        :key="article.id"
-                        :article="article"
-                    />
+                    <ArticleCard v-for="article in articles" :key="article.id" :article="article" />
                 </div>
 
                 <div v-if="hasMore" class="loading-more">
                     <template v-if="loadingMore">
                         <el-icon class="loading-icon">
-                            <Loading/>
+                            <Loading />
                         </el-icon>
                         <span>加载中...</span>
                     </template>
@@ -37,15 +33,15 @@
                 </div>
             </template>
 
-            <EmptyState v-else/>
+            <EmptyState v-else />
         </div>
     </div>
 </template>
 
 <script setup>
-import {ref, onMounted} from 'vue'
-import {Search, Loading} from '@element-plus/icons-vue'
-import {getContents} from '@/api/content'
+import { ref, onMounted } from 'vue'
+import { Search, Loading } from '@element-plus/icons-vue'
+import { getContents } from '@/api/content'
 import Skeleton from '@/components/Skeleton.vue'
 import ArticleCard from '@/components/ArticleCard.vue'
 import EmptyState from '@/components/EmptyState.vue'
@@ -62,7 +58,7 @@ const fetchArticles = async (isLoadMore = false) => {
     else loading.value = true
 
     try {
-        const {data} = await getContents({page: page.value, page_size: 10})
+        const { data } = await getContents({ page: page.value, page_size: 10 })
         const results = data.results || data
         articles.value = isLoadMore ? [...articles.value, ...results] : results
         hasMore.value = data.next || results.length >= 10

@@ -9,7 +9,7 @@
                     <span class="comment-author">{{ comment.user_name }}</span>
                     <template v-if="comment.reply_to_name && showReplyTo">
                         <el-icon class="reply-arrow">
-                            <ArrowRight/>
+                            <ArrowRight />
                         </el-icon>
                         <span class="reply-to-user">{{ comment.reply_to_name }}</span>
                     </template>
@@ -23,7 +23,7 @@
                         @click="$emit('like', comment.id)"
                     >
                         <el-icon>
-                            <Star/>
+                            <Star />
                         </el-icon>
                         <span>{{ comment.like_count || '' }}</span>
                     </button>
@@ -33,26 +33,26 @@
                         @click="$emit('reply', comment)"
                     >
                         <el-icon>
-                            <ChatDotRound/>
+                            <ChatDotRound />
                         </el-icon>
                         <span>回复</span>
                     </button>
                 </div>
-                <slot name="reply-form"/>
-                <slot name="replies"/>
+                <slot name="reply-form" />
+                <slot name="replies" />
             </div>
         </div>
     </div>
 </template>
 
 <script setup>
-import {Star, ChatDotRound, ArrowRight} from '@element-plus/icons-vue'
-import {getAvatarUrl, formatRelativeTime} from '@/utils'
+import { Star, ChatDotRound, ArrowRight } from '@element-plus/icons-vue'
+import { getAvatarUrl, formatRelativeTime } from '@/utils'
 
 const props = defineProps({
-    comment: {type: Object, required: true},
-    isReply: {type: Boolean, default: false},
-    showReplyTo: {type: Boolean, default: false}
+    comment: { type: Object, required: true },
+    isReply: { type: Boolean, default: false },
+    showReplyTo: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['like', 'reply'])

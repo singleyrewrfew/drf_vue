@@ -4,14 +4,14 @@
             <template #left>
                 <button class="btn-back" @click="$router.back()">
                     <el-icon>
-                        <ArrowLeft/>
+                        <ArrowLeft />
                     </el-icon>
                 </button>
             </template>
             <template #default>
                 <div class="search-bar">
                     <el-icon class="search-bar-icon">
-                        <Search/>
+                        <Search />
                     </el-icon>
                     <input
                         v-model="keyword"
@@ -21,7 +21,7 @@
                     />
                     <button v-if="keyword" class="clear-btn" @click="handleClear">
                         <el-icon>
-                            <Close/>
+                            <Close />
                         </el-icon>
                     </button>
                 </div>
@@ -30,19 +30,15 @@
 
         <div class="page-content">
             <div v-if="loading" class="feed-list">
-                <Skeleton v-for="i in 5" :key="i" type="card-image"/>
+                <Skeleton v-for="i in 5" :key="i" type="card-image" />
             </div>
 
             <template v-else-if="searched">
                 <div v-if="results.length" class="feed-list">
-                    <ArticleCard
-                        v-for="article in results"
-                        :key="article.id"
-                        :article="article"
-                    />
+                    <ArticleCard v-for="article in results" :key="article.id" :article="article" />
                 </div>
 
-                <EmptyState v-else icon="Search" text="没有找到相关内容" hint="换个关键词试试"/>
+                <EmptyState v-else icon="Search" text="没有找到相关内容" hint="换个关键词试试" />
             </template>
 
             <div v-else class="search-suggest">
@@ -63,10 +59,10 @@
 </template>
 
 <script setup>
-import {ref, onMounted} from 'vue'
-import {useRoute, useRouter} from 'vue-router'
-import {ArrowLeft, Search, Close} from '@element-plus/icons-vue'
-import {searchContents} from '@/api/content'
+import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ArrowLeft, Search, Close } from '@element-plus/icons-vue'
+import { searchContents } from '@/api/content'
 import Skeleton from '@/components/Skeleton.vue'
 import ArticleCard from '@/components/ArticleCard.vue'
 import EmptyState from '@/components/EmptyState.vue'
@@ -89,9 +85,9 @@ const handleSearch = async () => {
     searched.value = true
 
     try {
-        const {data} = await searchContents(keyword.value)
+        const { data } = await searchContents(keyword.value)
         results.value = data.results || data
-        router.replace({query: {q: keyword.value}})
+        router.replace({ query: { q: keyword.value } })
     } catch (e) {
         console.error(e)
     } finally {
@@ -103,10 +99,10 @@ const handleClear = () => {
     keyword.value = ''
     results.value = []
     searched.value = false
-    router.replace({query: {}})
+    router.replace({ query: {} })
 }
 
-const searchTag = (tag) => {
+const searchTag = tag => {
     keyword.value = tag
     handleSearch()
 }

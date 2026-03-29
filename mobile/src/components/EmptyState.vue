@@ -1,21 +1,21 @@
 <template>
     <div class="empty-state">
         <el-icon class="empty-state-icon">
-            <component :is="icon"/>
+            <component :is="icon" />
         </el-icon>
         <p class="empty-state-text">{{ text }}</p>
         <p v-if="hint" class="empty-state-hint">{{ hint }}</p>
-        <slot/>
+        <slot />
     </div>
 </template>
 
 <script setup>
-import {Document} from '@element-plus/icons-vue'
+import { Document } from '@element-plus/icons-vue'
 
 defineProps({
-    icon: {type: [Object, String], default: Document},
-    text: {type: String, default: '暂无内容'},
-    hint: {type: String, default: ''}
+    icon: { type: [Object, String], default: Document },
+    text: { type: String, default: '暂无内容' },
+    hint: { type: String, default: '' },
 })
 </script>
 

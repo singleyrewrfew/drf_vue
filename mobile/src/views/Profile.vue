@@ -6,8 +6,8 @@
             <div class="header-right">
                 <button class="btn-icon" @click="themeStore.toggleTheme()">
                     <el-icon>
-                        <Sunny v-if="themeStore.theme === 'dark'"/>
-                        <Moon v-else/>
+                        <Sunny v-if="themeStore.theme === 'dark'" />
+                        <Moon v-else />
                     </el-icon>
                 </button>
             </div>
@@ -28,7 +28,7 @@
             <div v-else class="user-card">
                 <el-avatar :size="64">
                     <el-icon>
-                        <User/>
+                        <User />
                     </el-icon>
                 </el-avatar>
                 <div class="user-info">
@@ -41,21 +41,21 @@
             <div class="menu-group">
                 <router-link to="/profile/edit" class="menu-item">
                     <el-icon class="menu-icon">
-                        <User/>
+                        <User />
                     </el-icon>
                     <span class="menu-label">个人资料</span>
                     <el-icon class="menu-arrow">
-                        <ArrowRight/>
+                        <ArrowRight />
                     </el-icon>
                 </router-link>
             </div>
 
             <div v-if="userStore.isLoggedIn" class="menu-group">
                 <button class="menu-item" @click="handleLogout">
-                    <el-icon class="menu-icon" style="color: var(--danger-color);">
-                        <SwitchButton/>
+                    <el-icon class="menu-icon" style="color: var(--danger-color)">
+                        <SwitchButton />
                     </el-icon>
-                    <span class="menu-label" style="color: var(--danger-color);">退出登录</span>
+                    <span class="menu-label" style="color: var(--danger-color)">退出登录</span>
                 </button>
             </div>
 
@@ -65,12 +65,12 @@
 </template>
 
 <script setup>
-import {useRouter} from 'vue-router'
-import {ElMessageBox} from 'element-plus'
-import {User, ArrowRight, SwitchButton, Sunny, Moon} from '@element-plus/icons-vue'
-import {useUserStore} from '@/stores/user'
-import {useThemeStore} from '@/stores/theme'
-import {getAvatarUrl} from '@/utils'
+import { useRouter } from 'vue-router'
+import { ElMessageBox } from 'element-plus'
+import { User, ArrowRight, SwitchButton, Sunny, Moon } from '@element-plus/icons-vue'
+import { useUserStore } from '@/stores/user'
+import { useThemeStore } from '@/stores/theme'
+import { getAvatarUrl } from '@/utils'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -81,7 +81,7 @@ const handleLogout = async () => {
         await ElMessageBox.confirm('确定要退出登录吗？', '提示', {
             confirmButtonText: '确定',
             cancelButtonText: '取消',
-            type: 'warning'
+            type: 'warning',
         })
         await userStore.logout()
         router.push('/')

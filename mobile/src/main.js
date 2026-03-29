@@ -12,7 +12,7 @@ import './assets/styles/main.css'
 const savedTheme = localStorage.getItem('mobile_theme') || 'light'
 document.documentElement.setAttribute('data-theme', savedTheme)
 if (savedTheme === 'dark') {
-  document.documentElement.classList.add('dark')
+    document.documentElement.classList.add('dark')
 }
 
 const app = createApp(App)

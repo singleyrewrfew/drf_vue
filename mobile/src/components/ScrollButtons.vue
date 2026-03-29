@@ -1,21 +1,21 @@
 <template>
-    <div class="scroll-buttons" v-show="visible">
-        <button class="scroll-btn" @click="scrollToTop" title="回到顶部">
+    <div v-show="visible" class="scroll-buttons">
+        <button class="scroll-btn" title="回到顶部" @click="scrollToTop">
             <el-icon>
-                <ArrowUp/>
+                <ArrowUp />
             </el-icon>
         </button>
-        <button class="scroll-btn" @click="scrollToBottom" title="滚动到底部">
+        <button class="scroll-btn" title="滚动到底部" @click="scrollToBottom">
             <el-icon>
-                <ArrowDown/>
+                <ArrowDown />
             </el-icon>
         </button>
     </div>
 </template>
 
 <script setup>
-import {ref, onMounted, onUnmounted} from 'vue'
-import {ArrowUp, ArrowDown} from '@element-plus/icons-vue'
+import { ref, onMounted, onUnmounted } from 'vue'
+import { ArrowUp, ArrowDown } from '@element-plus/icons-vue'
 
 const visible = ref(false)
 
@@ -34,12 +34,12 @@ const checkScroll = () => {
 
 const scrollToTop = () => {
     const el = findScrollElement()
-    el.scrollTo({top: 0, behavior: 'smooth'})
+    el.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 const scrollToBottom = () => {
     const el = findScrollElement()
-    el.scrollTo({top: el.scrollHeight, behavior: 'smooth'})
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
 }
 
 onMounted(() => {
@@ -86,7 +86,7 @@ onUnmounted(() => {
 }
 
 :global(.dark) .scroll-btn,
-:global([data-theme="dark"]) .scroll-btn {
+:global([data-theme='dark']) .scroll-btn {
     background: var(--bg-tertiary);
     color: var(--text-secondary);
 }

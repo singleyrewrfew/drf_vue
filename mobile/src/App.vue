@@ -2,14 +2,13 @@
     <div class="mobile-app">
         <router-view v-slot="{ Component }">
             <transition name="fade-slide" mode="out-in">
-                <component :is="Component"/>
+                <component :is="Component" />
             </transition>
         </router-view>
     </div>
 </template>
 
-<script setup>
-</script>
+<script setup></script>
 
 <style>
 .mobile-app {

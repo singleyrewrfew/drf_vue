@@ -4,14 +4,14 @@
             <h1 class="logo">CMS</h1>
             <div class="search-bar" @click="$router.push('/search')">
                 <el-icon class="search-bar-icon">
-                    <Search/>
+                    <Search />
                 </el-icon>
                 <span class="search-placeholder">搜索文章内容</span>
             </div>
             <button class="btn-icon" @click="themeStore.toggleTheme()">
                 <el-icon>
-                    <Sunny v-if="themeStore.theme === 'dark'"/>
-                    <Moon v-else/>
+                    <Sunny v-if="themeStore.theme === 'dark'" />
+                    <Moon v-else />
                 </el-icon>
             </button>
         </header>
@@ -30,27 +30,24 @@
 
         <div class="page-content">
             <div v-if="loading" class="feed-list">
-                <Skeleton v-for="i in 5" :key="i" type="card-image"/>
+                <Skeleton v-for="i in 5" :key="i" type="card-image" />
             </div>
 
             <div v-else-if="articles.length" class="feed-list">
-                <ArticleCard
-                    v-for="article in articles"
-                    :key="article.id"
-                    :article="article"
-                />
+                <ArticleCard v-for="article in articles" :key="article.id" :article="article" />
             </div>
 
-            <EmptyState v-else/>
+            <EmptyState v-else />
         </div>
     </div>
 </template>
 
 <script setup>
-import {ref, onMounted, watch} from 'vue'
-import {Search, Sunny, Moon} from '@element-plus/icons-vue'
-import {getContents} from '@/api/content'
-import {useThemeStore} from '@/stores/theme'
+import { ref, onMounted, watch } from 'vue'
+import { Search, Sunny, Moon } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import { getContents } from '@/api/content'
+import { useThemeStore } from '@/stores/theme'
 import Skeleton from '@/components/Skeleton.vue'
 import ArticleCard from '@/components/ArticleCard.vue'
 import EmptyState from '@/components/EmptyState.vue'
@@ -58,8 +55,8 @@ import EmptyState from '@/components/EmptyState.vue'
 const themeStore = useThemeStore()
 
 const tabs = [
-    {key: 'recommend', label: '推荐'},
-    {key: 'hot', label: '热门'},
+    { key: 'recommend', label: '推荐' },
+    { key: 'hot', label: '热门' },
 ]
 
 const activeTab = ref('recommend')
@@ -69,11 +66,11 @@ const articles = ref([])
 const fetchArticles = async () => {
     loading.value = true
     try {
-        const params = {page_size: 10}
+        const params = { page_size: 10 }
         if (activeTab.value === 'hot') {
             params.ordering = '-views_count'
         }
-        const {data} = await getContents(params)
+        const { data } = await getContents(params)
         articles.value = data.results || data
     } catch (e) {
         console.error(e)
@@ -85,7 +82,7 @@ const fetchArticles = async () => {
             showClose: true,
             onClose: () => {
                 // 用户关闭后可以手动刷新页面
-            }
+            },
         })
     } finally {
         loading.value = false

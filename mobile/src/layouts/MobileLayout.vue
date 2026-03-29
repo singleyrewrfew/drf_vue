@@ -2,11 +2,11 @@
     <div class="mobile-layout">
         <router-view v-slot="{ Component }">
             <keep-alive :include="['Home', 'Articles', 'Profile']">
-                <component :is="Component"/>
+                <component :is="Component" />
             </keep-alive>
         </router-view>
 
-        <ScrollButtons/>
+        <ScrollButtons />
 
         <nav v-if="showTabBar" class="bottom-nav">
             <router-link
@@ -17,7 +17,7 @@
                 :class="{ active: isActive(item.path) }"
             >
                 <el-icon class="nav-icon">
-                    <component :is="item.icon"/>
+                    <component :is="item.icon" />
                 </el-icon>
                 <span class="nav-label">{{ item.label }}</span>
             </router-link>
@@ -26,9 +26,9 @@
 </template>
 
 <script setup>
-import {computed} from 'vue'
-import {useRoute} from 'vue-router'
-import {HomeFilled, Document, User} from '@element-plus/icons-vue'
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import { HomeFilled, Document, User } from '@element-plus/icons-vue'
 import ScrollButtons from '@/components/ScrollButtons.vue'
 
 const route = useRoute()
@@ -36,12 +36,12 @@ const route = useRoute()
 const showTabBar = computed(() => route.meta.showTabBar !== false)
 
 const tabItems = [
-    {path: '/', label: '首页', icon: HomeFilled},
-    {path: '/articles', label: '发现', icon: Document},
-    {path: '/profile', label: '我的', icon: User},
+    { path: '/', label: '首页', icon: HomeFilled },
+    { path: '/articles', label: '发现', icon: Document },
+    { path: '/profile', label: '我的', icon: User },
 ]
 
-const isActive = (path) => {
+const isActive = path => {
     if (path === '/') return route.path === '/'
     return route.path.startsWith(path)
 }
