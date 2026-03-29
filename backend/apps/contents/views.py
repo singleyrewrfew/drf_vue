@@ -7,6 +7,7 @@ from rest_framework.response import Response
 
 from apps.users.permissions import IsEditorUser, IsOwnerOrAdmin
 from utils.mixins import SlugOrUUIDMixin
+from utils.response import StandardResponse, api_error
 from .models import Content
 from .serializers import ContentCreateUpdateSerializer, ContentListSerializer, ContentSerializer
 
@@ -127,7 +128,7 @@ class ContentViewSet(SlugOrUUIDMixin, viewsets.ModelViewSet):
         instance = self.get_object()
         instance.increment_view_count()
         serializer = self.get_serializer(instance)
-        return Response(serializer.data)
+        return StandardResponse(serializer.data)
 
     @extend_schema(request=None, responses=ContentSerializer)
     @action(detail=True, methods=['post'])
@@ -151,11 +152,15 @@ class ContentViewSet(SlugOrUUIDMixin, viewsets.ModelViewSet):
         """
         content = self.get_object()
         if content.status == 'published':
-            return Response({'message': '内容已发布'}, status=status.HTTP_400_BAD_REQUEST)
+            return api_error(
+                message='内容已发布',
+                error_type='bad_request',
+                status=status.HTTP_400_BAD_REQUEST
+            )
         content.status = 'published'
         content.published_at = timezone.now()
         content.save()
-        return Response(ContentSerializer(content).data)
+        return StandardResponse(ContentSerializer(content).data)
 
     @extend_schema(request=None, responses=ContentSerializer)
     @action(detail=True, methods=['post'])
@@ -178,7 +183,7 @@ class ContentViewSet(SlugOrUUIDMixin, viewsets.ModelViewSet):
         content = self.get_object()
         content.status = 'archived'
         content.save()
-        return Response(ContentSerializer(content).data)
+        return StandardResponse(ContentSerializer(content).data)
 
     def get_queryset(self):
         """
@@ -258,6 +263,34 @@ class ContentViewSet(SlugOrUUIDMixin, viewsets.ModelViewSet):
         
         return queryset
 
+    def list(self, request, *args, **kwargs):
+        """
+        获取内容列表（统一响应格式）
+        
+        重写父类方法以使用统一的响应格式。
+        
+        Args:
+            request: HTTP 请求对象
+            *args: 位置参数
+            **kwargs: 关键字参数
+        
+        Returns:
+            Response: 包含分页数据的统一格式响应，HTTP 状态码为 200
+        
+        Raises:
+            无
+        """
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            paginated_data = self.get_paginated_response(serializer.data).data
+            return StandardResponse(paginated_data)
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return StandardResponse(serializer.data)
+
     @extend_schema(request=None, responses=ContentSerializer)
     @action(detail=True, methods=['post'])
     def upload_cover(self, request, pk=None):
@@ -278,18 +311,30 @@ class ContentViewSet(SlugOrUUIDMixin, viewsets.ModelViewSet):
             无
         """
         if 'file' not in request.FILES:
-            return Response({'error': '请上传文件'}, status=status.HTTP_400_BAD_REQUEST)
+            return api_error(
+                message='请上传文件',
+                error_type='bad_request',
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
         file = request.FILES['file']
         
         # 验证文件类型
         allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
         if file.content_type not in allowed_types:
-            return Response({'error': '只支持 JPG/PNG/GIF/WEBP 格式的图片'}, status=status.HTTP_400_BAD_REQUEST)
+            return api_error(
+                message='只支持 JPG/PNG/GIF/WEBP 格式的图片',
+                error_type='unsupported_media_type',
+                status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE
+            )
         
         # 验证文件大小（最大 10MB）
         if file.size > 10 * 1024 * 1024:
-            return Response({'error': '图片大小不能超过 10MB'}, status=status.HTTP_400_BAD_REQUEST)
+            return api_error(
+                message='图片大小不能超过 10MB',
+                error_type='payload_too_large',
+                status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
+            )
         
         # 保存文件到 covers/ 目录
         from django.core.files.storage import default_storage
@@ -305,7 +350,7 @@ class ContentViewSet(SlugOrUUIDMixin, viewsets.ModelViewSet):
         # 返回文件 URL
         file_url = f'/media/covers/{filename}'
         
-        return Response({
+        return api_response({
             'url': file_url,
             'filename': filename
-        }, status=status.HTTP_201_CREATED)
+        }, message='封面图上传成功', status=status.HTTP_201_CREATED)

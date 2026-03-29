@@ -1,1 +1,0 @@
-import{W as n}from"./index-BfWl2eKD.js";const o=t=>n.get("/contents/",{params:t}),c=t=>n.get(`/contents/${t}/`),a=t=>n.post("/contents/",t),p=(t,e)=>n.put(`/contents/${t}/`,e),C=t=>n.delete(`/contents/${t}/`),g=t=>n.post(`/contents/${t}/publish/`);export{c as a,a as c,C as d,o as g,g as p,p as u};

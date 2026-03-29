@@ -25,10 +25,39 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => {
+    // 统一处理 API 响应格式
+    // 后端返回格式：{ code, message, data, error? }
+    const responseData = response.data
+    
+    // 如果是统一格式（包含 code 和 data 字段）
+    if (responseData && typeof responseData.code !== 'undefined' && 'data' in responseData) {
+      // 成功响应（code 为 0）
+      if (responseData.code === 0) {
+        // 将实际数据挂载到 response.data，方便使用
+        response.data = responseData.data
+        return response
+      } else {
+        // 错误响应，抛出错误
+        const error = new Error(responseData.message || '请求失败')
+        error.response = {
+          status: response.status,
+          data: responseData
+        }
+        return Promise.reject(error)
+      }
+    }
+    
+    // 如果不是统一格式，直接返回（兼容旧接口）
     return response
   },
   async (error) => {
     const userStore = useUserStore()
+    
+    // 统一处理 API 错误
+    const errorMessage = error.response?.data?.message || 
+                        error.response?.data?.detail || 
+                        error.message ||
+                        '请求失败，请稍后重试'
     
     if (error.response?.status === 401) {
       // 未授权，清除登录状态并跳转
@@ -60,7 +89,17 @@ api.interceptors.response.use(
           }
         }
       }
+    } else if (error.response?.data?.error) {
+      // 后端返回的业务错误，由调用方处理
+      console.error('API Error:', errorMessage)
+    } else if (error.response?.status === 500) {
+      console.error('Server Error:', errorMessage)
+    } else if (error.code === 'ECONNABORTED') {
+      console.error('Request Timeout:', errorMessage)
+    } else {
+      console.error('Unknown Error:', errorMessage)
     }
+    
     return Promise.reject(error)
   }
 )

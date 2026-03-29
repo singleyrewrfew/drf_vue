@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 
 from apps.users.permissions import IsOwnerOrAdmin
+from utils.response import StandardResponse
 
 from .models import Media
 from .serializers import MediaSerializer, MediaUploadSerializer
@@ -201,7 +202,7 @@ class MediaViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
-        return Response(MediaSerializer(serializer.instance).data, status=status.HTTP_201_CREATED)
+        return StandardResponse(MediaSerializer(serializer.instance).data, status=status.HTTP_201_CREATED)
 
     def get_queryset(self):
         """
@@ -224,6 +225,36 @@ class MediaViewSet(viewsets.ModelViewSet):
         if file_type:
             queryset = queryset.filter(file_type__startswith=file_type)
         return queryset
+
+    def list(self, request, *args, **kwargs):
+        """
+        获取媒体列表（统一响应格式）
+        
+        重写父类方法以使用统一的响应格式。
+        
+        Args:
+            request: HTTP 请求对象
+            *args: 位置参数
+            **kwargs: 关键字参数
+        
+        Returns:
+            Response: 包含分页数据的统一格式响应，HTTP 状态码为 200
+        
+        Raises:
+            无
+        """
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            # DRF 分页器会自动包装成 {count, next, previous, results}
+            # 我们需要再次包装成统一格式
+            paginated_data = self.get_paginated_response(serializer.data).data
+            return StandardResponse(paginated_data)
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return StandardResponse(serializer.data)
 
     @extend_schema(exclude=True)
     def retrieve(self, request, *args, **kwargs):

@@ -30,10 +30,12 @@
                 :comment="comment"
                 :is-replying="replyToParent === comment.id"
                 :reply-content="replyContent"
+                :reply-to-name="replyToName"
                 @like="handleLike"
                 @reply="openReplyForm"
                 @submit-reply="submitReply"
                 @toggle-replies="toggleReplies"
+                @close-reply="closeReplyForm"
             />
             
             <!-- 查看更多 -->
@@ -65,10 +67,12 @@
                     :comment="comment"
                     :is-replying="replyToParent === comment.id"
                     :reply-content="replyContent"
+                    :reply-to-name="replyToName"
                     @like="handleLike"
                     @reply="openReplyForm"
                     @submit-reply="submitReply"
                     @toggle-replies="toggleReplies"
+                    @close-reply="closeReplyForm"
                 />
             </div>
         </el-dialog>

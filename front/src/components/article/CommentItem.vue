@@ -128,6 +128,10 @@
 import { computed, ref } from 'vue'
 import { Pointer, ChatDotRound, ArrowRight } from '@element-plus/icons-vue'
 import { getAvatarUrl } from '@/utils'
+import { useUserStore } from '@/stores/user'
+import { ElMessage } from 'element-plus'
+
+const userStore = useUserStore()
 
 const props = defineProps({
     comment: {
@@ -142,10 +146,14 @@ const props = defineProps({
     replyContent: {
         type: String,
         default: ''
+    },
+    replyToName: {
+        type: String,
+        default: ''
     }
 })
 
-const emit = defineEmits(['like', 'reply', 'submit-reply', 'toggle-replies', 'close-reply'])
+const emit = defineEmits(['like', 'reply', 'submit-reply', 'toggle-replies', 'close-reply', 'update:reply-content'])
 
 const replyContentLocal = computed({
     get: () => props.replyContent,
@@ -195,10 +203,18 @@ const formatRelativeTime = (dateStr) => {
 }
 
 const handleLike = () => {
+    if (!userStore.isLoggedIn) {
+        ElMessage.warning('登录后才能点赞哦~')
+        return
+    }
     emit('like', props.comment)
 }
 
 const handleReply = () => {
+    if (!userStore.isLoggedIn) {
+        ElMessage.warning('登录后才能评论哦~')
+        return
+    }
     emit('reply', props.comment.id, props.comment.user_name, props.comment.user)
 }
 
@@ -212,6 +228,10 @@ const handleToggleReplies = () => {
 }
 
 const handleReplyToReply = (reply) => {
+    if (!userStore.isLoggedIn) {
+        ElMessage.warning('登录后才能评论哦~')
+        return
+    }
     emit('reply', props.comment.id, reply.user_name, reply.user_id)
 }
 </script>

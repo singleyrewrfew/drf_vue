@@ -19,8 +19,39 @@ api.interceptors.request.use(
 )
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // 统一处理 API 响应格式
+    // 后端返回格式：{ code, message, data, error? }
+    const responseData = response.data
+    
+    // 如果是统一格式（包含 code 和 data 字段）
+    if (responseData && typeof responseData.code !== 'undefined' && 'data' in responseData) {
+      // 成功响应（code 为 0）
+      if (responseData.code === 0) {
+        // 将实际数据挂载到 response.data，方便使用
+        response.data = responseData.data
+        return response
+      } else {
+        // 错误响应，抛出错误
+        const error = new Error(responseData.message || '请求失败')
+        error.response = {
+          status: response.status,
+          data: responseData
+        }
+        return Promise.reject(error)
+      }
+    }
+    
+    // 如果不是统一格式，直接返回（兼容旧接口）
+    return response
+  },
   (error) => {
+    // 统一处理 API 错误
+    const errorMessage = error.response?.data?.message || 
+                        error.response?.data?.detail || 
+                        error.message ||
+                        '请求失败，请稍后重试'
+    
     if (error.response?.status === 401) {
       localStorage.removeItem('mobile_token')
       localStorage.removeItem('mobile_user')
@@ -35,11 +66,17 @@ api.interceptors.response.use(
       ElMessage.error('没有权限访问')
     } else if (error.response?.status === 404) {
       ElMessage.error('请求的资源不存在')
+    } else if (error.response?.data?.error) {
+      // 后端返回的业务错误
+      ElMessage.error(errorMessage)
     } else if (error.response?.status === 500) {
       ElMessage.error('服务器错误，请稍后重试')
     } else if (error.code === 'ECONNABORTED') {
       ElMessage.error('请求超时，请稍后重试')
+    } else {
+      ElMessage.error(errorMessage)
     }
+    
     return Promise.reject(error)
   }
 )

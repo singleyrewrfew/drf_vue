@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnl
 from rest_framework.response import Response
 
 from apps.users.permissions import IsEditorUser, IsOwnerOrAdmin
+from utils.response import StandardResponse
 
 from .models import Comment, CommentLike
 from .serializers import CommentCreateSerializer, CommentListSerializer, CommentSerializer
@@ -147,6 +148,32 @@ class CommentViewSet(viewsets.ModelViewSet):
                 queryset = queryset.filter(is_approved=is_approved.lower() == 'true')
         return queryset
 
+    def list(self, request, *args, **kwargs):
+        """
+        获取评论列表（统一响应格式）
+        
+        Args:
+            request: HTTP 请求对象
+            *args: 位置参数
+            **kwargs: 关键字参数
+        
+        Returns:
+            Response: 包含分页数据的统一格式响应，HTTP 状态码为 200
+        
+        Raises:
+            无
+        """
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            paginated_data = self.get_paginated_response(serializer.data).data
+            return StandardResponse(paginated_data)
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return StandardResponse(serializer.data)
+
     @extend_schema(request=None, responses=CommentSerializer)
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
@@ -168,7 +195,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         comment = self.get_object()
         comment.is_approved = True
         comment.save()
-        return Response(CommentSerializer(comment).data)
+        return StandardResponse(CommentSerializer(comment).data)
 
     @extend_schema(request=None, responses=CommentSerializer)
     @action(detail=True, methods=['post'])
@@ -201,4 +228,4 @@ class CommentViewSet(viewsets.ModelViewSet):
             like.delete()
             comment.like_count -= 1
             comment.save(update_fields=['like_count'])
-        return Response(CommentSerializer(comment, context={'request': request}).data)
+        return StandardResponse(CommentSerializer(comment, context={'request': request}).data)

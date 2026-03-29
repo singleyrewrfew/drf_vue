@@ -77,6 +77,16 @@ const fetchArticles = async () => {
         articles.value = data.results || data
     } catch (e) {
         console.error(e)
+        // 显示错误提示和重试按钮
+        ElMessage({
+            message: '加载失败，请检查网络连接',
+            type: 'error',
+            duration: 3000,
+            showClose: true,
+            onClose: () => {
+                // 用户关闭后可以手动刷新页面
+            }
+        })
     } finally {
         loading.value = false
     }

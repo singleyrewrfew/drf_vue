@@ -63,8 +63,9 @@
               <textarea
                   v-model="newCommentText"
                   class="comment-textarea"
-                  placeholder="理性发言，友善互动..."
+                  placeholder="理性发言，友善互动...（最多 500 字）"
                   rows="3"
+                  maxlength="500"
               ></textarea>
                             <div class="comment-form-footer">
                                 <div class="comment-form-tools">
@@ -129,7 +130,7 @@
                                     <button
                                         class="action-btn"
                                         :class="{ liked: comment.is_liked }"
-                                        @click="likeComment(comment.id)"
+                                        @click="checkLoginAndLike(comment.id)"
                                     >
                                         <el-icon>
                                             <Star/>
@@ -137,7 +138,7 @@
                                         <span>{{ comment.like_count || '' }}</span>
                                     </button>
                                     <button class="action-btn"
-                                            @click="openReplyForm(comment.id, comment.user_name, comment.user_id)">
+                                            @click="checkLoginAndReply(comment.id, comment.user_name, comment.user_id)">
                                         <el-icon>
                                             <ChatDotRound/>
                                         </el-icon>
@@ -153,8 +154,9 @@
                                     <textarea
                                         v-model="replyContent"
                                         class="reply-textarea"
-                                        placeholder="写下你的回复..."
+                                        placeholder="写下你的回复...（最多 500 字）"
                                         rows="2"
+                                        maxlength="500"
                                     ></textarea>
                                     <div class="reply-form-footer">
                                         <span class="char-count">{{ replyContent.length }}/500</span>
@@ -205,7 +207,7 @@
                                                     <button
                                                         class="action-btn small"
                                                         :class="{ liked: reply.is_liked }"
-                                                        @click="likeComment(reply.id, comment.id)"
+                                                        @click="checkLoginAndLike(reply.id, comment.id)"
                                                     >
                                                         <el-icon>
                                                             <Star/>
@@ -213,7 +215,7 @@
                                                         <span>{{ reply.like_count || '' }}</span>
                                                     </button>
                                                     <button class="action-btn small"
-                                                            @click="openReplyForm(comment.id, reply.user_name, reply.user_id)">
+                                                            @click="checkLoginAndReply(comment.id, reply.user_name, reply.user_id)">
                                                         <el-icon>
                                                             <ChatDotRound/>
                                                         </el-icon>
@@ -308,7 +310,7 @@
                                 <button
                                     class="action-btn"
                                     :class="{ liked: comment.is_liked }"
-                                    @click="likeComment(comment.id)"
+                                    @click="checkLoginAndLike(comment.id)"
                                 >
                                     <el-icon>
                                         <Star/>
@@ -316,7 +318,7 @@
                                     <span>{{ comment.like_count || '' }}</span>
                                 </button>
                                 <button class="action-btn"
-                                        @click="openReplyForm(comment.id, comment.user_name, comment.user_id); showCommentsDialog = false">
+                                        @click="checkLoginAndReply(comment.id, comment.user_name, comment.user_id); showCommentsDialog = false">
                                     <el-icon>
                                         <ChatDotRound/>
                                     </el-icon>
@@ -395,11 +397,21 @@ const submitReply = async (parentId) => {
     if (!replyContent.value.trim() || submittingReply.value) return
 
     if (!userStore.isLoggedIn) {
-        ElMessage.warning('请先登录')
+        ElMessage.warning('请先登录', {
+            duration: 2000,
+            onClose: () => router.push('/login')
+        })
+        return
+    }
+    
+    // 检查字数限制
+    if (replyContent.value.length > 500) {
+        ElMessage.error('回复不能超过 500 字')
         return
     }
 
     submittingReply.value = true
+    const originalText = replyContent.value  // 保存原始内容
     try {
         const {data} = await createComment({
             article: article.value.id,
@@ -433,7 +445,9 @@ const submitReply = async (parentId) => {
         ElMessage.success('回复成功')
     } catch (e) {
         console.error(e)
-        ElMessage.error('回复失败')
+        // 保留用户输入的内容
+        replyContent.value = originalText
+        ElMessage.error('回复失败，请检查网络连接后重试')
     } finally {
         submittingReply.value = false
     }
@@ -538,11 +552,21 @@ const submitComment = async () => {
     if (!newCommentText.value.trim() || submitting.value) return
 
     if (!userStore.isLoggedIn) {
-        ElMessage.warning('请先登录')
+        ElMessage.warning('请先登录', {
+            duration: 2000,
+            onClose: () => router.push('/login')
+        })
+        return
+    }
+    
+    // 检查字数限制
+    if (newCommentText.value.length > 500) {
+        ElMessage.error('评论不能超过 500 字')
         return
     }
 
     submitting.value = true
+    const originalText = newCommentText.value  // 保存原始内容，失败时恢复
     try {
         const {data} = await createComment({
             article: article.value.id,
@@ -565,13 +589,20 @@ const submitComment = async () => {
         ElMessage.success('评论成功')
     } catch (e) {
         console.error(e)
-        ElMessage.error('评论失败')
+        // 保留用户输入的内容，方便重试
+        newCommentText.value = originalText
+        ElMessage.error('评论失败，请检查网络连接后重试')
     } finally {
         submitting.value = false
     }
 }
 
 const likeComment = async (commentId, parentId = null) => {
+    if (!userStore.isLoggedIn) {
+        ElMessage.warning('请先登录')
+        return
+    }
+    
     try {
         await likeCommentApi(commentId)
 
@@ -596,6 +627,34 @@ const likeComment = async (commentId, parentId = null) => {
     }
 }
 
+// 检查登录并点赞
+const checkLoginAndLike = (commentId, parentId = null) => {
+    if (!userStore.isLoggedIn) {
+        ElMessage({
+            message: '登录后才能点赞哦~',
+            type: 'warning',
+            duration: 2000,
+            onClose: () => router.push('/login')
+        })
+        return
+    }
+    likeComment(commentId, parentId)
+}
+
+// 检查登录并回复
+const checkLoginAndReply = (parentId, userName, userId) => {
+    if (!userStore.isLoggedIn) {
+        ElMessage({
+            message: '登录后才能评论哦~',
+            type: 'warning',
+            duration: 2000,
+            onClose: () => router.push('/login')
+        })
+        return
+    }
+    openReplyForm(parentId, userName, userId)
+}
+
 watch(() => article.value, async () => {
     if (article.value) {
         await nextTick()
@@ -614,6 +673,15 @@ const fetchArticle = async () => {
         article.value = data
     } catch (e) {
         console.error(e)
+        ElMessage({
+            message: '文章加载失败，可能已被删除或不存在',
+            type: 'error',
+            duration: 3000,
+            showClose: true,
+            onClose: () => {
+                router.push('/')
+            }
+        })
     } finally {
         loading.value = false
     }

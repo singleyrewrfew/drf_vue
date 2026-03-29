@@ -17,6 +17,7 @@ from .serializers import (
     UserSerializer,
     UserUpdateSerializer,
 )
+from utils.response import StandardResponse
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -92,22 +93,38 @@ class UserViewSet(viewsets.ModelViewSet):
         password = request.data.get('password')
         
         if not username or not password:
-            return Response({'error': '用户名和密码不能为空'}, status=status.HTTP_400_BAD_REQUEST)
+            return api_error(
+                message='用户名和密码不能为空',
+                error_type='bad_request',
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
         try:
             user = User.objects.get(username=username)
         except User.DoesNotExist:
-            return Response({'error': '用户不存在'}, status=status.HTTP_401_UNAUTHORIZED)
+            return api_error(
+                message='用户不存在',
+                error_type='unauthorized',
+                status=status.HTTP_401_UNAUTHORIZED
+            )
         
         if not user.check_password(password):
-            return Response({'error': '密码错误'}, status=status.HTTP_401_UNAUTHORIZED)
+            return api_error(
+                message='密码错误',
+                error_type='unauthorized',
+                status=status.HTTP_401_UNAUTHORIZED
+            )
         
         if not user.is_active:
-            return Response({'error': '账户已被禁用'}, status=status.HTTP_403_FORBIDDEN)
+            return api_error(
+                message='账户已被禁用',
+                error_type='forbidden',
+                status=status.HTTP_403_FORBIDDEN
+            )
         
         # 生成 JWT 令牌
         refresh = RefreshToken.for_user(user)
-        return Response({
+        return StandardResponse({
             'access': str(refresh.access_token),
             'refresh': str(refresh),
             'user': UserSerializer(user).data
@@ -121,7 +138,7 @@ class UserViewSet(viewsets.ModelViewSet):
         返回完整的用户信息，包括计算属性
         """
         serializer = UserSerializer(request.user)
-        return Response(serializer.data)
+        return StandardResponse(serializer.data)
     
     @action(detail=False, methods=['put', 'patch', 'post'], permission_classes=[IsAuthenticated])
     def update_profile(self, request):
@@ -137,7 +154,7 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = UserUpdateSerializer(request.user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(UserSerializer(request.user).data)
+        return StandardResponse(UserSerializer(request.user).data)
     
     @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
     def change_password(self, request):
@@ -152,7 +169,7 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = PasswordChangeSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({'message': '密码修改成功'})
+        return StandardResponse({'message': '密码修改成功'})
     
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def logout(self, request):
@@ -171,7 +188,7 @@ class UserViewSet(viewsets.ModelViewSet):
                 token.blacklist()
         except Exception:
             pass
-        return Response({'message': '退出成功'})
+        return StandardResponse({'message': '退出成功'})
     
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def popular(self, request):
@@ -196,7 +213,7 @@ class UserViewSet(viewsets.ModelViewSet):
                 'avatar': user.avatar.url if user.avatar else None,
                 'article_count': user.article_count,
             })
-        return Response(data)
+        return StandardResponse(data)
     
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def stats(self, request):
@@ -247,7 +264,7 @@ class UserViewSet(viewsets.ModelViewSet):
             # 获取最近 5 篇文章
             recent_contents = Content.objects.filter(status='published').select_related('author').order_by('-created_at')[:5]
             
-            return Response({
+            return StandardResponse({
                 'contents': content_count,
                 'published': published_count,
                 'drafts': draft_count,
@@ -285,7 +302,7 @@ class UserViewSet(viewsets.ModelViewSet):
             # 获取最近 5 篇文章
             recent_contents = Content.objects.filter(author=request.user, status='published').order_by('-created_at')[:5]
             
-            return Response({
+            return StandardResponse({
                 'my_contents': my_contents,
                 'my_published': my_published,
                 'my_drafts': my_drafts,
