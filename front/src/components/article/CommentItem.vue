@@ -128,10 +128,9 @@
 import { computed, ref } from 'vue'
 import { Pointer, ChatDotRound, ArrowRight } from '@element-plus/icons-vue'
 import { getAvatarUrl } from '@/utils'
-import { useUserStore } from '@/stores/user'
-import { ElMessage } from 'element-plus'
+import { useCommentAuth } from '@/composables/useCommentAuth'
 
-const userStore = useUserStore()
+const { requireAuth } = useCommentAuth()
 
 const props = defineProps({
     comment: {
@@ -203,18 +202,12 @@ const formatRelativeTime = (dateStr) => {
 }
 
 const handleLike = () => {
-    if (!userStore.isLoggedIn) {
-        ElMessage.warning('登录后才能点赞哦~')
-        return
-    }
+    if (!requireAuth('点赞')) return
     emit('like', props.comment)
 }
 
 const handleReply = () => {
-    if (!userStore.isLoggedIn) {
-        ElMessage.warning('登录后才能评论哦~')
-        return
-    }
+    if (!requireAuth('评论')) return
     emit('reply', props.comment.id, props.comment.user_name, props.comment.user)
 }
 
@@ -228,10 +221,7 @@ const handleToggleReplies = () => {
 }
 
 const handleReplyToReply = (reply) => {
-    if (!userStore.isLoggedIn) {
-        ElMessage.warning('登录后才能评论哦~')
-        return
-    }
+    if (!requireAuth('回复')) return
     emit('reply', props.comment.id, reply.user_name, reply.user_id)
 }
 </script>

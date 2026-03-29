@@ -1,264 +1,82 @@
-"""
-Content Service
-
-内容管理业务逻辑服务
-"""
-import logging
 from django.utils import timezone
-from django.db import DatabaseError, IntegrityError, transaction
-from rest_framework.exceptions import PermissionDenied, ValidationError
-
+from django.db import transaction
 from apps.contents.models import Content
-from services.base import ModelService
-
-logger = logging.getLogger(__name__)
 
 
-class ContentService(ModelService):
+class ContentService:
     """
-    内容服务类
+    内容业务逻辑服务层
     
-    处理内容相关的业务逻辑
+    封装所有与内容相关的业务逻辑，使 ViewSet 保持简洁
     """
     
-    model_class = Content
+    def create_content(self, validated_data, author):
+        """
+        创建内容
+        
+        Args:
+            validated_data: 已验证的数据字典
+            author: 作者对象
+            
+        Returns:
+            Content: 创建的内容对象
+        """
+        return Content.objects.create(author=author, **validated_data)
     
-    @staticmethod
-    def publish_content(content: Content, user) -> Content:
+    @transaction.atomic
+    def publish_content(self, content):
         """
         发布内容
         
         Args:
-            content: 内容实例
-            user: 用户实例
-        
+            content: 要发布的内容对象
+            
         Returns:
-            发布后的内容实例
-        
+            Content: 发布后的内容对象
+            
         Raises:
-            PermissionDenied: 无发布权限
-            ValidationError: 内容已发布
+            ValueError: 如果内容已经发布
         """
-        if not user.has_permission('content_publish') and not user.is_editor:
-            raise PermissionDenied('无发布权限')
-        
         if content.status == 'published':
-            raise ValidationError('内容已发布')
+            raise ValueError('内容已发布')
         
-        try:
-            content.status = 'published'
-            content.published_at = timezone.now()
-            content.save()
-            logger.info(f"Content {content.id} published by user {user.id}")
-            return content
-        except (DatabaseError, IntegrityError) as e:
-            logger.error(f"Failed to publish content {content.id}: {type(e).__name__}: {e}", exc_info=True)
-            raise ValidationError('发布失败，请稍后重试')
+        content.status = 'published'
+        content.published_at = timezone.now()
+        content.save(update_fields=['status', 'published_at'])
+        return content
     
-    @staticmethod
-    def archive_content(content: Content, user) -> Content:
+    @transaction.atomic
+    def archive_content(self, content):
         """
         归档内容
         
         Args:
-            content: 内容实例
-            user: 用户实例
-        
+            content: 要归档的内容对象
+            
         Returns:
-            归档后的内容实例
-        
-        Raises:
-            PermissionDenied: 无归档权限
+            Content: 归档后的内容对象
         """
-        if not user.has_permission('content_archive') and not user.is_editor:
-            raise PermissionDenied('无归档权限')
-        
-        try:
-            content.status = 'archived'
-            content.save()
-            logger.info(f"Content {content.id} archived by user {user.id}")
-            return content
-        except (DatabaseError, IntegrityError) as e:
-            logger.error(f"Failed to archive content {content.id}: {type(e).__name__}: {e}", exc_info=True)
-            raise ValidationError('归档失败，请稍后重试')
-    
-    @staticmethod
-    def increment_view_count(content: Content) -> Content:
-        """
-        增加浏览量
-        
-        Args:
-            content: 内容实例
-        
-        Returns:
-            更新后的内容实例
-        """
-        content.view_count += 1
-        content.save(update_fields=['view_count'])
+        content.status = 'archived'
+        content.save(update_fields=['status'])
         return content
     
-    @staticmethod
-    def can_user_edit(content: Content, user) -> bool:
+    def get_content_or_error(self, pk):
         """
-        检查用户是否可以编辑内容
+        获取内容或抛出异常
         
         Args:
-            content: 内容实例
-            user: 用户实例
-        
+            pk: 内容主键或 UUID
+            
         Returns:
-            是否可以编辑
+            Content: 内容对象
+            
+        Raises:
+            Http404: 如果内容不存在
         """
-        if user.is_superuser or user.is_admin:
-            return True
+        from django.http import Http404
         
-        if content.author == user:
-            return True
-        
-        return False
-    
-    @staticmethod
-    def can_user_delete(content: Content, user) -> bool:
-        """
-        检查用户是否可以删除内容
-        
-        Args:
-            content: 内容实例
-            user: 用户实例
-        
-        Returns:
-            是否可以删除
-        """
-        if user.is_superuser or user.is_admin:
-            return True
-        
-        if content.author == user:
-            return True
-        
-        return False
-    
-    @classmethod
-    def get_published_contents(cls, limit: int = None):
-        """
-        获取已发布的内容列表
-        
-        Args:
-            limit: 限制数量
-        
-        Returns:
-            内容查询集
-        """
-        queryset = cls.model_class.objects.filter(status='published')
-        
-        if limit:
-            queryset = queryset[:limit]
-        
-        return queryset
-    
-    @classmethod
-    def get_contents_by_author(cls, author, status: str = None):
-        """
-        获取作者的内容列表
-        
-        Args:
-            author: 作者实例
-            status: 内容状态过滤
-        
-        Returns:
-            内容查询集
-        """
-        queryset = cls.model_class.objects.filter(author=author)
-        
-        if status:
-            queryset = queryset.filter(status=status)
-        
-        return queryset
-    
-    @classmethod
-    def get_contents_by_category(cls, category, status: str = 'published'):
-        """
-        获取分类下的内容列表
-        
-        Args:
-            category: 分类实例或ID
-            status: 内容状态过滤
-        
-        Returns:
-            内容查询集
-        """
-        queryset = cls.model_class.objects.filter(category=category)
-        
-        if status:
-            queryset = queryset.filter(status=status)
-        
-        return queryset
-    
-    @classmethod
-    def get_contents_by_tag(cls, tag, status: str = 'published'):
-        """
-        获取标签下的内容列表
-        
-        Args:
-            tag: 标签实例或ID
-            status: 内容状态过滤
-        
-        Returns:
-            内容查询集
-        """
-        queryset = cls.model_class.objects.filter(tags=tag)
-        
-        if status:
-            queryset = queryset.filter(status=status)
-        
-        return queryset
-    
-    @classmethod
-    def search_contents(cls, keyword: str, status: str = 'published'):
-        """
-        搜索内容
-        
-        Args:
-            keyword: 搜索关键词
-            status: 内容状态过滤
-        
-        Returns:
-            内容查询集
-        """
-        queryset = cls.model_class.objects.filter(
-            title__icontains=keyword
-        )
-        
-        if status:
-            queryset = queryset.filter(status=status)
-        
-        return queryset
-    
-    @classmethod
-    def get_hot_contents(cls, limit: int = 10):
-        """
-        获取热门内容
-        
-        Args:
-            limit: 限制数量
-        
-        Returns:
-            内容查询集
-        """
-        return cls.model_class.objects.filter(
-            status='published'
-        ).order_by('-view_count')[:limit]
-    
-    @classmethod
-    def get_recent_contents(cls, limit: int = 10):
-        """
-        获取最新内容
-        
-        Args:
-            limit: 限制数量
-        
-        Returns:
-            内容查询集
-        """
-        return cls.model_class.objects.filter(
-            status='published'
-        ).order_by('-created_at')[:limit]
+        try:
+            return Content.objects.select_related('author', 'category')\
+                                  .prefetch_related('tags').get(pk=pk)
+        except Content.DoesNotExist:
+            raise Http404('内容不存在')

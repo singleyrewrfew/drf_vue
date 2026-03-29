@@ -6,42 +6,43 @@ from utils.response import StandardResponse
 from .models import Tag
 from .serializers import TagCreateUpdateSerializer, TagSerializer
 
-class TagViewSet(SlugOrUUIDMixin, viewsets.ModelViewSet):
-    """
-    标签视图集
+
+class TagSerializerMixin:
+    """标签序列化器选择 Mixin"""
     
-    提供标签相关的 API 端点：
-    - 列表、创建、更新、删除
-    - 支持通过 UUID 或 slug 查找标签
-    """
+    default_serializer_class = TagSerializer
+    
+    def get_serializer_class(self):
+        """根据 action 选择合适的序列化器（配置化）"""
+        serializer_mapping = {
+            'create': TagCreateUpdateSerializer,
+            'update': TagCreateUpdateSerializer,
+            'partial_update': TagCreateUpdateSerializer,
+        }
+        return serializer_mapping.get(self.action, self.default_serializer_class)
+
+
+class TagPermissionMixin:
+    """标签权限控制 Mixin"""
+    
+    def get_permissions(self):
+        """根据 action 动态分配权限"""
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsEditorUser()]
+        return super().get_permissions()
+
+
+class TagViewSet(
+    TagPermissionMixin,
+    TagSerializerMixin,
+    SlugOrUUIDMixin,
+    viewsets.ModelViewSet
+):
+    """标签视图集 - 提供标签的 CRUD 操作"""
     queryset = Tag.objects.all()
     permission_classes = [IsAuthenticatedOrReadOnly]
     lookup_field = 'pk'
     lookup_url_kwarg = 'pk'
-    
-    def get_serializer_class(self):
-        """
-        根据不同的操作返回不同的序列化器
-        
-        序列化器映射：
-        - create/update/partial_update: TagCreateUpdateSerializer（创建和更新）
-        - 其他: TagSerializer（读取）
-        """
-        if self.action in ['create', 'update', 'partial_update']:
-            return TagCreateUpdateSerializer
-        return TagSerializer
-    
-    def get_permissions(self):
-        """
-        根据不同的操作返回不同的权限类
-            
-        权限规则：
-        - create/update/partial_update/destroy: 需要编辑者权限
-        - 其他：使用默认权限（认证用户可读写，未认证用户只读）
-        """
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            return [IsEditorUser()]
-        return super().get_permissions()
         
     def list(self, request, *args, **kwargs):
         """
