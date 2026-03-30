@@ -294,73 +294,45 @@ const handleTocClick = (id) => {
 
 const headings = ref([])
 
-const extractHeadings = (html) => {
+const extractHeadings = (content) => {
+    if (!content) return []
+    
+    marked.setOptions({
+        highlight: function (code, lang) {
+            if (lang && hljs.getLanguage(lang)) {
+                try {
+                    return hljs.highlight(code, {language: lang}).value
+                } catch (e) {
+                    console.error(e)
+                }
+            }
+            return hljs.highlightAuto(code).value
+        },
+        breaks: true,
+        gfm: true,
+    })
+    
+    const html = marked.parse(content)
     const tempDiv = document.createElement('div')
     tempDiv.innerHTML = html
+    
     const headingElements = tempDiv.querySelectorAll('h1, h2, h3, h4, h5, h6')
     const result = []
     headingElements.forEach((el, index) => {
-        const id = `heading-${index}`
-        el.id = id
         result.push({
-            id,
+            id: `heading-${index}`,
             level: parseInt(el.tagName.charAt(1)),
             text: el.textContent,
         })
     })
-    return {html: tempDiv.innerHTML, headings: result}
+    return result
 }
-
-const renderedContent = computed(() => {
-    if (!article.value.content) return ''
-
-    marked.setOptions({
-        highlight: function (code, lang) {
-            if (lang && hljs.getLanguage(lang)) {
-                try {
-                    return hljs.highlight(code, {language: lang}).value
-                } catch (e) {
-                    console.error(e)
-                }
-            }
-            return hljs.highlightAuto(code).value
-        },
-        breaks: true,
-        gfm: true,
-    })
-
-    let html = marked.parse(article.value.content)
-    const result = extractHeadings(html)
-    headings.value = result.headings
-    return result.html
-})
 
 const initArticleContent = () => {
     if (!article.value.content) return
 
-    marked.setOptions({
-        highlight: function (code, lang) {
-            if (lang && hljs.getLanguage(lang)) {
-                try {
-                    return hljs.highlight(code, {language: lang}).value
-                } catch (e) {
-                    console.error(e)
-                }
-            }
-            return hljs.highlightAuto(code).value
-        },
-        breaks: true,
-        gfm: true,
-    })
-
-    let html = marked.parse(article.value.content)
-    const result = extractHeadings(html)
-    headings.value = result.headings
-
-    // 文章渲染完成后，初始化图片懒加载（已移除，使用浏览器原生懒加载）
-    // nextTick(() => {
-    //     initImageLazyLoad()
-    // })
+    // 提取标题用于目录
+    headings.value = extractHeadings(article.value.content)
 
     // 如果当前是预览内容且内容长度等于 5000，异步加载完整内容
     if (article.value.content === article.value.content_preview &&

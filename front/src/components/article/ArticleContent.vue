@@ -60,7 +60,18 @@ marked.setOptions({
 
 const renderedContent = computed(() => {
     if (!props.content) return ''
-    return marked.parse(props.content)
+    
+    const html = marked.parse(props.content)
+    
+    const tempDiv = document.createElement('div')
+    tempDiv.innerHTML = html
+    
+    const headingElements = tempDiv.querySelectorAll('h1, h2, h3, h4, h5, h6')
+    headingElements.forEach((el, index) => {
+        el.id = `heading-${index}`
+    })
+    
+    return tempDiv.innerHTML
 })
 </script>
 

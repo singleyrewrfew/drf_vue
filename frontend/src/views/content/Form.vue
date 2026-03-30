@@ -421,13 +421,15 @@ const getMediaBaseUrl = () => {
 }
 
 const handleCoverSuccess = (response, file) => {
-    // response 是 Media 对象，包含 url 字段
-    if (response.url) {
+    // response 是统一响应格式 { code, message, data }
+    // data 中包含 Media 对象，有 url 字段
+    const mediaData = response.data || response
+    if (mediaData.url) {
         const baseUrl = getMediaBaseUrl()
-        form.value.cover_image = response.url.startsWith('http') ? response.url : `${baseUrl}${response.url}`
+        form.value.cover_image = mediaData.url.startsWith('http') ? mediaData.url : `${baseUrl}${mediaData.url}`
         ElMessage.success('封面图上传成功')
     } else {
-        ElMessage.error('封面图上传失败')
+        ElMessage.error('封面图上传失败：响应格式错误')
     }
 }
 

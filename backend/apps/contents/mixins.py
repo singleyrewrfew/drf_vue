@@ -98,37 +98,51 @@ class ContentQuerySetMixin:
     def _filter_by_category(self, queryset, category):
         """按分类过滤"""
         from apps.categories.models import Category
+        import uuid
         
-        # 尝试通过 ID、slug 或 UUID 查找分类
-        try:
-            category_obj = Category.objects.filter(
-                id=category
-            ).first() or Category.objects.filter(
-                slug=category
-            ).first()
-            
-            if not category_obj:
-                # 尝试 UUID
-                category_obj = Category.objects.get(pk=category)
-            
+        category_obj = None
+        
+        # 1. 先尝试通过 slug 查找（最常见的情况）
+        category_obj = Category.objects.filter(slug=category).first()
+        
+        # 2. 如果没找到，尝试通过 UUID 查找
+        if not category_obj:
+            try:
+                # 验证是否为有效的 UUID 格式
+                uuid.UUID(str(category))
+                category_obj = Category.objects.filter(id=category).first()
+            except (ValueError, AttributeError):
+                # 不是有效的 UUID，忽略
+                pass
+        
+        if category_obj:
             return queryset.filter(category=category_obj)
-        except (Category.DoesNotExist, ValueError):
-            return queryset.none()
+        
+        # 如果都没找到，返回空查询集
+        return queryset.none()
     
     def _filter_by_tag(self, queryset, tag):
         """按标签过滤"""
         from apps.tags.models import Tag
+        import uuid
         
-        try:
-            tag_obj = Tag.objects.filter(
-                id=tag
-            ).first() or Tag.objects.filter(
-                slug=tag
-            ).first()
-            
-            if not tag_obj:
-                tag_obj = Tag.objects.get(pk=tag)
-            
+        tag_obj = None
+        
+        # 1. 先尝试通过 slug 查找（最常见的情况）
+        tag_obj = Tag.objects.filter(slug=tag).first()
+        
+        # 2. 如果没找到，尝试通过 UUID 查找
+        if not tag_obj:
+            try:
+                # 验证是否为有效的 UUID 格式
+                uuid.UUID(str(tag))
+                tag_obj = Tag.objects.filter(id=tag).first()
+            except (ValueError, AttributeError):
+                # 不是有效的 UUID，忽略
+                pass
+        
+        if tag_obj:
             return queryset.filter(tags=tag_obj)
-        except (Tag.DoesNotExist, ValueError):
-            return queryset.none()
+        
+        # 如果都没找到，返回空查询集
+        return queryset.none()
