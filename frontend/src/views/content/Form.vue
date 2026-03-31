@@ -118,6 +118,7 @@
                                 :headers="uploadHeaders"
                                 :show-file-list="false"
                                 :on-success="handleCoverSuccess"
+                                :on-error="handleCoverError"
                                 :before-upload="beforeCoverUpload"
                             >
                                 <img v-if="form.cover_image" :src="form.cover_image" class="cover-image"/>
@@ -421,16 +422,43 @@ const getMediaBaseUrl = () => {
 }
 
 const handleCoverSuccess = (response, file) => {
+    console.log('封面图上传响应:', response)
     // response 是统一响应格式 { code, message, data }
     // data 中包含 Media 对象，有 url 字段
-    const mediaData = response.data || response
+    if (response.code !== 0) {
+        ElMessage.error(response.message || '封面图上传失败')
+        return
+    }
+    
+    const mediaData = response.data
+    if (!mediaData) {
+        ElMessage.error('封面图上传失败：响应数据为空')
+        return
+    }
+    
     if (mediaData.url) {
         const baseUrl = getMediaBaseUrl()
         form.value.cover_image = mediaData.url.startsWith('http') ? mediaData.url : `${baseUrl}${mediaData.url}`
+        console.log('封面图 URL:', form.value.cover_image)
         ElMessage.success('封面图上传成功')
     } else {
-        ElMessage.error('封面图上传失败：响应格式错误')
+        ElMessage.error('封面图上传失败：响应中缺少 url 字段')
     }
+}
+
+const handleCoverError = (error) => {
+    console.error('封面图上传错误:', error)
+    let errorMessage = '封面图上传失败'
+    
+    if (error.response && error.response.status === 401) {
+        errorMessage = '请先登录'
+    } else if (error.response && error.response.status === 403) {
+        errorMessage = '没有上传权限'
+    } else if (error.message) {
+        errorMessage = error.message
+    }
+    
+    ElMessage.error(errorMessage)
 }
 
 const fetchCategories = async () => {

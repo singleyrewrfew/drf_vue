@@ -1663,25 +1663,12 @@ watch(() => route.params.id, () => {
 }
 
 .markdown-body pre {
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    padding: 20px;
-    border-radius: var(--radius-lg);
+    background: var(--bg-secondary);
+    padding: 16px;
+    border-radius: var(--radius-md);
     overflow-x: auto;
-    margin: 20px 0;
-    box-shadow: var(--shadow-lg);
-    position: relative;
-}
-
-.markdown-body pre::before {
-    content: '';
-    position: absolute;
-    top: 12px;
-    left: 16px;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: #ff5f56;
-    box-shadow: 20px 0 0 #ffbd2e, 40px 0 0 #27c93f;
+    margin: 16px 0;
+    border: 1px solid var(--border-light);
 }
 
 .markdown-body code {

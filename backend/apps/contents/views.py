@@ -1,4 +1,3 @@
-from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -7,7 +6,7 @@ from rest_framework.response import Response
 
 from apps.users.permissions import IsEditorUser, IsOwnerOrAdmin
 from utils.mixins import SlugOrUUIDMixin
-from utils.response import StandardResponse, api_error
+from utils.response import StandardResponse, api_error, api_response
 from utils.response_decorator import auto_response
 from services.content_service import ContentService
 from .models import Content
