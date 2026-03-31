@@ -176,7 +176,7 @@ import {
     ArticleNav,
     CommentsSection
 } from '@/components/article'
-import {getCoverUrl, getAvatarUrl, formatDate} from '@/utils'
+import {getCoverUrl, getAvatarUrl, formatDate, getArticleUrl} from '@/utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -1690,9 +1690,13 @@ watch(() => route.params.id, () => {
 }
 
 .markdown-body pre code {
-    color: #e0e0e0;
+    color: var(--text-primary);
     padding-top: 16px;
     display: block;
+}
+
+[data-theme="dark"] .markdown-body pre code {
+    color: #e0e0e0;
 }
 
 .markdown-body p code {

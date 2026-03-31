@@ -149,7 +149,7 @@ defineExpose({
 }
 
 .markdown-body :deep(.code-block) {
-    background: #282c34;
+    background: var(--bg-secondary);
     padding: 16px;
     border-radius: var(--radius-md);
     overflow-x: auto;
@@ -160,6 +160,14 @@ defineExpose({
     font-family: var(--font-mono);
     font-size: 13px;
     line-height: 1.6;
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .markdown-body :deep(.code-block) {
+    background: #282c34;
+}
+
+[data-theme="dark"] .markdown-body :deep(.code-block code) {
     color: #abb2bf;
 }
 </style>

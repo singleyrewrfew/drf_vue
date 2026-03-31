@@ -172,6 +172,14 @@ const renderedContent = computed(() => {
     overflow: auto;
 }
 
+.markdown-body :deep(pre code) {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .markdown-body :deep(pre code) {
+    color: #abb2bf;
+}
+
 .markdown-body :deep(code) {
     font-family: var(--font-mono);
     font-size: 14px;
