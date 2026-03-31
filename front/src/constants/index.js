@@ -31,3 +31,13 @@ export const API_CONTENT_TYPES = {
   ARTICLE: 'contents.Content',
   COMMENT: 'comments.Comment'
 }
+
+export const CONTENT_PREVIEW_LENGTH = 5000
+
+export const LOG_LEVELS = {
+  DEBUG: 0,
+  INFO: 1,
+  WARN: 2,
+  ERROR: 3,
+  NONE: 4
+}

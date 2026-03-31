@@ -41,7 +41,19 @@ export const useUserStore = defineStore('user', () => {
     
     token.value = savedToken || ''
     refreshToken.value = savedRefresh || ''
-    user.value = JSON.parse(localStorage.getItem(STORAGE_KEYS.USER) || 'null')
+    
+    try {
+      const savedUser = localStorage.getItem(STORAGE_KEYS.USER)
+      if (savedUser && savedUser !== 'undefined') {
+        user.value = JSON.parse(savedUser)
+      } else {
+        user.value = null
+      }
+    } catch (e) {
+      console.error('Failed to parse user data from storage:', e)
+      user.value = null
+      localStorage.removeItem(STORAGE_KEYS.USER)
+    }
   }
 
   const saveToStorage = () => {
@@ -77,7 +89,7 @@ export const useUserStore = defineStore('user', () => {
       if (!isActive || !token.value) return
       
       try {
-        const { data } = await userApi.getProfile()
+        const data = await userApi.getProfile()
         if (isActive && JSON.stringify(user.value) !== JSON.stringify(data)) {
           user.value = data
           localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data))
@@ -100,7 +112,7 @@ export const useUserStore = defineStore('user', () => {
   })
 
   const login = async (credentials) => {
-    const { data } = await userApi.login(credentials)
+    const data = await userApi.login(credentials)
     token.value = data.access
     refreshToken.value = data.refresh
     user.value = data.user
@@ -109,7 +121,7 @@ export const useUserStore = defineStore('user', () => {
   }
 
   const register = async (userData) => {
-    const { data } = await userApi.register(userData)
+    const data = await userApi.register(userData)
     return data
   }
 
@@ -125,7 +137,7 @@ export const useUserStore = defineStore('user', () => {
   }
 
   const fetchProfile = async () => {
-    const { data } = await userApi.getProfile()
+    const data = await userApi.getProfile()
     user.value = data
     localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data))
   }
@@ -136,7 +148,7 @@ export const useUserStore = defineStore('user', () => {
     }
     
     try {
-      const { data } = await userApi.refreshToken({ refresh: refreshToken.value })
+      const data = await userApi.refreshToken({ refresh: refreshToken.value })
       token.value = data.access
       if (data.refresh) {
         refreshToken.value = data.refresh
