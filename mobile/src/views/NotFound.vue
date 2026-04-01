@@ -5,11 +5,11 @@
       <h2 class="error-title">页面未找到</h2>
       <p class="error-message">抱歉，您访问的页面不存在或已被删除</p>
       <div class="error-actions">
-        <el-button type="primary" size="large" @click="goHome">
+        <el-button type="primary" size="large" @click="$router.push('/')">
           <el-icon><HomeFilled /></el-icon>
           返回首页
         </el-button>
-        <el-button size="large" @click="goBack">
+        <el-button size="large" @click="$router.go(-1)">
           <el-icon><Back /></el-icon>
           返回上一页
         </el-button>
@@ -20,21 +20,6 @@
 
 <script setup>
 import { HomeFilled, Back } from '@element-plus/icons-vue'
-import { useRouter } from 'vue-router'
-
-const router = useRouter()
-
-const goHome = () => {
-  router.push('/')
-}
-
-const goBack = () => {
-  if (window.history.length > 1) {
-    router.go(-1)
-  } else {
-    router.push('/')
-  }
-}
 </script>
 
 <style scoped>
@@ -42,9 +27,9 @@ const goBack = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
+  min-height: calc(100vh - 60px);
   padding: 40px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--el-bg-color);
 }
 
 .not-found-content {
@@ -53,40 +38,41 @@ const goBack = () => {
 }
 
 .error-code {
-  font-size: 140px;
+  font-size: 120px;
   font-weight: 900;
-  color: #ffffff;
+  color: var(--el-color-primary);
   line-height: 1;
   margin-bottom: 0;
-  text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.2);
+  text-shadow: 3px 3px 0 var(--el-color-primary-light-9);
 }
 
 .error-title {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 600;
-  color: #ffffff;
-  margin: 24px 0 12px;
+  color: var(--el-text-color-primary);
+  margin: 20px 0 10px;
 }
 
 .error-message {
-  font-size: 16px;
-  color: rgba(255, 255, 255, 0.9);
-  margin-bottom: 40px;
+  font-size: 15px;
+  color: var(--el-text-color-regular);
+  margin-bottom: 30px;
   line-height: 1.6;
 }
 
 .error-actions {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   justify-content: center;
+  flex-wrap: wrap;
 }
 
 .error-actions .el-button {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 24px;
-  font-size: 15px;
+  gap: 6px;
+  padding: 10px 20px;
+  font-size: 14px;
 }
 
 @media (max-width: 768px) {
@@ -104,6 +90,7 @@ const goBack = () => {
 
   .error-actions {
     flex-direction: column;
+    width: 100%;
   }
 
   .error-actions .el-button {
