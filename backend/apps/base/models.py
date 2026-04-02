@@ -34,7 +34,7 @@ class BaseModel(models.Model):
         return self.__class__.__name__
     
     def refresh_from_db(self, using=None, fields=None):
-        """刷新实例，清空更新缓存"""
+        """同步数据库最新状态、清空关联缓存"""
         super().refresh_from_db(using=using, fields=fields)
 
 
