@@ -1,11 +1,9 @@
-import uuid
-
 from django.db import models
 
+from apps.base.models import BaseModel
 from apps.categories.models import Category
 from apps.core.models import User
 from apps.tags.models import Tag
-from apps.base.models import BaseModel
 
 
 class Content(BaseModel):

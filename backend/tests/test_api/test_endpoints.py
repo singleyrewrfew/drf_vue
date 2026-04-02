@@ -5,10 +5,8 @@ API 端点测试
 """
 import pytest
 from rest_framework import status
-from rest_framework.test import APIClient
 
 from apps.users.models import User
-from apps.roles.models import Role
 
 
 @pytest.mark.integration

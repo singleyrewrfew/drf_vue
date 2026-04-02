@@ -1,10 +1,10 @@
-from rest_framework import serializers
-from django.conf import settings
-from django.core.exceptions import ValidationError
 import hashlib
 import logging
 import os
 import shutil
+
+from django.conf import settings
+from rest_framework import serializers
 
 from .models import Media
 

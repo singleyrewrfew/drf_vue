@@ -4,6 +4,7 @@ Test Slug Utils
 Slug工具测试
 """
 import pytest
+
 from utils.slug_utils import generate_slug_from_text, generate_unique_slug
 
 

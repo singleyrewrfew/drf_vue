@@ -4,8 +4,6 @@
 测试评论相关的服务和模型方法
 """
 import pytest
-from django.utils import timezone
-from rest_framework.exceptions import ValidationError
 
 from apps.comments.models import Comment
 from apps.contents.models import Content

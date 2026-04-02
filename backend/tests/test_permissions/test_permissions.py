@@ -6,12 +6,9 @@
 import pytest
 from rest_framework.test import APIRequestFactory
 from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
 
-from apps.users.permissions import IsAdminUser, IsEditorUser, IsOwnerOrAdmin
 from apps.users.models import User
-from apps.roles.models import Role
+from apps.users.permissions import IsAdminUser, IsEditorUser, IsOwnerOrAdmin
 
 
 @pytest.mark.unit

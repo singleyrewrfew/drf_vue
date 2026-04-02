@@ -5,7 +5,6 @@
 """
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.conf import settings
 
 from apps.media.models import Media
 from apps.users.models import User
@@ -284,8 +283,7 @@ class TestMediaAPI:
     
     def test_delete_media_owner(self, authenticated_api_client, db):
         """测试所有者删除自己的媒体"""
-        from apps.users.models import User
-        
+
         # 创建测试媒体
         test_file = SimpleUploadedFile(
             "delete_test.jpg",
@@ -337,9 +335,7 @@ class TestMediaAPI:
         
         # 执行删除（会触发 perform_destroy）
         from apps.media.views import MediaViewSet
-        from rest_framework.request import Request
-        from unittest.mock import Mock
-        
+
         # 创建 Mock 视图实例
         viewset = MediaViewSet()
         
