@@ -1,9 +1,7 @@
 from rest_framework import serializers
 
-from apps.categories.serializers import CategorySerializer
 from apps.tags.serializers import TagSerializer
 from utils.serializer_mixins import AutoSlugMixin
-
 from .models import Content
 
 

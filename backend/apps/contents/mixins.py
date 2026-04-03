@@ -1,4 +1,3 @@
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from apps.users.permissions import IsEditorUser, IsOwnerOrAdmin
 
 

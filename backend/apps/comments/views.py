@@ -1,12 +1,11 @@
 from drf_spectacular.utils import extend_schema
-from rest_framework import status, viewsets
+from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 
-from apps.users.permissions import IsEditorUser, IsOwnerOrAdmin
+from apps.users.permissions import IsOwnerOrAdmin
 from utils.response import StandardResponse
-
 from .models import Comment, CommentLike
 from .serializers import CommentCreateSerializer, CommentListSerializer, CommentSerializer
 

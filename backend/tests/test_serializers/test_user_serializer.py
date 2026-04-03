@@ -5,14 +5,13 @@
 """
 import pytest
 from django.contrib.auth import get_user_model
-from rest_framework.exceptions import ValidationError
 
+from apps.roles.models import Role
 from apps.users.serializers import (
     UserSerializer,
     UserRegisterSerializer,
     UserUpdateSerializer,
 )
-from apps.roles.models import Role
 
 User = get_user_model()
 

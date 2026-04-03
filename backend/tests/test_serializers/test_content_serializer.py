@@ -6,13 +6,13 @@
 import pytest
 from django.contrib.auth import get_user_model
 
+from apps.categories.models import Category
+from apps.contents.models import Content
 from apps.contents.serializers import (
     ContentSerializer,
     ContentListSerializer,
     ContentCreateUpdateSerializer,
 )
-from apps.contents.models import Content
-from apps.categories.models import Category
 from apps.tags.models import Tag
 
 User = get_user_model()

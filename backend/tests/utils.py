@@ -3,7 +3,6 @@ Test Utilities
 
 测试工具类和Mock对象
 """
-from unittest.mock import Mock
 from django.contrib.auth import get_user_model
 
 User = get_user_model()

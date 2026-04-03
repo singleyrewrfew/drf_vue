@@ -4,14 +4,13 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 
-from apps.users.permissions import IsEditorUser, IsOwnerOrAdmin
+from services.content_service import ContentService
 from utils.mixins import SlugOrUUIDMixin
 from utils.response import StandardResponse, api_error, api_response
 from utils.response_decorator import auto_response
-from services.content_service import ContentService
+from .mixins import ContentPermissionMixin, ContentSerializerMixin, ContentQuerySetMixin
 from .models import Content
 from .serializers import ContentCreateUpdateSerializer, ContentListSerializer, ContentSerializer
-from .mixins import ContentPermissionMixin, ContentSerializerMixin, ContentQuerySetMixin
 
 
 class ContentViewSet(

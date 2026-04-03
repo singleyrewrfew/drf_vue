@@ -4,15 +4,15 @@ Pytest Configuration
 测试配置和 fixtures
 """
 import os
-import pytest
 import shutil
 from pathlib import Path
+
+import pytest
 
 # 设置 Django 环境变量
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
 import django
-from django.conf import settings
 from django.test import RequestFactory
 from rest_framework.test import APIClient
 

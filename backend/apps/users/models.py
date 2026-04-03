@@ -1,6 +1,6 @@
-import uuid
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+
 from apps.base.models import BaseModel
 
 
@@ -18,6 +18,8 @@ class User(AbstractUser, BaseModel):
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True, verbose_name='头像')
     
     # 外键：关联到角色表，删除角色时用户角色设为 NULL
+    # roles - 应用标签（app_label），对应 backend/apps/roles/ 目录
+    # Role - 模型类名，在 roles/models.py 中定义
     role = models.ForeignKey('roles.Role', on_delete=models.SET_NULL, null=True, blank=True, related_name='users', verbose_name='角色')
     
     # 注意：id, created_at, updated_at 由 BaseModel 提供

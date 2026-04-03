@@ -12,6 +12,7 @@ import Profile from '@/views/Profile.vue'
 import ProfileEdit from '@/views/ProfileEdit.vue'
 import Login from '@/views/Login.vue'
 import Register from '@/views/Register.vue'
+import NotFound from '@/views/NotFound.vue'
 
 const routes = [
     {
@@ -79,6 +80,12 @@ const routes = [
         name: 'Register',
         component: Register,
         meta: { title: '注册' },
+    },
+    {
+        path: '/:pathMatch(.*)*',
+        name: 'NotFound',
+        component: NotFound,
+        meta: { title: '页面未找到' },
     },
 ]
 

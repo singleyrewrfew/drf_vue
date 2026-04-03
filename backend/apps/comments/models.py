@@ -1,10 +1,8 @@
-import uuid
-
 from django.db import models
 
+from apps.base.models import BaseModel
 from apps.contents.models import Content
 from apps.core.models import User
-from apps.base.models import BaseModel
 
 
 class Comment(BaseModel):

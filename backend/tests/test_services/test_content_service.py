@@ -4,7 +4,6 @@ Test Content Service
 内容服务单元测试
 """
 import pytest
-from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from services.content_service import ContentService

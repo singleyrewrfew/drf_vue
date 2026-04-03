@@ -62,39 +62,39 @@ else:
 
 # 已安装的应用列表
 INSTALLED_APPS = [
-    'django.contrib.admin',              # Django 管理后台
-    'apps.core',                        # 核心应用（必须在 django.contrib.auth 之前）
-    'django.contrib.auth',               # Django 认证系统
-    'django.contrib.contenttypes',        # 内容类型框架
-    'django.contrib.sessions',             # 会话框架
-    'django.contrib.messages',            # 消息框架
-    'django.contrib.staticfiles',         # 静态文件管理
-    'rest_framework',                   # Django REST Framework
-    'rest_framework_simplejwt',          # JWT 认证
-    'rest_framework_simplejwt.token_blacklist',  # JWT Token 黑名单
-    'corsheaders',                      # CORS 跨域支持
-    'drf_spectacular',                  # API 文档生成
-    'apps.users',                       # 用户管理应用
-    'apps.roles',                       # 角色管理应用
-    'apps.contents',                     # 内容管理应用
-    'apps.categories',                   # 分类管理应用
-    'apps.tags',                        # 标签管理应用
-    'apps.media',                       # 媒体管理应用
-    'apps.comments',                     # 评论管理应用
+    'django.contrib.admin',                              # Django 管理后台
+    'apps.core',                                         # 核心应用（必须在 django.contrib.auth 之前）
+    'django.contrib.auth',                               # Django 认证系统
+    'django.contrib.contenttypes',                       # 内容类型框架
+    'django.contrib.sessions',                           # 会话框架
+    'django.contrib.messages',                           # 消息框架
+    'django.contrib.staticfiles',                        # 静态文件管理
+    'rest_framework',                                    # Django REST Framework
+    'rest_framework_simplejwt',                          # JWT 认证
+    'rest_framework_simplejwt.token_blacklist',          # JWT Token 黑名单
+    'corsheaders',                                       # CORS 跨域支持
+    'drf_spectacular',                                   # API 文档生成
+    'apps.users',                                        # 用户管理应用
+    'apps.roles',                                        # 角色管理应用
+    'apps.contents',                                     # 内容管理应用
+    'apps.categories',                                   # 分类管理应用
+    'apps.tags',                                         # 标签管理应用
+    'apps.media',                                        # 媒体管理应用
+    'apps.comments',                                     # 评论管理应用
 ]
 
 # 中间件列表
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',        # 安全中间件
-    'corsheaders.middleware.CorsMiddleware',             # CORS 跨域支持
-    'django.contrib.sessions.middleware.SessionMiddleware',     # 会话中间件
-    'django.middleware.common.CommonMiddleware',           # 通用中间件
-    'django.middleware.csrf.CsrfViewMiddleware',         # CSRF 保护
-    'django.contrib.auth.middleware.AuthenticationMiddleware',  # 认证中间件
-    'django.contrib.messages.middleware.MessageMiddleware',    # 消息中间件
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',  # 点击劫持保护
+    'django.middleware.security.SecurityMiddleware',               # 安全中间件
+    'corsheaders.middleware.CorsMiddleware',                       # CORS 跨域支持
+    'django.contrib.sessions.middleware.SessionMiddleware',        # 会话中间件
+    'django.middleware.common.CommonMiddleware',                   # 通用中间件
+    'django.middleware.csrf.CsrfViewMiddleware',                   # CSRF 保护
+    'django.contrib.auth.middleware.AuthenticationMiddleware',     # 认证中间件
+    'django.contrib.messages.middleware.MessageMiddleware',        # 消息中间件
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',      # 点击劫持保护
     'middleware.BackendAccessMiddleware.BackendAccessMiddleware',  # 自定义后台访问中间件
-    'middleware.error_handler.ErrorHandlerMiddleware',  # 统一错误处理中间件（必须在最后）
+    'middleware.error_handler.ErrorHandlerMiddleware',             # 统一错误处理中间件（必须在最后）
 ]
 
 # 根 URL 配置文件

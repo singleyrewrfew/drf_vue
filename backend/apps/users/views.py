@@ -4,12 +4,13 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
+
 from apps.comments.models import Comment
 from apps.contents.models import Content
 from apps.core.models import User
 from apps.media.models import Media
+from utils.response import StandardResponse
 from .permissions import IsAdminUser
 from .serializers import (
     PasswordChangeSerializer,
@@ -17,7 +18,6 @@ from .serializers import (
     UserSerializer,
     UserUpdateSerializer,
 )
-from utils.response import StandardResponse
 
 
 class UserViewSet(viewsets.ModelViewSet):

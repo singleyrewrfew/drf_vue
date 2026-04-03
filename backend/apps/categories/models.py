@@ -1,8 +1,7 @@
-import uuid
-
 from django.db import models
-from utils.slug_utils import generate_unique_slug
+
 from apps.base.models import BaseModel
+from utils.slug_utils import generate_unique_slug
 
 
 class Category(BaseModel):

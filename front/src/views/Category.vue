@@ -28,12 +28,13 @@
 
 <script setup>
 import { ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getCategory, getContents } from '@/api/content'
 import { PageHeader, ArticleList } from '@/components/common'
 
 const route = useRoute()
+const router = useRouter()
 
 const loading = ref(false)
 const category = ref({})
@@ -61,7 +62,11 @@ const fetchData = async () => {
     total.value = contentRes.data.count || articles.value.length
   } catch (e) {
     console.error(e)
-    if (e.response?.status !== 401) {
+    
+    // 如果是 404 错误，跳转到 404 页面
+    if (e.response?.status === 404) {
+      router.replace({ name: 'NotFound' })
+    } else if (e.response?.status !== 401) {
       ElMessage.error('加载分类失败')
     }
   } finally {

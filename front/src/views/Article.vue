@@ -359,6 +359,10 @@ const loadFullContent = async () => {
         }
     } catch (e) {
         console.error('加载完整内容失败:', e)
+        // 如果是 404 错误，跳转到 404 页面
+        if (e.response?.status === 404) {
+            router.replace({ name: 'NotFound' })
+        }
     }
 }
 
@@ -388,7 +392,14 @@ const fetchArticle = async () => {
         })
     } catch (e) {
         console.error(e)
-        ElMessage.error('文章不存在')
+        
+        // 检查是否是 404 错误
+        if (e.response?.status === 404) {
+            // 跳转到 404 页面
+            router.replace({ name: 'NotFound' })
+        } else {
+            ElMessage.error('文章不存在')
+        }
     } finally {
         loading.value = false
     }
