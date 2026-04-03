@@ -48,7 +48,11 @@ class CategoryViewSet(
     """分类视图集 - 提供分类的 CRUD 操作"""
     queryset = Category.objects.all()
     permission_classes = [IsAuthenticatedOrReadOnly]
+    # 作用：指定数据库模型中，用于检索单个对象的字段名。
+    # 原理：当请求 /api/items/1/ 时，DRF 会执行查询：Item.objects.get(pk=1)。
     lookup_field = 'pk'
+    # 作用：指定 URL 路径中，传递参数的关键字名称
+    # 原理：DRF 会从 URL 的关键字参数 self.kwargs 中，取出名为 pk 的值（如 1），然后用它去匹配 lookup_field（pk）。
     lookup_url_kwarg = 'pk'
 
     def list(self, request, *args, **kwargs):
