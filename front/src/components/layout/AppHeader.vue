@@ -65,10 +65,10 @@
           <WinDropdown :items="userMenuItems" @select="handleUserMenuSelect">
             <template #trigger>
               <div class="user-info">
-                <el-avatar :size="36" :src="getAvatarUrl(userStore.user?.avatar)">
-                  {{ userStore.user?.username?.charAt(0).toUpperCase() }}
+                <el-avatar :size="36" :src="userAvatar">
+                  {{ username?.charAt(0).toUpperCase() }}
                 </el-avatar>
-                <span class="username">{{ userStore.user?.username }}</span>
+                <span class="username">{{ username }}</span>
                 <el-icon class="dropdown-arrow"><ArrowDown /></el-icon>
               </div>
             </template>
@@ -84,7 +84,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { HomeFilled, Document, Folder, Search, ArrowDown, Sunny, Moon } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
@@ -108,6 +108,20 @@ const themeStore = useThemeStore()
 
 const searchKeyword = ref('')
 const previousPath = ref('')
+
+// 强制触发头像更新
+const userAvatar = computed(() => getAvatarUrl(userStore.user?.avatar))
+const username = computed(() => userStore.user?.username)
+
+// 组件挂载时检查用户状态
+onMounted(() => {
+  // 如果有 token 但没有 user 信息，重新获取
+  if (userStore.isLoggedIn && !userStore.user) {
+    userStore.fetchProfile().catch(err => {
+      console.error('[AppHeader] Failed to fetch profile:', err)
+    })
+  }
+})
 
 const categoryItems = computed(() =>
   props.categories.map(cat => ({

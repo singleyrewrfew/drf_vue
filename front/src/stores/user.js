@@ -44,8 +44,17 @@ export const useUserStore = defineStore('user', () => {
     
     try {
       const savedUser = localStorage.getItem(STORAGE_KEYS.USER)
+      
       if (savedUser && savedUser !== 'undefined') {
-        user.value = JSON.parse(savedUser)
+        const parsed = JSON.parse(savedUser)
+        // 检查是否是错误的 response 对象（包含 status 字段）
+        if (parsed.status && parsed.data) {
+          localStorage.removeItem(STORAGE_KEYS.USER)
+          user.value = null
+        } else {
+          // 解析后创建新对象确保响应式
+          user.value = { ...parsed }
+        }
       } else {
         user.value = null
       }
@@ -89,9 +98,13 @@ export const useUserStore = defineStore('user', () => {
       if (!isActive || !token.value) return
       
       try {
-        const data = await userApi.getProfile()
+        const response = await userApi.getProfile()
+        // axios 响应拦截器已经将 responseData.data 赋值给 response.data
+        const data = response.data || response
+        
         if (isActive && JSON.stringify(user.value) !== JSON.stringify(data)) {
-          user.value = data
+          // 创建新对象确保响应式更新
+          user.value = { ...data }
           localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data))
         }
       } catch (error) {
@@ -112,10 +125,17 @@ export const useUserStore = defineStore('user', () => {
   })
 
   const login = async (credentials) => {
-    const data = await userApi.login(credentials)
+    const response = await userApi.login(credentials)
+    
+    // axios 响应拦截器已经将 responseData.data 赋值给 response.data
+    const data = response.data
+    
     token.value = data.access
     refreshToken.value = data.refresh
-    user.value = data.user
+    // 使用 Object.assign 确保响应式更新
+    if (data.user) {
+      user.value = { ...data.user }  // 创建新对象触发响应式
+    }
     saveToStorage()
     return data
   }
@@ -137,8 +157,13 @@ export const useUserStore = defineStore('user', () => {
   }
 
   const fetchProfile = async () => {
-    const data = await userApi.getProfile()
-    user.value = data
+    const response = await userApi.getProfile()
+    
+    // axios 响应拦截器已经将 responseData.data 赋值给 response.data
+    const data = response.data || response
+    
+    // 创建新对象确保响应式更新
+    user.value = { ...data }
     localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data))
   }
 
