@@ -66,9 +66,28 @@ const renderedContent = computed(() => {
     const tempDiv = document.createElement('div')
     tempDiv.innerHTML = html
     
+    // 给标题添加 ID（与 extractHeadings 保持一致的逻辑）
+    const idCounters = {}
     const headingElements = tempDiv.querySelectorAll('h1, h2, h3, h4, h5, h6')
-    headingElements.forEach((el, index) => {
-        el.id = `heading-${index}`
+    
+    headingElements.forEach((el) => {
+        const text = el.textContent.trim()
+        
+        // 基于标题文本生成 ID
+        const baseId = text
+            .toLowerCase()
+            .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')  // 非字母数字中文替换为 -
+            .replace(/^-+|-+$/g, '')  // 移除首尾的 -
+        
+        // 处理重复标题
+        if (idCounters[baseId] === undefined) {
+            idCounters[baseId] = 0
+        } else {
+            idCounters[baseId]++
+        }
+        
+        const id = idCounters[baseId] === 0 ? baseId : `${baseId}-${idCounters[baseId]}`
+        el.id = id
     })
     
     return tempDiv.innerHTML

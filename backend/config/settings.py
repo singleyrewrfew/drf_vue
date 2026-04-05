@@ -95,6 +95,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',      # 点击劫持保护
     'middleware.BackendAccessMiddleware.BackendAccessMiddleware',  # 自定义后台访问中间件
     'middleware.error_handler.ErrorHandlerMiddleware',             # 统一错误处理中间件（必须在最后）
+    'middleware.ApiResultInterceptorMiddleware.ResponseLogMiddleware',             # 统一错误处理中间件（必须在最后）
 ]
 
 # 根 URL 配置文件
@@ -240,8 +241,8 @@ SIMPLE_JWT = {
 
 # CORS 配置：始终使用白名单策略（不再使用 CORS_ALLOW_ALL_ORIGINS）
 CORS_ALLOWED_ORIGINS = [
-    origin.strip() 
-    for origin in os.getenv('CORS_ALLOWED_ORIGINS', '').split(',') 
+    origin.strip()
+    for origin in os.getenv('CORS_ALLOWED_ORIGINS', '').split(',')
     if origin.strip()
 ]
 
@@ -289,3 +290,74 @@ FFMPEG_PATH = os.getenv('FFMPEG_PATH', '')
 FFMPEG_ADDITIONAL_PATHS = [
     p.strip() for p in os.getenv('FFMPEG_ADDITIONAL_PATHS', '').split(',') if p.strip()
 ]
+
+
+# ======================== DRF 完整日志配置 ========================
+LOGGING = {
+    # 固定版本号，Django 要求必须写 1
+    'version': 1,
+
+    # 是否禁用已存在的默认日志器
+    # False = 保留 Django 自带日志，不覆盖
+    'disable_existing_loggers': False,
+
+    # ===================== 日志格式定义 =====================
+    'formatters': {
+        # 详细格式：时间 + 日志级别 + 模块名 + 日志信息
+        'verbose': {
+            # 日志输出格式
+            'format': '{asctime} [{levelname}] {module} {message}',
+            # 格式风格：使用大括号 {} 占位
+            'style': '{',
+            # 时间显示格式：年-月-日 时:分:秒
+            'datefmt': '%Y-%m-%d %H:%M:%S'
+        },
+    },
+
+    # ===================== 日志处理器（输出到哪里） =====================
+    'handlers': {
+        # 控制台输出处理器（开发最常用）
+        'console': {
+            # 日志级别：DEBUG 及以上全部打印
+            'level': 'DEBUG',
+            # 输出到控制台
+            'class': 'logging.StreamHandler',
+            # 使用上面定义的 verbose 格式
+            'formatter': 'verbose'
+        },
+    },
+
+    # ===================== 日志器（谁来打日志） =====================
+    'loggers': {
+        # Django 系统全局日志
+        'django': {
+            # 使用控制台输出
+            'handlers': ['console'],
+            # 只打印 INFO 及以上级别（过滤 DEBUG 垃圾信息）
+            'level': 'INFO',
+            # 允许向上传递日志
+            'propagate': True,
+        },
+
+        # DRF 接口专用日志（请求、异常、认证、权限全部在这里）
+        'django.request': {
+            'handlers': ['console'],
+            # 打印 DEBUG 级别，接口所有细节都能看到
+            'level': 'DEBUG',
+            # 禁止重复传递，避免日志重复
+            'propagate': False,
+        },
+
+        # 你自己项目的自定义日志（业务逻辑用这个）
+        'myapp': {
+            'handlers': ['console'],
+            # 开发环境全开 DEBUG
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}
+
+# ======================== DRF 异常处理 + 自动日志增强 ========================
+# 作用：让 DRF 所有接口异常（400/401/403/404/500）都自动记录日志
+REST_FRAMEWORK["EXCEPTION_HANDLER"] = 'utils.exceptions.custom_exception_handler'

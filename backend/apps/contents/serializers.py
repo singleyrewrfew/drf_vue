@@ -42,7 +42,13 @@ class ContentSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'author', 'view_count', 'created_at', 'updated_at']
 
     def get_content_preview(self, obj):
-        """返回文章预览内容（前 5000 个字符）"""
+        """
+        返回文章预览内容（前 5000 个字符）
+
+        结果返回给fields配置里的content_preview，最终返回给前端
+
+        !!!注意：fields必须配置了 content_preview 才会触发
+        """
         if not obj.content:
             return ''
         return obj.content[:5000] if len(obj.content) > 5000 else obj.content
@@ -87,20 +93,20 @@ class ContentCreateUpdateSerializer(AutoSlugMixin, serializers.ModelSerializer):
     def create(self, validated_data):
         tags_data = validated_data.pop('tags', [])
         cover_image_url = validated_data.pop('cover_image', None)
-        
+
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             if 'author' not in validated_data or not validated_data.get('author'):
                 validated_data['author'] = request.user
-        
+
         content = Content.objects.create(**validated_data)
-        
+
         if cover_image_url:
             relative_path = extract_media_path(cover_image_url)
             if relative_path:
                 content.cover_image.name = relative_path
                 content.save(update_fields=['cover_image'])
-        
+
         if tags_data:
             from apps.tags.models import Tag
             content.tags.set(Tag.objects.filter(id__in=tags_data))
@@ -109,10 +115,10 @@ class ContentCreateUpdateSerializer(AutoSlugMixin, serializers.ModelSerializer):
     def update(self, instance, validated_data):
         tags_data = validated_data.pop('tags', None)
         cover_image_url = validated_data.pop('cover_image', None)
-        
+
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-        
+
         if cover_image_url is not None:
             if cover_image_url:
                 relative_path = extract_media_path(cover_image_url)
@@ -122,9 +128,9 @@ class ContentCreateUpdateSerializer(AutoSlugMixin, serializers.ModelSerializer):
                     instance.cover_image = None
             else:
                 instance.cover_image = None
-        
+
         instance.save()
-        
+
         if tags_data is not None:
             from apps.tags.models import Tag
             instance.tags.set(Tag.objects.filter(id__in=tags_data))

@@ -2,6 +2,7 @@
     <div class="article-page">
         <div class="container">
             <el-row :gutter="24">
+                <!-- 左侧主内容区 -->
                 <el-col :span="17">
                     <div class="article-main">
                         <template v-if="loading">
@@ -28,12 +29,12 @@
                         </template>
                         <template v-else>
                             <!-- 文章头部 -->
-                            <ArticleHeader 
+                            <ArticleHeader
                                 :article="article"
                                 @category-click="handleCategoryClick"
                                 @tag-click="(tag) => $router.push(`/tag/${tag.slug || tag.id}`)"
                             />
-                            
+
                             <!-- 文章内容 -->
                             <ArticleContent
                                 :content="article.content"
@@ -59,9 +60,9 @@
                             @like="handleLikeComment"
                             @reply="handleReply"
                         />
-                    </div><!-- /.article-main -->
+                    </div>
                 </el-col>
-
+                <!-- 右侧侧边栏 -->
                 <el-col :span="7">
                     <div class="sidebar">
                         <div class="sidebar-card">
@@ -158,53 +159,62 @@
 </template>
 
 <script setup>
-import {ref, computed, watch, onUnmounted, nextTick} from 'vue'
+// ==================== 导入依赖 ====================
+import {ref, computed, watch, nextTick} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {
     Document,
     List
 } from '@element-plus/icons-vue'
 import {ElMessage} from 'element-plus'
-import {marked} from 'marked'
-import hljs from 'highlight.js'
+import {marked} from 'marked'  // Markdown 解析器
+import hljs from 'highlight.js'  // 代码高亮库
 import 'highlight.js/styles/github-dark.css'
-import {useUserStore} from '@/stores/user'
-import {getContent, getContents, getComments, createComment, likeComment} from '@/api/content'
+import {useUserStore} from '@/stores/user'  // 用户状态管理
+import {getContent, getContents, getComments, createComment, likeComment} from '@/api/content'  // API 接口
 import {
     ArticleHeader,
     ArticleContent,
     ArticleNav,
     CommentsSection
-} from '@/components/article'
-import {getCoverUrl, getAvatarUrl, formatDate, getArticleUrl} from '@/utils'
+} from '@/components/article'  // 文章相关组件
+import {getCoverUrl, getAvatarUrl, formatDate, getArticleUrl} from '@/utils'  // 工具函数
 
-const route = useRoute()
-const router = useRouter()
-const userStore = useUserStore()
+// ==================== 路由和状态管理 ====================
+const route = useRoute()  // 获取当前路由信息
+const router = useRouter()  // 获取路由实例用于导航
+const userStore = useUserStore()  // 用户状态管理
 
-const loading = ref(false)
-const article = ref({})
-const fullContentLoaded = ref(false)
-const comments = ref([])
-const commentContent = ref('')
-const submitting = ref(false)
-const prevArticle = ref(null)
-const nextArticle = ref(null)
-const relatedArticles = ref([])
-const showAllComments = ref(false)
-const imageInput = ref(null)
+// ==================== 响应式数据定义 ====================
+const loading = ref(false)  // 文章加载状态
+const article = ref({})  // 文章详情数据
+const fullContentLoaded = ref(false)  // 完整内容是否已加载（用于懒加载）
+const comments = ref([])  // 评论列表
+const commentContent = ref('')  // 评论内容输入框
+const submitting = ref(false)  // 评论提交状态
+const prevArticle = ref(null)  // 上一篇文章
+const nextArticle = ref(null)  // 下一篇文章
+const relatedArticles = ref([])  // 相关文章列表
+const showAllComments = ref(false)  // 是否显示全部评论
+const imageInput = ref(null)  // 图片上传 input 引用
 
-const emojis = ['😀', '😂', '😍', '🥰', '😎', '🤔', '👍', '👎', '❤️', '💔', '🎉', '🔥', '✨', '🌟', '⭐', '💯', '💪', '🙏', '😭', '😱', '🤣', '😊', '🥺', '👏', '🙄', '😴'] // 精简到 25 个常用表情
+// 常用表情符号列表（精简到 25 个）
+const emojis = ['😀', '😂', '😍', '🥰', '😎', '🤔', '👍', '👎', '❤️', '💔', '🎉', '🔥', '✨', '🌟', '⭐', '💯', '💪', '🙏', '😭', '😱', '🤣', '😊', '🥺', '👏', '🙄', '😴']
 
+// ==================== 计算属性 ====================
+// 根据 showAllComments 状态决定显示的评论数量
 const displayComments = computed(() => {
     if (showAllComments.value) {
-        return comments.value
+        return comments.value  // 显示全部评论
     }
-    return comments.value.slice(0, 2)
+    return comments.value.slice(0, 2)  // 只显示前 2 条
 })
-const showTocDrawer = ref(false)
-const activeHeadingId = ref('')
+// 移动端目录抽屉相关状态
+const showTocDrawer = ref(false)  // 是否显示目录抽屉
+const activeHeadingId = ref('')  // 当前激活的标题 ID
 
+// ==================== 事件处理函数 ====================
+// 处理分类标签点击事件
 const handleCategoryClick = () => {
     const idOrSlug = article.value.category_slug || article.value.category
     if (idOrSlug) {
@@ -212,27 +222,30 @@ const handleCategoryClick = () => {
     }
 }
 
-// 处理评论相关 - 已委托给 CommentsSection 组件
+// ==================== 评论功能处理 ====================
+// 评论区组件引用
 const commentsSectionRef = ref(null)
 
+// 处理评论提交（区分主评论和回复）
 const handleCommentSubmit = ({ content, parentId }) => {
     if (parentId === null) {
-        submitCommentMain(content)
+        submitCommentMain(content)  // 提交主评论
     } else {
-        submitReplyMain(parentId, content)
+        submitReplyMain(parentId, content)  // 提交回复
     }
 }
 
+// 提交主评论
 const submitCommentMain = async (content) => {
     if (!content.trim()) return
-    
+
     try {
         await createComment({
             article: route.params.id,
             content: content
         })
-        
-        await loadComments()
+
+        await loadComments()  // 重新加载评论列表
         ElMessage.success('评论成功')
     } catch (error) {
         console.error('Failed to submit comment:', error)
@@ -240,17 +253,18 @@ const submitCommentMain = async (content) => {
     }
 }
 
+// 提交回复评论
 const submitReplyMain = async (parentId, content) => {
     if (!content.trim()) return
-    
+
     try {
         await createComment({
             article: route.params.id,
             content: content,
-            parent: parentId
+            parent: parentId  // 指定父评论 ID
         })
-        
-        await loadComments()
+
+        await loadComments()  // 重新加载评论列表
         ElMessage.success('回复成功')
     } catch (error) {
         console.error('Failed to submit reply:', error)
@@ -258,9 +272,11 @@ const submitReplyMain = async (parentId, content) => {
     }
 }
 
+// 处理评论点赞
 const handleLikeComment = async (comment) => {
     try {
         await likeComment(comment.id)
+        // 切换点赞状态并更新点赞数
         comment.is_liked = !comment.is_liked
         comment.like_count = (comment.like_count || 0) + (comment.is_liked ? 1 : -1)
     } catch (error) {
@@ -268,91 +284,127 @@ const handleLikeComment = async (comment) => {
     }
 }
 
+// 处理回复按钮点击，打开回复表单
 const handleReply = (commentId, userName, userId) => {
     if (commentsSectionRef.value) {
         commentsSectionRef.value.openReplyForm(commentId, userName, userId)
     }
 }
 
+// ==================== 目录导航功能 ====================
+// 滚动到指定标题位置
 const scrollToHeading = (id) => {
     const element = document.getElementById(id)
     if (element) {
-        const headerHeight = 72
+        const headerHeight = 72  // 顶部导航栏高度
         const elementPosition = element.getBoundingClientRect().top + window.pageYOffset
         window.scrollTo({
-            top: elementPosition - headerHeight - 16,
-            behavior: 'smooth'
+            top: elementPosition - headerHeight - 16,  // 减去导航栏高度和额外间距
+            behavior: 'smooth'  // 平滑滚动
         })
     }
 }
 
+// 处理移动端目录项点击
 const handleTocClick = (id) => {
-    showTocDrawer.value = false
-    activeHeadingId.value = id
-    scrollToHeading(id)
+    showTocDrawer.value = false  // 关闭抽屉
+    activeHeadingId.value = id  // 设置当前激活的标题
+    scrollToHeading(id)  // 滚动到对应位置
 }
 
+// ==================== Markdown 内容处理 ====================
+// 文章标题列表（用于生成目录）
 const headings = ref([])
 
+// 从 Markdown 内容中提取标题，生成目录结构（优化版：无需完整解析）
 const extractHeadings = (content) => {
     if (!content) return []
-    
-    marked.setOptions({
-        highlight: function (code, lang) {
-            if (lang && hljs.getLanguage(lang)) {
-                try {
-                    return hljs.highlight(code, {language: lang}).value
-                } catch (e) {
-                    console.error(e)
-                }
-            }
-            return hljs.highlightAuto(code).value
-        },
-        breaks: true,
-        gfm: true,
-    })
-    
-    const html = marked.parse(content)
-    const tempDiv = document.createElement('div')
-    tempDiv.innerHTML = html
-    
-    const headingElements = tempDiv.querySelectorAll('h1, h2, h3, h4, h5, h6')
+
     const result = []
-    headingElements.forEach((el, index) => {
-        result.push({
-            id: `heading-${index}`,
-            level: parseInt(el.tagName.charAt(1)),
-            text: el.textContent,
-        })
-    })
+    const idCounters = {}  // 用于处理重复标题
+
+    // 第一步：移除代码块（避免匹配代码中的 #）
+    // 匹配 ```code``` 或 ~~~code~~~ 格式的 code blocks
+    const contentWithoutCodeBlocks = content
+        .replace(/```[\s\S]*?```/g, '')  // 移除 ``` 代码块
+        .replace(/~~~[\s\S]*?~~~/g, '')  // 移除 ~~~ 代码块
+        .replace(/^`{3,}.*$/gm, '')      // 移除单行 ```
+        .replace(/^~{3,}.*$/gm, '')      // 移除单行 ~~~
+
+    // 第二步：使用正则表达式直接匹配 Markdown 标题（# ## ### 等）
+    const headingRegex = /^(#{1,6})\s+(.+)$/gm
+    let match
+
+    while ((match = headingRegex.exec(contentWithoutCodeBlocks)) !== null) {
+        const level = match[1].length  // # 的数量即标题级别
+        let text = match[2].trim()   // 标题文本
+
+        // 清理 Markdown 格式符号
+        text = text
+            .replace(/\*\*(.+?)\*\*/g, '$1')  // 移除 **粗体**
+            .replace(/\*(.+?)\*/g, '$1')       // 移除 *斜体*
+            .replace(/__(.+?)__/g, '$1')       // 移除 __粗体__
+            .replace(/_(.+?)_/g, '$1')         // 移除 _斜体_
+            .replace(/`(.+?)`/g, '$1')         // 移除 `代码`
+            .replace(/\[(.+?)\]\(.+?\)/g, '$1') // 移除 [链接](url)
+            .replace(/!\[(.+?)\]\(.+?\)/g, '$1') // 移除 ![图片](url)
+            .trim()
+
+        // 过滤掉空标题和过长的标题
+        if (text && text.length < 200) {
+            // 基于标题文本生成 ID（与 ArticleContent.vue 保持一致）
+            const baseId = text
+                .toLowerCase()
+                .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')  // 非字母数字中文替换为 -
+                .replace(/^-+|-+$/g, '')  // 移除首尾的 -
+            
+            // 处理重复标题
+            if (idCounters[baseId] === undefined) {
+                idCounters[baseId] = 0
+            } else {
+                idCounters[baseId]++
+            }
+            
+            const id = idCounters[baseId] === 0 ? baseId : `${baseId}-${idCounters[baseId]}`
+            
+            result.push({
+                id: id,
+                level: level,
+                text: text,
+            })
+        }
+    }
+
     return result
 }
 
+// 初始化文章内容：提取目录并处理懒加载
 const initArticleContent = () => {
     if (!article.value.content) return
 
-    // 提取标题用于目录
+    // 提取标题用于生成目录
     headings.value = extractHeadings(article.value.content)
 
     // 如果当前是预览内容且内容长度等于 5000，异步加载完整内容
     if (article.value.content === article.value.content_preview &&
         article.value.content.length === 5000 &&
         !fullContentLoaded.value) {
-        loadFullContent()
+        loadFullContent()  // 触发完整内容加载
     } else {
         // 否则标记为已加载完成
         fullContentLoaded.value = true
     }
 }
 
+// 异步加载文章完整内容（用于懒加载优化）
 const loadFullContent = async () => {
     try {
         const {data} = await getContent(route.params.id)
         if (data.content && data.content !== article.value.content) {
-            article.value.content = data.content
+            article.value.content = data.content  // 更新为完整内容
             fullContentLoaded.value = true
 
-            // 重新渲染完整内容
+            // 重新渲染完整内容（更新目录等）
             nextTick(() => {
                 initArticleContent()
             })
@@ -366,21 +418,24 @@ const loadFullContent = async () => {
     }
 }
 
+// ==================== 数据获取函数 ====================
+// 获取文章详情
 const fetchArticle = async () => {
     loading.value = true
     fullContentLoaded.value = false
     try {
         // 支持通过 slug 或 ID 获取文章
         const articleId = route.params.slug || route.params.id
+        // 直接从返回对象里“掏”出 data 属性
         const {data} = await getContent(articleId)
         article.value = data
 
-        // 如果有 preview 字段且内容超过 preview，先使用 preview
-        if (data.content_preview && data.content.length > data.content_preview.length) {
+        // 如果有 preview 字段且内容超过 preview，先使用 preview（优化首屏加载）
+        if (data.content_preview && (data.content.length > data.content_preview.length)) {
             article.value.content = data.content_preview
         }
 
-        // 文章加载成功后，初始化内容渲染
+        // 文章加载成功后，初始化内容渲染（提取目录等）
         initArticleContent()
 
         // 并行加载评论和相关文章（失败不影响文章显示）
@@ -392,7 +447,7 @@ const fetchArticle = async () => {
         })
     } catch (e) {
         console.error(e)
-        
+
         // 检查是否是 404 错误
         if (e.response?.status === 404) {
             // 跳转到 404 页面
@@ -405,41 +460,48 @@ const fetchArticle = async () => {
     }
 }
 
+// 获取文章评论列表
 const fetchComments = async () => {
     try {
         const articleId = route.params.slug || route.params.id
         const {data} = await getComments({article: articleId})
-        comments.value = data.results || data
+        comments.value = data.results || data  // 兼容不同的 API 返回格式
     } catch (e) {
         console.error(e)
     }
 }
 
-// 别名，用于 CommentsSection 组件
+// 别名，用于 CommentsSection 组件调用
 const loadComments = fetchComments
 
+// 获取相关文章列表（基于当前文章的分类）
 const fetchRelatedArticles = async () => {
     try {
         const params = {status: 'published', page_size: 5}
         if (article.value.category) {
-            params.category = article.value.category
+            params.category = article.value.category  // 按分类筛选
         }
         const {data} = await getContents(params)
         const results = data.results || data
+        // 过滤掉当前文章，最多取 5 篇
         relatedArticles.value = results.filter(item => item.id !== article.value.id).slice(0, 5)
     } catch (e) {
         console.error(e)
     }
 }
 
+// ==================== 评论编辑器工具函数 ====================
+// 触发图片上传
 const triggerImageUpload = () => {
     imageInput.value?.click()
 }
 
+// 处理图片上传（目前仅本地预览，未调用后端接口）
 const handleImageUpload = async (event) => {
     const file = event.target.files[0]
     if (!file) return
 
+    // 限制图片大小不超过 5MB
     if (file.size > 5 * 1024 * 1024) {
         ElMessage.error('图片大小不能超过 5MB')
         return
@@ -450,7 +512,7 @@ const handleImageUpload = async (event) => {
         const reader = new FileReader()
         reader.onload = (e) => {
             const imgMarkdown = `![图片](${e.target.result})`
-            commentContent.value += imgMarkdown
+            commentContent.value += imgMarkdown  // 插入图片 Markdown 语法
         }
         reader.readAsDataURL(file)
     } catch (e) {
@@ -461,6 +523,7 @@ const handleImageUpload = async (event) => {
     event.target.value = ''
 }
 
+// 插入链接
 const insertLink = () => {
     const url = prompt('请输入链接地址：')
     if (!url) return
@@ -469,19 +532,22 @@ const insertLink = () => {
     if (!text) return
 
     const linkMarkdown = `[${text}](${url})`
-    commentContent.value += linkMarkdown
+    commentContent.value += linkMarkdown  // 插入链接 Markdown 语法
 }
 
+// 显示提示信息
 const showTooltip = (message) => {
     ElMessage.info(message)
 }
 
+// 插入表情符号
 const insertEmoji = (emoji) => {
     commentContent.value += emoji
 }
 
-// 图片懒加载和文章内容渲染已在 initArticleContent 中处理
+// 注意：图片懒加载功能已移除，使用浏览器原生懒加载
 
+// 提交评论（旧版方法，已被 CommentsSection 组件替代）
 const submitComment = async () => {
     if (!commentContent.value.trim()) {
         ElMessage.warning('请输入评论内容')
@@ -503,13 +569,13 @@ const submitComment = async () => {
     }
 }
 
+// ==================== 监听器 ====================
+// 监听路由参数变化，当文章 ID 改变时重新获取文章数据
 watch(() => route.params.id, () => {
     if (route.params.id) {
         fetchArticle()
     }
-}, {immediate: true})
-
-// 注意：图片懒加载功能已移除，使用浏览器原生懒加载
+}, {immediate: true})  // immediate: true 表示组件挂载时立即执行一次
 </script>
 
 <style scoped>
