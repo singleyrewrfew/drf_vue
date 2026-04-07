@@ -210,6 +210,7 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ],
     # 默认分页类
+    # from rest_framework.pagination import LimitOffsetPagination
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     # 默认每页数量
     'PAGE_SIZE': 20,
