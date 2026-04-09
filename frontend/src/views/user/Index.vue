@@ -121,7 +121,7 @@ const formRef = ref()
 
 const isEdit = computed(() => !!editingId.value)
 
-const form = reactive({
+let form = reactive({
     username: '',
     password: '',
     password_confirm: '',

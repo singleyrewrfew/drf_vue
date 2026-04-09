@@ -57,7 +57,7 @@ const router = useRouter()
 const userStore = useUserStore()
 
 const loading = ref(false)
-const form = reactive({
+let form = reactive({
     username: '',
     password: '',
 })

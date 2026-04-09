@@ -63,7 +63,7 @@ const dialogVisible = ref(false)
 const isEdit = ref(false)
 const editId = ref(null)
 
-const form = reactive({
+let form = reactive({
     name: '',
     code: '',
     description: '',

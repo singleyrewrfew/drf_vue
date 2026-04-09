@@ -84,7 +84,7 @@ const userStore = useUserStore()
 const saving = ref(false)
 const showAvatarOptions = ref(false)
 
-const form = reactive({
+let form = reactive({
     username: '',
     email: '',
     nickname: '',

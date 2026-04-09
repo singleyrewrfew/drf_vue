@@ -81,7 +81,7 @@ const dialogVisible = ref(false)
 const editingId = ref(null)
 const formRef = ref()
 
-const form = reactive({
+let form = reactive({
     name: '',
     slug: '',
     parent: '',

@@ -64,7 +64,7 @@ import AuthBackground from '@/components/AuthBackground.vue'
 const router = useRouter()
 
 const loading = ref(false)
-const form = reactive({
+let form = reactive({
     username: '',
     email: '',
     password: '',

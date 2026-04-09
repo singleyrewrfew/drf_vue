@@ -118,7 +118,7 @@ const formRef = ref()
 const loading = ref(false)
 const rememberMe = ref(false)
 
-const form = reactive({
+let form = reactive({
     username: '',
     password: '',
 })

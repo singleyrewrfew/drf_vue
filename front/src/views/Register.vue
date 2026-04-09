@@ -150,7 +150,7 @@ const loading = ref(false)
 const agreeTerms = ref(false)
 const passwordStrength = ref(0)
 
-const form = reactive({
+let form = reactive({
     username: '',
     email: '',
     password: '',
