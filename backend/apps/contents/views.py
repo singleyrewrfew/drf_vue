@@ -41,6 +41,7 @@ class ContentViewSet(
     def perform_create(self, serializer):
         """创建内容时自动设置作者（管理员可指定其他作者）"""
         author_id = self.request.data.get('author')
+        # 如果有作者，执行操作
         if author_id and (self.request.user.is_admin or self.request.user.is_superuser):
             from apps.core.models import User
             try:
@@ -51,7 +52,7 @@ class ContentViewSet(
                 pass
         serializer.save(author=self.request.user)
     
-    @auto_response
+    @auto_response  # 包装响应格式
     def retrieve(self, request, *args, **kwargs):
         """检索单个内容并增加浏览次数"""
         instance = self.get_object()
@@ -68,7 +69,8 @@ class ContentViewSet(
         try:
             service = ContentService()
             published_content = service.publish_content(content)
-            return ContentSerializer(published_content).data  # 装饰器会自动包装
+            serializer = self.get_serializer(published_content)
+            return serializer.data  # 装饰器会自动包装
         except ValueError as e:
             return api_error(
                 message=str(e),
@@ -84,7 +86,8 @@ class ContentViewSet(
         content = self.get_object()
         service = ContentService()
         archived_content = service.archive_content(content)
-        return ContentSerializer(archived_content).data  # 装饰器会自动包装
+        serializer = self.get_serializer(archived_content)
+        return serializer.data  # 装饰器会自动包装
 
     def get_queryset(self):
         """
@@ -164,6 +167,7 @@ class ContentViewSet(
         
         return queryset
 
+    @auto_response
     def list(self, request, *args, **kwargs):
         """
         获取内容列表（统一响应格式）
@@ -187,15 +191,15 @@ class ContentViewSet(
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             paginated_data = self.get_paginated_response(serializer.data).data
-            return StandardResponse(paginated_data)
+            return paginated_data
         
         serializer = self.get_serializer(queryset, many=True)
-        return StandardResponse(serializer.data)
+        return serializer.data
 
     @extend_schema(request=None, responses=ContentSerializer)
     @action(detail=True, methods=['post'])
     def upload_cover(self, request, pk=None):
-        """
+        """：：：：废弃接口
         上传封面图
         
         封面图会保存到 covers/ 目录，而不是 media/{uploader.id}/ 目录

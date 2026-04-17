@@ -86,7 +86,7 @@ const pagination = reactive({
     total: 0,
 })
 
-const form = reactive({
+let form = reactive({
     name: '',
     code: '',
     description: '',

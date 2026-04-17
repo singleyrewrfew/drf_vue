@@ -301,7 +301,7 @@ const showOldPassword = ref(false)
 const showNewPassword = ref(false)
 const showConfirmPassword = ref(false)
 
-const form = reactive({
+let form = reactive({
     email: '',
 })
 

@@ -54,9 +54,7 @@ class ContentQuerySetMixin:
         queryset = super().get_queryset()
         
         # 预加载关联数据，避免 N+1 查询
-        queryset = queryset.select_related('author', 'category')\
-                          .prefetch_related('tags')
-        
+        queryset = queryset.select_related('author', 'category').prefetch_related('tags')
         # 应用过滤
         queryset = self._apply_filters(queryset)
         
