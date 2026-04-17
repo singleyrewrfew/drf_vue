@@ -12,12 +12,12 @@ const routes = [
     path: '/register',
     name: 'Register',
     component: () => import('@/views/auth/Register.vue'),
-    meta: { guest: true },
+    meta: { guest: true },  // 标记：仅访客
   },
   {
     path: '/',
     component: () => import('@/components/layout/MainLayout.vue'),
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true },  // 标记：需登录
     children: [
       {
         path: '',
@@ -88,22 +88,34 @@ const routes = [
       },
     ],
   },
+  /* Vue 3 专用语法，用来匹配任意 URL
+    :pathMatch：自定义参数名，被捕获的路径会存在 $route.params.pathMatch 里。
+    (.*)：正则表达式，匹配任意字符（包括 /）。
+    末尾的 *：表示参数可重复 0 次或多次，能正确捕获多级路径（/a/b/c）。
+  */
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
-    component: () => import('@/views/auth/NotFound.vue'),
+    component: () => import('@/views/notFound/NotFound.vue'),
   },
 ]
 
 const router = createRouter({
+  // 配置路由历史模式（History模式，URL不带#）
   history: createWebHistory('/admin/'),
-  routes,
+  routes,  // 路由规则数组
 })
 
+/* Vue Router 全局前置守卫的异步写法，核心用于：路由跳转前，执行异步操作
+to：即将进入的目标路由（如 to.path、to.meta）Vue Router
+from：当前正要离开的路由Vue Router
+next：必须调用的函数，决定导航是否放行
+*/
 router.beforeEach(async (to, from, next) => {
   const userStore = useUserStore()
 
   // 如果需要认证但未登录
+  // 前提：路由配置时必须定义 meta: { requiresAuth: true }
   if (to.meta.requiresAuth && !userStore.isLoggedIn()) {
     return next({ name: 'Login', query: { redirect: to.fullPath } })
   }
