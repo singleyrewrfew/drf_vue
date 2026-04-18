@@ -2,6 +2,7 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.request import Request
 from rest_framework.response import Response
 
 from apps.users.permissions import IsOwnerOrAdmin
@@ -112,21 +113,22 @@ class CommentViewSet(viewsets.ModelViewSet):
             无
         """
         queryset = super().get_queryset()
+        request: Request = self.request  # type: ignore
         if self.action == 'list':
-            show_all = self.request.query_params.get('all')
-            show_my = self.request.query_params.get('my')
+            show_all = request.query_params.get('all')
+            show_my = request.query_params.get('my')
             
             # 如果请求的是自己的评论
             if show_my and self.request.user.is_authenticated:
                 queryset = queryset.filter(user=self.request.user)
             # 如果是编辑或管理员请求所有评论
-            elif show_all and self.request.user.is_authenticated and self.request.user.is_editor:
+            elif show_all and request.user.is_authenticated and request.user.is_editor:
                 return queryset
             # 默认只显示已审核的主评论
             else:
                 queryset = queryset.filter(is_approved=True, parent__isnull=True)
         
-        article_id = self.request.query_params.get('article')
+        article_id = request.query_params.get('article')
         if article_id:
             # 支持通过 slug 或 UUID 查找文章
             try:
@@ -141,9 +143,9 @@ class CommentViewSet(viewsets.ModelViewSet):
                     queryset = queryset.filter(article_id=article.id)
                 except Content.DoesNotExist:
                     queryset = queryset.none()
-        is_approved = self.request.query_params.get('is_approved')
-        if is_approved is not None and self.request.user.is_authenticated:
-            if self.request.user.is_editor:
+        is_approved = request.query_params.get('is_approved')
+        if is_approved is not None and request.user.is_authenticated:
+            if request.user.is_editor:
                 queryset = queryset.filter(is_approved=is_approved.lower() == 'true')
         return queryset
 
