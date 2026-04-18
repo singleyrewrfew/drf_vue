@@ -18,12 +18,13 @@ from .serializers import (
     UserSerializer,
     UserUpdateSerializer,
 )
+from backend.utils.response import api_error
 
 
 class UserViewSet(viewsets.ModelViewSet):
     """
     用户视图集
-    
+
     提供用户相关的 API 端点：
     - 登录、登出
     - 获取用户信息
@@ -36,11 +37,11 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     # 支持多种解析器：表单、JSON、多部分（文件上传）
     parser_classes = [JSONParser, MultiPartParser, FormParser]
-    
+
     def get_permissions(self):
         """
         根据不同的操作返回不同的权限类
-        
+
         权限规则：
         - login: 允许任何人访问
         - create: 允许任何人注册
@@ -59,11 +60,11 @@ class UserViewSet(viewsets.ModelViewSet):
         elif self.action in ['list', 'destroy']:
             return [IsAdminUser()]
         return [IsAuthenticated()]
-    
+
     def get_serializer_class(self):
         """
         根据不同的操作返回不同的序列化器
-        
+
         序列化器映射：
         - create: UserRegisterSerializer（注册）
         - update/partial_update: UserUpdateSerializer（更新）
@@ -74,12 +75,12 @@ class UserViewSet(viewsets.ModelViewSet):
         elif self.action in ['update', 'partial_update']:
             return UserUpdateSerializer
         return UserSerializer
-    
-    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
+
+    @action(detail=False, methods=['post'],)
     def login(self, request):
         """
         用户登录
-        
+
         步骤：
         1. 获取用户名和密码
         2. 验证用户名和密码不为空
@@ -91,37 +92,39 @@ class UserViewSet(viewsets.ModelViewSet):
         """
         username = request.data.get('username')
         password = request.data.get('password')
-        
+
         if not username or not password:
             return api_error(
                 message='用户名和密码不能为空',
                 error_type='bad_request',
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         try:
             user = User.objects.get(username=username)
-        except User.DoesNotExist:
+        except User.DoesNotExist:  # get不到对象，抛出不存在的错误
             return api_error(
                 message='用户不存在',
                 error_type='unauthorized',
                 status=status.HTTP_401_UNAUTHORIZED
             )
-        
+
+        # 密码校验
         if not user.check_password(password):
             return api_error(
                 message='密码错误',
                 error_type='unauthorized',
                 status=status.HTTP_401_UNAUTHORIZED
             )
-        
+
+        # 用户是否激活
         if not user.is_active:
             return api_error(
                 message='账户已被禁用',
                 error_type='forbidden',
                 status=status.HTTP_403_FORBIDDEN
             )
-        
+
         # 生成 JWT 令牌
         refresh = RefreshToken.for_user(user)
         return StandardResponse({
@@ -129,22 +132,22 @@ class UserViewSet(viewsets.ModelViewSet):
             'refresh': str(refresh),
             'user': UserSerializer(user).data
         })
-    
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+
+    @action(detail=False, methods=['get'])
     def profile(self, request):
         """
         获取当前登录用户的个人信息
-        
+
         返回完整的用户信息，包括计算属性
         """
         serializer = UserSerializer(request.user)
         return StandardResponse(serializer.data)
-    
-    @action(detail=False, methods=['put', 'patch', 'post'], permission_classes=[IsAuthenticated])
+
+    @action(detail=False, methods=['put', 'patch', 'post'])
     def update_profile(self, request):
         """
         更新用户个人信息
-        
+
         支持的字段：
         - email: 邮箱
         - avatar: 头像（支持文件对象或 URL）
@@ -155,12 +158,12 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return StandardResponse(UserSerializer(request.user).data)
-    
-    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
+
+    @action(detail=False, methods=['post'])
     def change_password(self, request):
         """
         修改用户密码
-        
+
         步骤：
         1. 验证原密码
         2. 验证新密码和确认密码
@@ -170,12 +173,12 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return StandardResponse({'message': '密码修改成功'})
-    
-    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
+
+    @action(detail=False, methods=['post'])
     def logout(self, request):
         """
         用户登出
-        
+
         步骤：
         1. 获取刷新令牌
         2. 将令牌加入黑名单
@@ -189,12 +192,12 @@ class UserViewSet(viewsets.ModelViewSet):
         except Exception:
             pass
         return StandardResponse({'message': '退出成功'})
-    
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+
+    @action(detail=False, methods=['get'])
     def popular(self, request):
         """
         获取热门作者列表
-        
+
         排序规则：
         - 按已发布的文章数量降序
         - 返回前 10 名
@@ -204,7 +207,7 @@ class UserViewSet(viewsets.ModelViewSet):
         ).annotate(
             article_count=Count('contents')
         ).order_by('-article_count')[:10]
-        
+
         data = []
         for user in users:
             data.append({
@@ -214,14 +217,14 @@ class UserViewSet(viewsets.ModelViewSet):
                 'article_count': user.article_count,
             })
         return StandardResponse(data)
-    
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+
+    @action(detail=False, methods=['get'])
     def stats(self, request):
         """
         获取仪表盘统计数据
-        
+
         根据用户角色返回不同的数据：
-        
+
         管理员（is_admin 或 is_superuser）：
         - 所有内容统计
         - 所有用户数
@@ -229,20 +232,20 @@ class UserViewSet(viewsets.ModelViewSet):
         - 所有媒体数
         - 总浏览量
         - 最近 5 篇文章
-        
+
         编辑者（is_editor）：
         - 自己的内容统计
         - 自己的评论数
         - 自己的浏览量
         - 最近 5 篇文章
-        
+
         普通用户：
         - 空数据
         """
         # 判断用户角色
         is_admin = request.user.is_admin or request.user.is_superuser
         is_editor = request.user.is_admin or request.user.is_superuser or (request.user.role and request.user.role.code == 'editor')
-        
+
         if is_admin:
             # 管理员显示全部数据 - 使用聚合减少查询次数
             content_stats = Content.objects.aggregate(
@@ -251,19 +254,19 @@ class UserViewSet(viewsets.ModelViewSet):
                 drafts=Count('id', filter=models.Q(status='draft')),
                 total_views=Sum('view_count')
             )
-            
+
             content_count = content_stats['total']
             published_count = content_stats['published']
             draft_count = content_stats['drafts']
             total_views = content_stats['total_views'] or 0
-            
+
             comment_count = Comment.objects.count()
             user_count = User.objects.count()
             media_count = Media.objects.count()
-            
+
             # 获取最近 5 篇文章
             recent_contents = Content.objects.filter(status='published').select_related('author').order_by('-created_at')[:5]
-            
+
             return StandardResponse({
                 'contents': content_count,
                 'published': published_count,
@@ -291,17 +294,17 @@ class UserViewSet(viewsets.ModelViewSet):
                 drafts=Count('id', filter=models.Q(status='draft')),
                 total_views=Sum('view_count')
             )
-            
+
             my_contents = my_content_stats['total']
             my_published = my_content_stats['published']
             my_drafts = my_content_stats['drafts']
             my_views = my_content_stats['total_views'] or 0
-            
+
             my_comments = Comment.objects.filter(user=request.user).count()
-            
+
             # 获取最近 5 篇文章
             recent_contents = Content.objects.filter(author=request.user, status='published').order_by('-created_at')[:5]
-            
+
             return StandardResponse({
                 'my_contents': my_contents,
                 'my_published': my_published,
