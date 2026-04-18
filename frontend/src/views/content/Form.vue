@@ -268,7 +268,7 @@ const uploadUrl = computed(() => `${import.meta.env.VITE_API_BASE_URL || '/api'}
 // 封面图上传使用通用媒体上传接口
 const coverUploadUrl = computed(() => `${import.meta.env.VITE_API_BASE_URL || '/api'}/media/`)
 const uploadHeaders = computed(() => {
-    const token = userStore.token
+    const token = userStore.accessToken
     console.log('上传 Token:', token ? '存在' : '为空')
     return {
         'Authorization': `Bearer ${token}`
@@ -276,7 +276,7 @@ const uploadHeaders = computed(() => {
 })
 
 const beforeUpload = (file) => {
-    const token = userStore.token
+    const token = userStore.accessToken
     if (!token) {
         ElMessage.error('请先登录')
         return false
@@ -295,7 +295,7 @@ const beforeUpload = (file) => {
 }
 
 const beforeCoverUpload = (file) => {
-    const token = userStore.token
+    const token = userStore.accessToken
     if (!token) {
         ElMessage.error('请先登录')
         return false
@@ -429,13 +429,13 @@ const handleCoverSuccess = (response, file) => {
         ElMessage.error(response.message || '封面图上传失败')
         return
     }
-    
+
     const mediaData = response.data
     if (!mediaData) {
         ElMessage.error('封面图上传失败：响应数据为空')
         return
     }
-    
+
     if (mediaData.url) {
         const baseUrl = getMediaBaseUrl()
         form.value.cover_image = mediaData.url.startsWith('http') ? mediaData.url : `${baseUrl}${mediaData.url}`
@@ -449,7 +449,7 @@ const handleCoverSuccess = (response, file) => {
 const handleCoverError = (error) => {
     console.error('封面图上传错误:', error)
     let errorMessage = '封面图上传失败'
-    
+
     if (error.response && error.response.status === 401) {
         errorMessage = '请先登录'
     } else if (error.response && error.response.status === 403) {
@@ -457,7 +457,7 @@ const handleCoverError = (error) => {
     } else if (error.message) {
         errorMessage = error.message
     }
-    
+
     ElMessage.error(errorMessage)
 }
 
@@ -635,7 +635,7 @@ onMounted(async () => {
 
     // 初始化编辑器主题
     updateEditorTheme()
-    
+
     setTimeout(() => {
         editorLoaded.value = true
     }, 100)

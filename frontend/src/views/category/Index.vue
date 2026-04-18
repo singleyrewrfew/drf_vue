@@ -163,7 +163,7 @@ const handleSubmit = async () => {
             ElMessage.success('创建成功')
         }
         dialogVisible.value = false
-        fetchCategories()
+        await fetchCategories()
     } catch (error) {
         ElMessage.error(isEdit.value ? '更新失败' : '创建失败')
     } finally {
@@ -176,7 +176,7 @@ const handleDelete = async (row) => {
     try {
         await deleteCategory(row.id)
         ElMessage.success('删除成功')
-        fetchCategories()
+        await fetchCategories()
     } catch (error) {
         ElMessage.error('删除失败')
     }

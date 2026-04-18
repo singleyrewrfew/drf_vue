@@ -378,7 +378,7 @@ const handleRegenerateThumbnails = async (row) => {
   try {
     await api.post(`/media/${row.id}/regenerate_thumbnails/`)
     ElMessage.success('缩略图生成任务已启动')
-    fetchMedia()
+    await fetchMedia()
   } catch (error) {
     ElMessage.error('启动缩略图生成失败')
   }
