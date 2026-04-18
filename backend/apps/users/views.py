@@ -18,7 +18,7 @@ from .serializers import (
     UserSerializer,
     UserUpdateSerializer,
 )
-from backend.utils.response import api_error
+from utils.response import api_error
 
 
 class UserViewSet(viewsets.ModelViewSet):
