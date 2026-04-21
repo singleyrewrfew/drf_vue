@@ -1,42 +1,40 @@
 <template>
     <div class="table-page">
         <el-card>
+            <!-- 这里的 #header 不是 TablePage 暴露给父组件的插槽 ，而是 Element Plus 的 el-card 组件提供的插槽 -->
             <template #header>
                 <div class="card-header">
                     <span>{{ title }}</span>
-                    <CreateButton v-if="showCreate" :text="createText" @click="$emit('create')"/>
+                    <CreateButton v-if="showCreate" :text="createText" @click="$emit('create')" />
                 </div>
             </template>
+            <!-- v-loading 是 Element Plus 提供的 自定义指令 ，不是 Vue 内置的指令： -->
+            <!-- $attrs 是 Vue 的一个内置对象，包含 父组件传递但未被 props 声明的所有属性 。 -->
+            <!-- v-bind="$attrs" 是 Vue 的一个 特殊用法 ，叫做 属性透传（父组件传递的属性透传给子组件的 props） 。 -->
             <el-table :data="data" v-loading="loading" stripe v-bind="$attrs">
                 <slot></slot>
                 <el-table-column v-if="showActions" label="操作" :width="actionsWidth" fixed="right">
                     <template #default="{ row }">
                         <div class="action-buttons">
-                            <EditButton v-if="showEdit" @click="$emit('edit', row)" :disabled="editDisabled?.(row)"/>
+                            <EditButton v-if="showEdit" @click="$emit('edit', row)" :disabled="editDisabled?.(row)" />
                             <DeleteButton v-if="showDelete" @click="$emit('delete', row)"
-                                          :disabled="deleteDisabled?.(row)"/>
+                                :disabled="deleteDisabled?.(row)" />
                             <slot name="actions" :row="row"></slot>
                         </div>
                     </template>
                 </el-table-column>
             </el-table>
             <div v-if="showPagination" class="pagination-wrapper">
-                <el-pagination
-                    v-model:current-page="currentPage"
-                    v-model:page-size="currentPageSize"
-                    :page-sizes="pageSizes"
-                    :total="total"
-                    layout="total, sizes, prev, pager, next, jumper"
-                    @size-change="handleSizeChange"
-                    @current-change="handleCurrentChange"
-                />
+                <el-pagination v-model:current-page="currentPage" v-model:page-size="currentPageSize"
+                    :page-sizes="pageSizes" :total="total" layout="total, sizes, prev, pager, next, jumper"
+                    @size-change="handleSizeChange" @current-change="handleCurrentChange" />
             </div>
         </el-card>
     </div>
 </template>
 
 <script setup>
-import {ref, watch} from 'vue'
+import { ref, watch } from 'vue'
 import CreateButton from '@/components/CreateButton.vue'
 import EditButton from '@/components/EditButton.vue'
 import DeleteButton from '@/components/DeleteButton.vue'
@@ -113,24 +111,32 @@ const emit = defineEmits(['create', 'edit', 'delete', 'update:page', 'update:pag
 const currentPage = ref(props.page)
 const currentPageSize = ref(props.pageSize)
 
-watch(() => props.page, (val) => {
-    currentPage.value = val
-})
+watch(
+    () => props.page, // 监听来源
+    // 监听回调函数
+    (val) => {
+        currentPage.value = val
+    }
+)
 
-watch(() => props.pageSize, (val) => {
-    currentPageSize.value = val
-})
+watch(
+    () => props.pageSize, // 监听来源
+    // 监听回调函数
+    (val) => {
+        currentPageSize.value = val
+    }
+)
 
 const handleSizeChange = (size) => {
     currentPage.value = 1
     emit('update:page', 1)
     emit('update:pageSize', size)
-    emit('page-change', {page: 1, pageSize: size})
+    emit('page-change', { page: 1, pageSize: size })
 }
 
 const handleCurrentChange = (page) => {
     emit('update:page', page)
-    emit('page-change', {page, pageSize: currentPageSize.value})
+    emit('page-change', { page, pageSize: currentPageSize.value })
 }
 </script>
 
