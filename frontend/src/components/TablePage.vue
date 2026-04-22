@@ -2,6 +2,7 @@
     <div class="table-page">
         <el-card>
             <!-- 这里的 #header 不是 TablePage 暴露给父组件的插槽 ，而是 Element Plus 的 el-card 组件提供的插槽 -->
+            <!-- 子组件挖个坑 → 父组件填内容 → Vue 自动把填的内容放到坑里 -->
             <template #header>
                 <div class="card-header">
                     <span>{{ title }}</span>
@@ -11,7 +12,15 @@
             <!-- v-loading 是 Element Plus 提供的 自定义指令 ，不是 Vue 内置的指令： -->
             <!-- $attrs 是 Vue 的一个内置对象，包含 父组件传递但未被 props 声明的所有属性 。 -->
             <!-- v-bind="$attrs" 是 Vue 的一个 特殊用法 ，叫做 属性透传（父组件传递的属性透传给子组件的 props） 。 -->
-            <el-table :data="data" v-loading="loading" stripe v-bind="$attrs">
+            <el-table
+                :data="data"
+                v-loading="loading"
+                v-bind="$attrs"
+                element-loading-text="Loading..."
+                element-loading-svg-view-box="-10, -10, 50, 50"
+                :element-loading-spinner="svg"
+                :element-loading-background="loadingBackground()"
+            >
                 <slot></slot>
                 <el-table-column v-if="showActions" label="操作" :width="actionsWidth" fixed="right">
                     <template #default="{ row }">
@@ -38,6 +47,27 @@ import { ref, watch } from 'vue'
 import CreateButton from '@/components/CreateButton.vue'
 import EditButton from '@/components/EditButton.vue'
 import DeleteButton from '@/components/DeleteButton.vue'
+import {useThemeStore} from '@/stores/theme.ts'
+
+const svg = `
+        <path class="path" d="
+          M 30 15
+          L 28 17
+          M 25.61 25.61
+          A 15 15, 0, 0, 1, 15 30
+          A 15 15, 0, 1, 1, 27.99 7.5
+          L 15 15
+        " style="stroke-width: 4px; fill: rgba(0, 0, 0, 0)"/>
+      `
+
+const themeStore = useThemeStore()
+const loadingBackground = () => {
+    if (themeStore.theme === 'light') {
+        return 'rgba(136,135,135,0.8)'
+    }else {
+        return 'rgba(53,48,48,0.8)'
+    }
+}
 
 const props = defineProps({
     title: {
@@ -105,7 +135,7 @@ const props = defineProps({
         default: 0
     }
 })
-
+// 'update:page', 'update:pageSize' 这两个目前没有使用
 const emit = defineEmits(['create', 'edit', 'delete', 'update:page', 'update:pageSize', 'page-change'])
 
 const currentPage = ref(props.page)
@@ -128,14 +158,21 @@ watch(
 )
 
 const handleSizeChange = (size) => {
+    // 1. 重置页码：用户切换每页显示条数（如从 10 条改成 20 条）时，必须把页码重置为 1。
+    // 这是行业标准行为，避免出现 “新 pageSize 下页码超出范围” 的 BUG。
     currentPage.value = 1
+    // 2. 触发 v-model:page 双向绑定更新（父组件同步 page）
     emit('update:page', 1)
+    // 3. 触发 v-model:pageSize 双向绑定更新（父组件同步 pageSize）
     emit('update:pageSize', size)
+    // 4. 触发自定义事件，向父组件传递完整分页参数
     emit('page-change', { page: 1, pageSize: size })
 }
 
 const handleCurrentChange = (page) => {
+    // 1. 同步更新父组件的页码（v-model:page）
     emit('update:page', page)
+    // 2. 通知父组件：页码变了，带上当前页+每页条数去请求数据
     emit('page-change', { page, pageSize: currentPageSize.value })
 }
 </script>

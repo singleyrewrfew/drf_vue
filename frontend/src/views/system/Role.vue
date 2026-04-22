@@ -1,4 +1,5 @@
 <template>
+    <!-- 角色列表表格组件 -->
     <!-- create-text映射到createText(HTML 不支持驼峰 → 必须写 create-text, JS 不支持短横线 → 必须写 createText) -->
     <TablePage
         title="角色管理"
