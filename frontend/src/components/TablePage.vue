@@ -1,17 +1,13 @@
 <template>
     <div class="table-page">
         <el-card>
-            <!-- 这里的 #header 不是 TablePage 暴露给父组件的插槽 ，而是 Element Plus 的 el-card 组件提供的插槽 -->
-            <!-- 子组件挖个坑 → 父组件填内容 → Vue 自动把填的内容放到坑里 -->
+            <!-- #header 是 el-card 组件提供的插槽, 流程:子组件挖个坑 → 父组件填内容 → Vue 自动把填的内容放到坑里 -->
             <template #header>
                 <div class="card-header">
                     <span>{{ title }}</span>
                     <CreateButton v-if="showCreate" :text="createText" @click="$emit('create')" />
                 </div>
             </template>
-            <!-- v-loading 是 Element Plus 提供的 自定义指令 ，不是 Vue 内置的指令： -->
-            <!-- $attrs 是 Vue 的一个内置对象，包含 父组件传递但未被 props 声明的所有属性 。 -->
-            <!-- v-bind="$attrs" 是 Vue 的一个 特殊用法 ，叫做 属性透传（父组件传递的属性透传给子组件的 props） 。 -->
             <el-table
                 :data="data"
                 v-loading="loading"
