@@ -95,7 +95,7 @@
                                            @click="$router.push('/contents')"/>
                         </div>
                     </template>
-                    <el-table :data="stats.recent_contents" v-loading="loading" stripe>
+                    <el-table :data="stats.recent_contents" v-loading="loading">
                         <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip/>
                         <el-table-column prop="author_name" label="作者" width="120" v-if="isAdmin"/>
                         <el-table-column prop="view_count" label="浏览量" width="100">

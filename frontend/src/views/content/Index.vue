@@ -1,6 +1,5 @@
 <template>
     <div class="content-page">
-
         <el-card>
             <template #header>
                 <div class="card-header">
@@ -26,7 +25,7 @@
                     <SearchButton @click="handleSearch" style="margin-left: 12px"/>
                 </el-form-item>
             </el-form>
-            <el-table :data="contentList" v-loading="loading" stripe>
+            <el-table :data="contentList" v-loading="loading">
                 <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip/>
                 <el-table-column prop="author_name" label="作者" width="120"/>
                 <el-table-column prop="category_name" label="分类" width="120"/>
