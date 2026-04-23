@@ -18,21 +18,24 @@
             <el-table-column prop="content_count" label="文章数量" width="100"/>
             <el-table-column prop="created_at" label="创建时间" width="180"/>
         </TablePage>
-        <!-- todo:改成FormDialog组件 -->
-        <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑标签' : '新建标签'" width="400px">
-            <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
-                <el-form-item label="名称" prop="name">
-                    <el-input v-model="form.name" placeholder="请输入标签名称"/>
-                </el-form-item>
-                <el-form-item label="别名">
-                    <el-input v-model="form.slug" placeholder="URL别名，留空自动生成"/>
-                </el-form-item>
-            </el-form>
-            <template #footer>
-                <ResetButton text="取消" @click="dialogVisible = false"/>
-                <ConfirmButton text="确定" @click="handleSubmit" :disabled="submitLoading"/>
-            </template>
-        </el-dialog>
+        <FormDialog
+            v-model="form"
+            v-model:show="dialogVisible"
+            create-title="新建标签"
+            edit-title="编辑标签"
+            width="400px"
+            label-width="80px"
+            :rules="rules"
+            :loading="submitLoading"
+            @submit="handleSubmit"
+        >
+            <el-form-item label="名称" prop="name">
+                <el-input v-model="form.name" placeholder="请输入标签名称"/>
+            </el-form-item>
+            <el-form-item label="别名">
+                <el-input v-model="form.slug" placeholder="URL别名，留空自动生成"/>
+            </el-form-item>
+        </FormDialog>
     </div>
 </template>
 
@@ -40,8 +43,6 @@
 import {ref, reactive, computed, onMounted} from 'vue'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {getTags, createTag, updateTag, deleteTag} from '@/api/category'
-import ResetButton from '@/components/ResetButton.vue'
-import ConfirmButton from '@/components/ConfirmButton.vue'
 import TablePage from '@/components/TablePage.vue'
 import FormDialog from '@/components/FormDialog.vue'
 
@@ -51,7 +52,6 @@ const submitLoading = ref(false)
 const tagList = ref([])
 const dialogVisible = ref(false)
 const editingId = ref(null)
-const formRef = ref()
 
 const pagination = reactive({
     page: 1,
@@ -104,7 +104,6 @@ const handleEdit = (row) => {
 }
 
 const handleSubmit = async () => {
-    await formRef.value.validate()
     submitLoading.value = true
     try {
         const submitData = {...form}
