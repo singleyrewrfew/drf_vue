@@ -1,6 +1,6 @@
 import api from './index'
 
-// 获取媒体列表（带分页 / 筛选）
+// 获取媒体列表
 export const getMedia = (params = {}) => api.get('/media/', { params })
 // 删除媒体
 export const deleteMedia = (id) => api.delete(`/media/${id}/`)
