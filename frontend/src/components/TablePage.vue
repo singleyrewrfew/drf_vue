@@ -2,7 +2,10 @@
     <div class="table-page">
         <el-card>
             <!-- #header 是 el-card 组件提供的插槽, 流程:子组件挖个坑 → 父组件填内容 → Vue 自动把填的内容放到坑里 -->
-            <template #header>
+            <template #header v-if="$slots.header">
+                <slot name="header"></slot>
+            </template>
+            <template #header v-else>
                 <div class="card-header">
                     <span>{{ title }}</span>
                     <CreateButton v-if="showCreate" :text="createText" @click="$emit('create')" />

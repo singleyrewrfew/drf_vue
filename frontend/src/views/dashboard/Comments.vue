@@ -1,6 +1,5 @@
 <template>
     <div class="comments-page">
-
         <TablePage
             title="评论管理"
             :show-create="false"
