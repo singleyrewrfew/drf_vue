@@ -100,11 +100,7 @@ const rules = {
 
 const isDeleteDisabled = (row) => {
     // 判断是否禁用系统角色的删除按钮，系统角色不能被删除
-    if (row.is_system) {
-        return true
-    } else {
-        return false
-    }
+    return !!row.is_system;
 }
 
 const fetchRoles = async () => {
