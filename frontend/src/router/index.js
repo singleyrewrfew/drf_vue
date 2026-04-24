@@ -123,11 +123,7 @@ router.beforeEach(async (to, from, next) => {
     // 如果已登录但没有后台访问权限，且访问的是需要认证的页面
     if (to.meta.requiresAuth && userStore.isLoggedIn() && !userStore.canAccessBackend()) {
         // 先清除登录状态
-        userStore.token = ''
-        userStore.user = null
-        localStorage.removeItem('token')
-        localStorage.removeItem('user')
-        localStorage.removeItem('refresh')
+        await userStore.logout()
         // 然后跳转到登录页
         return next({name: 'Login', query: {error: 'no_permission'}})
     }

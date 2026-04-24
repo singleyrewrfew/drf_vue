@@ -40,17 +40,15 @@ api.interceptors.request.use(
 )
 
 // Axios 响应拦截器
+// {code, message, data, error?}
 api.interceptors.response.use(
-    // ✅ 成功回调：HTTP 2xx 都会进来（包括后端业务成功/失败）
-    // 作用：统一剥壳、判断业务 code、成功返回 data，失败抛错
     (response) => {
         // 统一处理 API 响应格式
-        // 后端返回格式：{ code, message, data, error? }
         const responseData = response.data
 
         // 如果是统一格式（包含 code 和 data 字段）
         if (responseData && typeof responseData.code !== 'undefined' && 'data' in responseData) {
-            // 成功响应（code 为 0）
+            // 成功响应 code 为 0
             if (responseData.code === 0) {
                 // 将实际数据挂载到 response.data，方便使用
                 response.data = responseData.data
@@ -62,6 +60,7 @@ api.interceptors.response.use(
                     status: response.status,
                     data: responseData
                 }
+                 // 抛出异常，让业务catch捕获处理
                 return Promise.reject(error)
             }
         }
@@ -69,14 +68,11 @@ api.interceptors.response.use(
         // 如果不是统一格式，直接返回（兼容旧接口）
         return response
     },
-    // ❌ 错误回调：HTTP 非 2xx（4xx/5xx）、网络错误、超时
-    // 作用：统一处理 401/403/500、打印日志、最后抛错
+    // 统一处理 401/403/500、打印日志、最后抛错
     async (error) => {
         const userStore = useUserStore()
 
         // 统一处理 API 错误
-        // ?.:可选链接符
-        // 安全地一层一层往下找，中间哪一层不存在，就直接返回 undefined，不报错。
         const errorMessage = error.response?.data?.message ||
             error.response?.data?.detail ||
             error.message ||
@@ -84,9 +80,9 @@ api.interceptors.response.use(
 
         if (error.response?.status === 401) {
             // 未授权，清除登录状态并跳转
-            userStore.logout()
+            await userStore.logout()
             // 跳转登录页面
-            router.push('/login')
+            await router.push('/login')
         } else if (error.response?.status === 403) {
             // 权限不足
             const errorData = error.response?.data
@@ -94,8 +90,8 @@ api.interceptors.response.use(
             // 检查是否是因为失去了后台访问权限
             if (errorData?.error === 'no_backend_access') {
                 // 立即清除登录状态并跳转
-                userStore.logout()
-                router.push({
+                await userStore.logout()
+                await router.push({
                     name: 'Login',
                     query: {error: 'no_permission', message: errorData.message}
                 })
@@ -112,8 +108,8 @@ api.interceptors.response.use(
                     try {
                         await userStore.fetchProfile(true)
                         if (!userStore.canAccessBackend()) {
-                            userStore.logout()
-                            router.push({name: 'Login', query: {error: 'no_permission'}})
+                            await userStore.logout()
+                            await router.push({name: 'Login', query: {error: 'no_permission'}})
                         }
                     } catch (e) {
                         console.error('Failed to fetch user profile:', e)

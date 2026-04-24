@@ -85,17 +85,17 @@ INSTALLED_APPS = [
 
 # 中间件列表
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',               # 安全中间件
-    'corsheaders.middleware.CorsMiddleware',                       # CORS 跨域支持
-    'django.contrib.sessions.middleware.SessionMiddleware',        # 会话中间件
-    'django.middleware.common.CommonMiddleware',                   # 通用中间件
-    'django.middleware.csrf.CsrfViewMiddleware',                   # CSRF 保护
-    'django.contrib.auth.middleware.AuthenticationMiddleware',     # 认证中间件
-    'django.contrib.messages.middleware.MessageMiddleware',        # 消息中间件
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',      # 点击劫持保护
-    'middleware.BackendAccessMiddleware.BackendAccessMiddleware',  # 自定义后台访问中间件
-    # 'middleware.error_handler.ErrorHandlerMiddleware',             # 统一错误处理中间件（必须在最后）
-    # 'middleware.ApiResultInterceptorMiddleware.ResponseLogMiddleware',             # 统一错误处理中间件（必须在最后）
+    'django.middleware.security.SecurityMiddleware',                      # 安全中间件
+    'corsheaders.middleware.CorsMiddleware',                              # CORS 跨域支持
+    'django.contrib.sessions.middleware.SessionMiddleware',               # 会话中间件
+    'django.middleware.common.CommonMiddleware',                          # 通用中间件
+    'django.middleware.csrf.CsrfViewMiddleware',                          # CSRF 保护
+    'django.contrib.auth.middleware.AuthenticationMiddleware',            # 认证中间件
+    'django.contrib.messages.middleware.MessageMiddleware',               # 消息中间件
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',             # 点击劫持保护
+    'middleware.BackendAccessMiddleware.BackendAccessMiddleware',         # 自定义后台访问中间件
+    # 'middleware.error_handler.ErrorHandlerMiddleware',                  # 统一错误处理中间件（必须在最后）
+    'middleware.ApiResultInterceptorMiddleware.ResponseLogMiddleware',    # 日志中间件，记录 API 响应结果
 ]
 
 # 根 URL 配置文件

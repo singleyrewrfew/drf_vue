@@ -29,13 +29,13 @@ class ResponseLogMiddleware:
 
                 # 格式化打印（漂亮格式）
                 print("=" * 80)
-                print(f"📥 接口返回结果 [{request.method}] {request.path}")
+                print(f"📥 接口返回结果 [{request.method}] {request.path}", end=" ")
                 print(f"   状态码: {response.status_code}")
                 try:
                     # 尝试格式化 JSON，更好看
                     json_data = json.loads(response_data)
                     print(json.dumps(json_data, ensure_ascii=False, indent=2))
-                except:
+                except (json.JSONDecodeError, Exception):
                     # 不是标准 JSON 就直接打印
                     print(response_data)
                 print("=" * 80)

@@ -52,7 +52,11 @@ export const useUserStore = defineStore('user', () => {
         } catch (e) {
             console.error('Logout API error:', e)
         }
-        // 清空状态 + 本地存储
+        // 清空响应式状态（重要！否则前端只要不刷新还能拿到token）
+        accessToken.value = ''
+        refreshToken.value = ''
+        user.value = null
+        // 清空本地存储
         removeLocalStorageItem('access')
         removeLocalStorageItem('user')
         removeLocalStorageItem('refresh')

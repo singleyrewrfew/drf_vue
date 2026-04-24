@@ -171,6 +171,7 @@ const rules = {
 }
 
 const handleRegister = async () => {
+    // 校验表单
     await formRef.value.validate()
     loading.value = true
     try {
