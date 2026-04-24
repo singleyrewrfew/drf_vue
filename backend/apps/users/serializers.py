@@ -1,5 +1,6 @@
-from rest_framework import serializers
+from rest_framework import serializers, status
 from apps.core.models import User
+from utils.response import StandardResponse, api_error
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -87,13 +88,13 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         role = validated_data.pop('role', None)
         is_active = validated_data.pop('is_active', True)
         is_staff = validated_data.pop('is_staff', False)
-        
+
         # 创建用户（Django 的 create_user 会自动哈希密码）
         user = User.objects.create_user(**validated_data)
         # 设置激活状态
         user.is_active = is_active
         user.is_staff = is_staff
-        
+
         # 分配角色（如果提供了角色）
         if role:
             user.role = role
@@ -103,14 +104,14 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             default_role = Role.objects.filter(code='user').first()
             if default_role:
                 user.role = default_role
-        
+
         # 根据角色权限设置 is_staff（有后台管理权限的用户需要 is_staff=True）
         if user.role:
             # 管理员权限：可以管理角色
             admin_permissions = ['role_manage', 'user_view', 'user_create', 'user_update', 'user_delete']
             if user.role.permissions.filter(code__in=admin_permissions).exists():
                 user.is_staff = True
-        
+
         # 保存用户
         user.save()
         return user

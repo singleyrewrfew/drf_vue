@@ -19,6 +19,7 @@ class ResponseLogMiddleware:
         try:
             # 只处理 JSON 格式的返回
             if "application/json" in response.get("Content-Type", ""):
+
                 # 如果设置了监控路径，则只打印匹配的路径
                 if self.monitored_paths and not any(request.path.startswith(path) for path in self.monitored_paths):
                     return response

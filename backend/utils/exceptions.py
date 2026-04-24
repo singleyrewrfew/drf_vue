@@ -4,6 +4,7 @@ import logging
 
 logger = logging.getLogger('django.request')
 
+
 def custom_exception_handler(exc, context):
     """
     自定义 DRF 全局异常捕获（真正可用的生产级）
@@ -47,5 +48,9 @@ def custom_exception_handler(exc, context):
     内容: {response.data}
     ==============================================
     """)
-
-    return response
+    msg = "未知错误"
+    for key, value in response.data.items():
+        msg = value[0] if isinstance(value, list) else str(value)
+        break
+    # 异常请求直接拦截返回错误
+    return Response({"detail": msg}, status=status_code)

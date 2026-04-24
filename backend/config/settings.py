@@ -94,8 +94,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',        # 消息中间件
     'django.middleware.clickjacking.XFrameOptionsMiddleware',      # 点击劫持保护
     'middleware.BackendAccessMiddleware.BackendAccessMiddleware',  # 自定义后台访问中间件
-    'middleware.error_handler.ErrorHandlerMiddleware',             # 统一错误处理中间件（必须在最后）
-    'middleware.ApiResultInterceptorMiddleware.ResponseLogMiddleware',             # 统一错误处理中间件（必须在最后）
+    # 'middleware.error_handler.ErrorHandlerMiddleware',             # 统一错误处理中间件（必须在最后）
+    # 'middleware.ApiResultInterceptorMiddleware.ResponseLogMiddleware',             # 统一错误处理中间件（必须在最后）
 ]
 
 # 根 URL 配置文件
@@ -307,7 +307,8 @@ LOGGING = {
         # 详细格式：时间 + 日志级别 + 模块名 + 日志信息
         'verbose': {
             # 日志输出格式
-            'format': '{asctime} [{levelname}] {module} {message}',
+            # 'format': '{asctime} [{levelname}] {module} {message}',
+            'format': '{asctime} [{levelname}] [PID:{process}] [TID:{thread}] {filename}:{funcName}:{lineno} {module} - {message}',
             # 格式风格：使用大括号 {} 占位
             'style': '{',
             # 时间显示格式：年-月-日 时:分:秒
