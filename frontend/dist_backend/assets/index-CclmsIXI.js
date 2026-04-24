@@ -1,1 +1,0 @@
-const r=()=>"http://8.148.251.135/api".replace(/\/api\/?$/,""),s=t=>{if(!t)return"";if(t.startsWith("http"))return t;const e=r();return t.startsWith("/media/")?`${e}${t}`:`${e}/media/${t}`},i=t=>{if(!t)return"";if(t.startsWith("http"))return t;const e=r();return t.startsWith("/media/")?`${e}${t}`:`${e}/media/${t}`};export{i as a,s as g};
