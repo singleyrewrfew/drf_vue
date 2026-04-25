@@ -68,6 +68,7 @@ export const useUserStore = defineStore('user', () => {
         try {
             const currentRefreshToken = localStorage.getItem(AUTH_CONFIG.REFRESH_TOKEN_KEY)
             if (currentRefreshToken) {
+                // 使用不带拦截器的 axios 实例，避免无限循环
                 await logoutApi({ [AUTH_CONFIG.REFRESH_TOKEN_KEY]: currentRefreshToken })
             }
         } catch (e) {

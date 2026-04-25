@@ -33,6 +33,22 @@ const api = axios.create({
     },
 })
 
+/**
+ * 创建不带拦截器的 Axios 实例（用于登出等特殊场景）
+ *
+ * 此实例不会添加认证头，也不会处理错误响应，适用于：
+ * - 用户登出（Token 可能已失效）
+ * - Token 刷新（避免循环依赖）
+ * - 其他不需要认证的请求
+ */
+const logoutApi = axios.create({
+    baseURL: import.meta.env.VITE_API_BASE_URL,
+    timeout: 10000,
+    headers: {
+        'Content-Type': 'application/json',
+    },
+})
+
 
 /**
  * 为请求配置添加 JWT 认证头
@@ -245,3 +261,4 @@ api.interceptors.response.use(
 )
 
 export default api
+export { logoutApi }

@@ -281,12 +281,18 @@
 </template>
 
 <script setup>
+/**
+ * 个人设置页面
+ *
+ * 提供用户个人信息查看、头像上传、邮箱修改和密码修改功能。
+ * 支持从本地上传头像或从媒体库选择头像。
+ */
 import {ref, reactive, computed, onMounted} from 'vue'
 import {ElMessage} from 'element-plus'
 import {useUserStore} from '@/stores/user'
 import {updateProfile, changePassword} from '@/api/user'
+import {getUploadUrl, getMedia} from '@/api/media'
 import {getAvatarUrl} from '@/utils'
-import api from '@/api'
 import UploadButtonSmall from '@/components/UploadButtonSmall.vue'
 import ConfirmButton from '@/components/ConfirmButton.vue'
 import ResetButton from '@/components/ResetButton.vue'
@@ -305,12 +311,18 @@ let form = reactive({
     email: '',
 })
 
+/**
+ * 密码修改表单数据
+ */
 const passwordForm = reactive({
     old_password: '',
     new_password: '',
     new_password_confirm: '',
 })
 
+/**
+ * 邮箱表单验证规则
+ */
 const rules = {
     email: [
         {required: true, message: '请输入邮箱', trigger: 'blur'},
@@ -318,6 +330,13 @@ const rules = {
     ],
 }
 
+/**
+ * 密码确认验证器
+ *
+ * @param {Object} rule - 验证规则对象
+ * @param {string} value - 当前输入值
+ * @param {Function} callback - 回调函数，验证失败时传入 Error 对象
+ */
 const validatePassword = (rule, value, callback) => {
     if (value !== passwordForm.new_password) {
         callback(new Error('两次密码不一致'))
@@ -326,6 +345,9 @@ const validatePassword = (rule, value, callback) => {
     }
 }
 
+/**
+ * 密码表单验证规则
+ */
 const passwordRules = {
     old_password: [{required: true, message: '请输入原密码', trigger: 'blur'}],
     new_password: [
@@ -338,16 +360,29 @@ const passwordRules = {
     ],
 }
 
-const uploadUrl = computed(() => `${import.meta.env.VITE_API_BASE_URL || '/api'}/media/`)
+/**
+ * 头像上传接口 URL
+ */
+const uploadUrl = computed(() => getUploadUrl())
+
+/**
+ * 头像上传请求头，包含 JWT Token
+ */
 const uploadHeaders = computed(() => {
-    const token = userStore.token
+    const token = userStore.accessToken
     return {
         'Authorization': `Bearer ${token}`
     }
 })
 
+/**
+ * 头像上传前的验证
+ *
+ * @param {File} file - 待上传的文件对象
+ * @returns {boolean} 是否允许上传
+ */
 const beforeAvatarUpload = (file) => {
-    const token = userStore.token
+    const token = userStore.accessToken
     if (!token) {
         ElMessage.error('请先登录')
         return false
@@ -365,12 +400,21 @@ const beforeAvatarUpload = (file) => {
     return true
 }
 
+/**
+ * 媒体库相关状态
+ */
 const showMediaDialog = ref(false)
 const mediaLoading = ref(false)
 const mediaList = ref([])
 const mediaSearch = ref('')
 const selectedMedia = ref(null)
 
+/**
+ * 获取媒体文件的完整 URL
+ *
+ * @param {string} file - 媒体文件路径
+ * @returns {string} 完整的媒体 URL
+ */
 const getMediaUrl = (file) => {
     if (!file) return ''
     if (file.startsWith('http')) return file
@@ -378,10 +422,37 @@ const getMediaUrl = (file) => {
     return `${baseUrl.replace('/api', '')}${file}`
 }
 
+/**
+ * 标准化头像路径
+ *
+ * @param {string} avatarPath - 原始头像路径
+ * @returns {string} 标准化后的路径
+ */
+const normalizeAvatarPath = (avatarPath) => {
+    if (!avatarPath) return ''
+    
+    let path = avatarPath
+    if (path.startsWith('http')) {
+        const mediaIndex = path.indexOf('/media/')
+        if (mediaIndex !== -1) {
+            path = path.substring(mediaIndex)
+        }
+    }
+
+    if (!path.startsWith('/media/') && !path.startsWith('media/')) {
+        path = '/media/' + path
+    }
+    
+    return path
+}
+
+/**
+ * 从后端获取媒体列表
+ */
 const fetchMedia = async () => {
     mediaLoading.value = true
     try {
-        const {data} = await api.get('/media/', {params: {limit: 50}})
+        const {data} = await getMedia({limit: 50})
         mediaList.value = data.results || data
     } catch (error) {
         console.error('获取媒体列表失败:', error)
@@ -390,6 +461,9 @@ const fetchMedia = async () => {
     }
 }
 
+/**
+ * 过滤后的媒体列表（仅图片，支持搜索）
+ */
 const filteredMedia = computed(() => {
     let images = mediaList.value.filter(media => {
         return media.is_image || (media.file_type && media.file_type.startsWith('image/'))
@@ -404,22 +478,14 @@ const filteredMedia = computed(() => {
     return images
 })
 
+/**
+ * 从媒体库选择头像
+ */
 const handleMediaSelect = async () => {
     if (!selectedMedia.value) return
 
     try {
-        let avatarPath = selectedMedia.value.url
-
-        if (avatarPath && avatarPath.startsWith('http')) {
-            const mediaIndex = avatarPath.indexOf('/media/')
-            if (mediaIndex !== -1) {
-                avatarPath = avatarPath.substring(mediaIndex)
-            }
-        }
-
-        if (!avatarPath.startsWith('/media/') && !avatarPath.startsWith('media/')) {
-            avatarPath = '/media/' + avatarPath
-        }
+        const avatarPath = normalizeAvatarPath(selectedMedia.value.url)
 
         if (!avatarPath) {
             ElMessage.error('未找到媒体路径')
@@ -437,36 +503,44 @@ const handleMediaSelect = async () => {
     }
 }
 
-const handleAvatarSuccess = async (response) => {
-    if (response && response.url) {
-        try {
-            let avatarPath = response.url
-            if (avatarPath && avatarPath.startsWith('http')) {
-                const mediaIndex = avatarPath.indexOf('/media/')
-                if (mediaIndex !== -1) {
-                    avatarPath = avatarPath.substring(mediaIndex)
-                }
-            }
+/**
+ * 头像上传成功回调
+ *
+ * @param {Object} response - 后端响应数据
+ * @param {Object} file - 上传的文件对象
+ */
+const handleAvatarSuccess = async (response, file) => {
+    // el-upload 的 on-success 接收到的 response 是原始的后端响应
+    // 需要检查 response.data 是否存在（拦截器已处理）或直接是 data
+    const mediaData = response.data || response
 
-            if (!avatarPath.startsWith('/media/') && !avatarPath.startsWith('media/')) {
-                avatarPath = '/media/' + avatarPath
-            }
+    if (mediaData && mediaData.url) {
+        try {
+            const avatarPath = normalizeAvatarPath(mediaData.url)
 
             await updateProfile({avatar_url: avatarPath})
             await userStore.fetchProfile(true)
             ElMessage.success('头像更新成功')
         } catch (error) {
+            console.error('头像更新失败:', error)
             ElMessage.error(error.response?.data?.message || '头像更新失败')
         }
     } else {
+        console.error('头像上传响应格式错误:', response)
         ElMessage.error('头像上传失败：未返回媒体信息')
     }
 }
 
+/**
+ * 头像上传失败回调
+ */
 const handleAvatarError = () => {
     ElMessage.error('头像上传失败')
 }
 
+/**
+ * 更新用户邮箱
+ */
 const handleUpdateProfile = async () => {
     try {
         await formRef.value.validate()
@@ -489,6 +563,9 @@ const handleUpdateProfile = async () => {
     }
 }
 
+/**
+ * 修改用户密码
+ */
 const handleChangePassword = async () => {
     await passwordFormRef.value.validate()
     passwordLoading.value = true
@@ -507,6 +584,9 @@ const handleChangePassword = async () => {
     }
 }
 
+/**
+ * 组件挂载时初始化
+ */
 onMounted(() => {
     form.email = userStore.user?.email || ''
     fetchMedia()

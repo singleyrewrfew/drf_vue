@@ -31,3 +31,10 @@ export const deleteMedia = (id) => api.delete(`/media/${id}/`)
  */
 export const regenerateThumbnails = (id) => api.post(`/media/${id}/regenerate_thumbnails/`)
 
+/**
+ * 获取媒体上传接口 URL
+ *
+ * @returns {string} 媒体上传接口的完整 URL
+ */
+export const getUploadUrl = () => `${import.meta.env.VITE_API_BASE_URL || '/api'}/media/`
+

@@ -24,10 +24,15 @@ export const register = (data) => api.post('/auth/', data)
 /**
  * 用户登出
  *
+ * 注意：此接口使用不带拦截器的 axios 实例，避免 Token 失效时的无限循环
+ *
  * @param {Object} data - 包含 refresh token {refresh}
  * @returns {Promise} 解析为登出响应
  */
-export const logout = (data) => api.post('/auth/logout/', data)
+export const logout = async (data) => {
+    const { logoutApi } = await import('./index')
+    return logoutApi.post('/auth/logout/', data)
+}
 
 /**
  * 刷新访问令牌
