@@ -30,7 +30,6 @@ export const useUserStore = defineStore('user', () => {
         setToken('access', data.access)    // 存access token
         setToken('refresh', data.refresh)  // 存refresh token
         setUser(data.user)     // 存用户信息
-        // startProfileCheck()   // 开启定时检查
         return data
     }
 
@@ -56,7 +55,6 @@ export const useUserStore = defineStore('user', () => {
 
     // 获取用户信息（fetchProfile） 避免重复请求 强制刷新：fetchProfile(true)
     const fetchProfile = async (force = false) => {
-        // force: 是否强制刷新
         if (!force && user.value) {  // 有缓存直接返回
             return user.value
         }
@@ -88,7 +86,6 @@ export const useUserStore = defineStore('user', () => {
         if (user.value.permissions.includes('*')) return true  // 用户有通配符 * → 拥有所有权限，放行 ✅
         return permissionCodes.some(code => user.value.permissions.includes(code))  // 只要用户拥有数组里【任意一个】权限 → 就返回 true
     }
-
 
     return {
         accessToken,

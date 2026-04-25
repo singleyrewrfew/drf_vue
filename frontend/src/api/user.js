@@ -5,6 +5,8 @@ export const login = (data) => api.post('/auth/login/', data)
 export const register = (data) => api.post('/auth/', data)
 // 登出
 export const logout = (data) => api.post('/auth/logout/', data)
+// 刷新 token
+export const refreshToken = (data) => api.post('/auth/refresh/', data)
 // 获取个人资料
 export const getProfile = () => api.get('/auth/profile/')
 // 修改个人资料

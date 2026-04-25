@@ -3,6 +3,10 @@ import axios from 'axios'
 import {useUserStore} from '@/stores/user'
 import router from '@/router'
 
+let isLoggingOut = false
+let isRefreshing = false
+let refreshSubscribers = []
+
 // 创建一个 axios 实例，可以预先配置默认设置
 // 这样，所有使用这个 api 实例的请求都会自动应用这些配置
 const api = axios.create({
@@ -15,6 +19,49 @@ const api = axios.create({
         'Content-Type': 'application/json',
     },
 })
+
+function onRefreshed(token) {
+    refreshSubscribers.forEach(callback => callback(token))
+    refreshSubscribers = []
+}
+
+function addRefreshSubscriber(callback) {
+    return new Promise((resolve) => {
+        refreshSubscribers.push((token) => {
+            resolve(callback(token))
+        })
+    })
+}
+
+async function handleTokenRefresh() {
+    const userStore = useUserStore()
+    const currentRefreshToken = localStorage.getItem('refresh')
+
+    if (!currentRefreshToken) {
+        throw new Error('No refresh token')
+    }
+
+    try {
+        const response = await axios.post(
+            `${import.meta.env.VITE_API_BASE_URL}/auth/refresh/`,
+            {refresh: currentRefreshToken},
+            {headers: {'Content-Type': 'application/json'}}
+        )
+
+        const {access, refresh} = response.data
+
+        userStore.setToken('access', access)
+        if (refresh) {
+            userStore.setToken('refresh', refresh)
+        }
+
+        onRefreshed(access)
+        return access
+    } catch (error) {
+        refreshSubscribers = []
+        throw error
+    }
+}
 
 // 请求拦截设置，发送请求之前拦截
 // 给 Axios 实例注册「请求拦截器」
@@ -71,6 +118,7 @@ api.interceptors.response.use(
     // 统一处理 401/403/500、打印日志、最后抛错
     async (error) => {
         const userStore = useUserStore()
+        const originalRequest = error.config
 
         // 统一处理 API 错误
         const errorMessage = error.response?.data?.message ||
@@ -78,11 +126,42 @@ api.interceptors.response.use(
             error.message ||
             '请求失败，请稍后重试'
 
-        if (error.response?.status === 401) {
-            // 未授权，清除登录状态并跳转
-            await userStore.logout()
-            // 跳转登录页面
-            await router.push('/login')
+        if (error.response?.status === 401 && !originalRequest._retry) {
+            originalRequest._retry = true
+
+            if (isRefreshing) {
+                try {
+                    const newToken = await addRefreshSubscriber((token) => {
+                        originalRequest.headers.Authorization = `Bearer ${token}`
+                        return api(originalRequest)
+                    })
+                    return newToken
+                } catch (subscribeError) {
+                    return Promise.reject(subscribeError)
+                }
+            }
+
+            isRefreshing = true
+            try {
+                const newAccessToken = await handleTokenRefresh()
+                originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
+                isRefreshing = false
+                return api(originalRequest)
+            } catch (refreshError) {
+                isRefreshing = false
+                if (!isLoggingOut) {
+                    isLoggingOut = true
+                    try {
+                        await userStore.logout()
+                        await router.push('/login')
+                    } finally {
+                        isLoggingOut = false
+                    }
+                }
+                return Promise.reject(refreshError)
+            }
+        } else if (error.response?.status === 401 && isLoggingOut) {
+            return Promise.reject(error)
         } else if (error.response?.status === 403) {
             // 权限不足
             const errorData = error.response?.data
