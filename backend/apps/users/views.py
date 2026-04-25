@@ -4,6 +4,7 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.comments.models import Comment
@@ -193,6 +194,68 @@ class UserViewSet(viewsets.ModelViewSet):
             pass
         return StandardResponse({'message': '退出成功'})
 
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
+    def refresh(self, request):
+        """
+        刷新访问令牌
+
+        使用刷新令牌获取新的访问令牌和刷新令牌
+        
+        请求体：
+        {
+            "refresh": "your_refresh_token"
+        }
+        
+        响应：
+        {
+            "access": "new_access_token",
+            "refresh": "new_refresh_token"
+        }
+        """
+        refresh_token_str = request.data.get('refresh')
+        
+        # 验证 refresh token 是否存在
+        if not refresh_token_str:
+            return api_error(
+                message='刷新令牌不能为空',
+                error_type='bad_request',
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            # 验证 refresh token 并生成新的 access token
+            refresh_token = RefreshToken(refresh_token_str)
+            
+            # 生成新的 access token
+            new_access_token = str(refresh_token.access_token)
+            
+            # 如果启用了 token 轮换，生成新的 refresh token
+            new_refresh_token = None
+            if hasattr(refresh_token, 'rotate'):
+                new_refresh = refresh_token.rotate()
+                new_refresh_token = str(new_refresh)
+            
+            response_data = {"access": new_access_token}
+            if new_refresh_token:
+                response_data["refresh"] = new_refresh_token
+            
+            return StandardResponse(response_data)
+            
+        except (TokenError, InvalidToken) as e:
+            # JWT 相关的特定异常：token 过期、格式错误、已加入黑名单等
+            return api_error(
+                message=f'刷新令牌无效或已过期: {str(e)}',
+                error_type='unauthorized',
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        except Exception as e:
+            # 其他未预期的异常
+            return api_error(
+                message='服务器内部错误',
+                error_type='server_error',
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
     @action(detail=False, methods=['get'])
     def popular(self, request):
         """
@@ -321,3 +384,4 @@ class UserViewSet(viewsets.ModelViewSet):
                     for content in recent_contents
                 ],
             })
+
