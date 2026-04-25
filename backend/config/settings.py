@@ -229,9 +229,9 @@ REST_FRAMEWORK = {
 # JWT 认证配置
 SIMPLE_JWT = {
     # 访问令牌有效期
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=1),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=3),
     # 刷新令牌有效期
-    'REFRESH_TOKEN_LIFETIME': timedelta(minutes=2),
+    'REFRESH_TOKEN_LIFETIME': timedelta(minutes=5),
     # 刷新时轮换令牌
     'ROTATE_REFRESH_TOKENS': True,
     # 轮换后加入黑名单

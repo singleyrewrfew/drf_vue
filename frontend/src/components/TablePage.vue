@@ -1,7 +1,6 @@
 <template>
     <div class="table-page">
         <el-card>
-            <!-- #header 是 el-card 组件提供的插槽, 流程:子组件挖个坑 → 父组件填内容 → Vue 自动把填的内容放到坑里 -->
             <template #header v-if="$slots.header">
                 <slot name="header"></slot>
             </template>
@@ -18,15 +17,15 @@
                 element-loading-text="Loading..."
                 element-loading-svg-view-box="-10, -10, 50, 50"
                 :element-loading-spinner="svg"
-                :element-loading-background="loadingBackground()"
+                :element-loading-background="loadingBackground"
             >
                 <slot></slot>
                 <el-table-column v-if="showActions" label="操作" :width="actionsWidth" fixed="right">
                     <template #default="{ row }">
                         <div class="action-buttons">
-                            <EditButton v-if="showEdit" @click="$emit('edit', row)" :disabled="editDisabled?.(row)" />
+                            <EditButton v-if="showEdit" @click="$emit('edit', row)" :disabled="isEditDisabled(row)" />
                             <DeleteButton v-if="showDelete" @click="$emit('delete', row)"
-                                :disabled="deleteDisabled?.(row)" />
+                                :disabled="isDeleteDisabled(row)" />
                             <slot name="actions" :row="row"></slot>
                         </div>
                     </template>
@@ -42,12 +41,21 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+/**
+ * 通用表格分页组件
+ *
+ * 封装了 Element Plus 的 el-table 和 el-pagination，提供统一的表格展示、操作按钮和分页功能。
+ * 支持自定义表头、操作列显示/隐藏、加载状态、主题适配等。
+ */
+import { ref, watch, computed } from 'vue'
 import CreateButton from '@/components/CreateButton.vue'
 import EditButton from '@/components/EditButton.vue'
 import DeleteButton from '@/components/DeleteButton.vue'
 import {useThemeStore} from '@/stores/theme.ts'
 
+/**
+ * 自定义 SVG 加载动画
+ */
 const svg = `
         <path class="path" d="
           M 30 15
@@ -60,118 +68,182 @@ const svg = `
       `
 
 const themeStore = useThemeStore()
-const loadingBackground = () => {
-    if (themeStore.theme === 'light') {
-        return 'rgba(136,135,135,0.8)'
-    }else {
-        return 'rgba(53,48,48,0.8)'
-    }
-}
 
+/**
+ * 根据主题动态计算加载遮罩背景色
+ *
+ * @type {import('vue').ComputedRef<string>}
+ */
+const loadingBackground = computed(() => {
+    return themeStore.theme === 'light' ? 'rgba(136,135,135,0.8)' : 'rgba(53,48,48,0.8)'
+})
+
+/**
+ * 组件属性定义
+ */
 const props = defineProps({
+    /** 卡片标题 */
     title: {
         type: String,
         default: '数据列表'
     },
+    /** 表格数据 */
     data: {
         type: Array,
         default: () => []
     },
+    /** 加载状态 */
     loading: {
         type: Boolean,
         default: false
     },
+    /** 是否显示新建按钮 */
     showCreate: {
         type: Boolean,
         default: true
     },
+    /** 新建按钮文本 */
     createText: {
         type: String,
         default: '新建'
     },
+    /** 是否显示操作列 */
     showActions: {
         type: Boolean,
         default: true
     },
+    /** 操作列宽度 */
     actionsWidth: {
         type: [String, Number],
         default: 150
     },
+    /** 是否显示编辑按钮 */
     showEdit: {
         type: Boolean,
         default: true
     },
+    /** 是否显示删除按钮 */
     showDelete: {
         type: Boolean,
         default: true
     },
+    /** 编辑按钮禁用判断函数 */
     editDisabled: {
         type: Function,
-        default: null
+        default: () => false
     },
+    /** 删除按钮禁用判断函数 */
     deleteDisabled: {
         type: Function,
-        default: null
+        default: () => false
     },
+    /** 是否显示分页器 */
     showPagination: {
         type: Boolean,
         default: true
     },
+    /** 当前页码 */
     page: {
         type: Number,
         default: 1
     },
+    /** 每页显示条数 */
     pageSize: {
         type: Number,
         default: 20
     },
+    /** 每页显示条数选项 */
     pageSizes: {
         type: Array,
         default: () => [10, 20, 50, 100]
     },
+    /** 数据总数 */
     total: {
         type: Number,
         default: 0
     }
 })
-// 'update:page', 'update:pageSize' 这两个目前没有使用
+
+/**
+ * 组件事件定义
+ */
 const emit = defineEmits(['create', 'edit', 'delete', 'update:page', 'update:pageSize', 'page-change'])
 
+/**
+ * 本地页码状态（用于 v-model 双向绑定）
+ * @type {import('vue').Ref<number>}
+ */
 const currentPage = ref(props.page)
+
+/**
+ * 本地每页条数状态（用于 v-model 双向绑定）
+ * @type {import('vue').Ref<number>}
+ */
 const currentPageSize = ref(props.pageSize)
 
+/**
+ * 监听父组件传入的页码变化，同步到本地状态
+ */
 watch(
-    () => props.page, // 监听来源
-    // 监听回调函数
+    () => props.page,
     (val) => {
         currentPage.value = val
     }
 )
 
+/**
+ * 监听父组件传入的每页条数变化，同步到本地状态
+ */
 watch(
-    () => props.pageSize, // 监听来源
-    // 监听回调函数
+    () => props.pageSize,
     (val) => {
         currentPageSize.value = val
     }
 )
 
+/**
+ * 判断编辑按钮是否禁用
+ *
+ * @param {Object} row - 当前行数据
+ * @returns {boolean} 是否禁用
+ */
+const isEditDisabled = (row) => {
+    return props.editDisabled(row)
+}
+
+/**
+ * 判断删除按钮是否禁用
+ *
+ * @param {Object} row - 当前行数据
+ * @returns {boolean} 是否禁用
+ */
+const isDeleteDisabled = (row) => {
+    return props.deleteDisabled(row)
+}
+
+/**
+ * 处理每页显示条数变化
+ *
+ * 当用户切换每页显示条数时，重置页码为 1 并通知父组件。
+ *
+ * @param {number} size - 新的每页显示条数
+ */
 const handleSizeChange = (size) => {
-    // 1. 重置页码：用户切换每页显示条数（如从 10 条改成 20 条）时，必须把页码重置为 1。
-    // 这是行业标准行为，避免出现 “新 pageSize 下页码超出范围” 的 BUG。
     currentPage.value = 1
-    // 2. 触发 v-model:page 双向绑定更新（父组件同步 page）
     emit('update:page', 1)
-    // 3. 触发 v-model:pageSize 双向绑定更新（父组件同步 pageSize）
     emit('update:pageSize', size)
-    // 4. 触发自定义事件，向父组件传递完整分页参数
     emit('page-change', { page: 1, pageSize: size })
 }
 
+/**
+ * 处理页码变化
+ *
+ * 当用户切换页码时，通知父组件更新数据。
+ *
+ * @param {number} page - 新的页码
+ */
 const handleCurrentChange = (page) => {
-    // 1. 同步更新父组件的页码（v-model:page）
     emit('update:page', page)
-    // 2. 通知父组件：页码变了，带上当前页+每页条数去请求数据
     emit('page-change', { page, pageSize: currentPageSize.value })
 }
 </script>

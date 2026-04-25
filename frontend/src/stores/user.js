@@ -1,90 +1,167 @@
+/**
+ * 用户状态管理 Store
+ *
+ * 管理用户认证状态、令牌和用户信息，支持持久化存储和权限判断。
+ * 所有状态变更会自动同步到 localStorage，确保页面刷新后状态不丢失。
+ */
 import {defineStore} from 'pinia'
 import {ref} from 'vue'
 import {getProfile as getProfileApi, login as loginApi, logout as logoutApi} from '@/api/user'
 
 export const useUserStore = defineStore('user', () => {
-    // 登录令牌（从 localStorage 读，刷新不丢失）
+    /**
+     * 响应式状态：从 localStorage 初始化，确保持久化
+     */
     const accessToken = ref(localStorage.getItem('access') || '')
     const refreshToken = ref(localStorage.getItem('refresh') || '')
-    // 用户信息对象（JSON 反序列化）
     const user = ref(JSON.parse(localStorage.getItem('user') || 'null'))
-    // 修改状态 同时同步到 localStorage 保证 内存状态 ↔ 本地存储 始终一致
+
+    /**
+     * 设置令牌并同步到本地存储
+     *
+     * @param {string} tokenName - 令牌类型 ('access' 或 'refresh')
+     * @param {string} newToken - 新的令牌值
+     */
     const setToken = (tokenName, newToken) => {
-        // 更新响应式状态
         if (tokenName === 'access') {
             accessToken.value = newToken
         } else if (tokenName === 'refresh') {
             refreshToken.value = newToken
         }
-        // 同步到 localStorage
         localStorage.setItem(tokenName, newToken)
     }
+
+    /**
+     * 设置用户信息并同步到本地存储
+     *
+     * @param {Object} newUser - 用户信息对象
+     */
     const setUser = (newUser) => {
         user.value = newUser
         localStorage.setItem('user', JSON.stringify(newUser))
     }
 
-    // 异步 async/await 处理登录请求
+    /**
+     * 用户登录
+     *
+     * 调用登录接口获取令牌和用户信息，并保存到状态和本地存储。
+     *
+     * @param {Object} credentials - 登录凭证 {username, password}
+     * @returns {Promise<Object>} 登录响应数据 {access, refresh, user}
+     */
     const login = async (credentials) => {
-        const {data} = await loginApi(credentials)   // 调登录接口
-        setToken('access', data.access)    // 存access token
-        setToken('refresh', data.refresh)  // 存refresh token
-        setUser(data.user)     // 存用户信息
+        const {data} = await loginApi(credentials)
+        setToken('access', data.access)
+        setToken('refresh', data.refresh)
+        setUser(data.user)
         return data
     }
 
-    // 清理所有状态 + 本地存储 + 停止定时任务
+    /**
+     * 用户登出
+     *
+     * 调用后端登出接口使令牌失效，然后清空所有状态和本地存储。
+     * 即使后端接口失败，也会清空前端状态以确保安全。
+     */
     const logout = async () => {
         try {
             const refreshToken = localStorage.getItem('refresh')
             if (refreshToken) {
-                await logoutApi({refresh: refreshToken})   // 调用后端登出
+                await logoutApi({refresh: refreshToken})
             }
         } catch (e) {
             console.error('Logout API error:', e)
         }
-        // 清空响应式状态（重要！否则前端只要不刷新还能拿到token）
+
+        // 清空响应式状态
         accessToken.value = ''
         refreshToken.value = ''
         user.value = null
+
         // 清空本地存储
         localStorage.removeItem('access')
         localStorage.removeItem('user')
         localStorage.removeItem('refresh')
     }
 
-    // 获取用户信息（fetchProfile） 避免重复请求 强制刷新：fetchProfile(true)
+    /**
+     * 获取用户个人信息
+     *
+     * 支持缓存机制，避免重复请求。可强制刷新以获取最新数据。
+     *
+     * @param {boolean} [force=false] - 是否强制刷新（忽略缓存）
+     * @returns {Promise<Object>} 用户信息对象
+     */
     const fetchProfile = async (force = false) => {
-        if (!force && user.value) {  // 有缓存直接返回
+        if (!force && user.value) {
             return user.value
         }
 
-        const {data} = await getProfileApi()  // 请求用户信息接口拿数据
+        const {data} = await getProfileApi()
         setUser(data)
         return data
     }
-    const isLoggedIn = () => !!accessToken.value  // 是否登录
 
-    const isAdmin = () => user.value?.is_admin || user.value?.is_superuser || false  // 是否管理员
+    /**
+     * 检查用户是否已登录
+     *
+     * @returns {boolean} 是否存在 access token
+     */
+    const isLoggedIn = () => !!accessToken.value
 
-    const isEditor = () => user.value?.is_editor || user.value?.is_superuser || false  // 是否编辑
+    /**
+     * 检查用户是否为管理员
+     *
+     * @returns {boolean} 是否为管理员或超级用户
+     */
+    const isAdmin = () => user.value?.is_admin || user.value?.is_superuser || false
 
-    const canAccessBackend = () => !!user.value?.is_staff  // 能否进后台
+    /**
+     * 检查用户是否为编辑者
+     *
+     * @returns {boolean} 是否为编辑者或超级用户
+     */
+    const isEditor = () => user.value?.is_editor || user.value?.is_superuser || false
 
-    // 单权限判断
+    /**
+     * 检查用户是否可以访问后台管理系统
+     *
+     * @returns {boolean} 是否具有后台访问权限 (is_staff)
+     */
+    const canAccessBackend = () => !!user.value?.is_staff
+
+    /**
+     * 检查用户是否拥有指定权限
+     *
+     * 权限判断逻辑：
+     * 1. 超级管理员拥有所有权限
+     * 2. 无权限列表则拒绝
+     * 3. 通配符 '*' 表示拥有所有权限
+     * 4. 检查权限码是否在权限列表中
+     *
+     * @param {string} permissionCode - 权限代码
+     * @returns {boolean} 是否拥有该权限
+     */
     const hasPermission = (permissionCode) => {
-        if (user.value?.is_superuser) return true  // 超级管理员全过
-        if (!user.value?.permissions) return false  // 无权限列表 → 直接拒绝
-        if (user.value.permissions.includes('*')) return true  // 拥有通配符 *：全过
-        return user.value.permissions.includes(permissionCode)  // 普通判断：是否包含指定权限码
+        if (user.value?.is_superuser) return true
+        if (!user.value?.permissions) return false
+        if (user.value.permissions.includes('*')) return true
+        return user.value.permissions.includes(permissionCode)
     }
 
-    // 多权限满足任一
+    /**
+     * 检查用户是否拥有多个权限中的任意一个
+     *
+     * 用于需要满足任一权限即可访问的场景。
+     *
+     * @param {string[]} permissionCodes - 权限代码数组
+     * @returns {boolean} 是否拥有任意一个权限
+     */
     const hasAnyPermission = (permissionCodes) => {
-        if (user.value?.is_superuser) return true  // 如果是超级管理员 → 直接放行 ✅
-        if (!user.value?.permissions) return false  // 用户没有任何权限列表 → 直接拒绝 ❌
-        if (user.value.permissions.includes('*')) return true  // 用户有通配符 * → 拥有所有权限，放行 ✅
-        return permissionCodes.some(code => user.value.permissions.includes(code))  // 只要用户拥有数组里【任意一个】权限 → 就返回 true
+        if (user.value?.is_superuser) return true
+        if (!user.value?.permissions) return false
+        if (user.value.permissions.includes('*')) return true
+        return permissionCodes.some(code => user.value.permissions.includes(code))
     }
 
     return {

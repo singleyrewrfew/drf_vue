@@ -21,10 +21,6 @@
                 </div>
                 <p class="subtitle">欢迎回来，请登录您的账号</p>
             </div>
-            <!--
-            :model="form" —— 表单数据对象
-            :rules="rules" —— 校验规则（验证器）
-            -->
             <el-form ref="formRef" :model="form" :rules="rules" @submit.prevent="handleLogin" class="login-form">
                 <el-form-item prop="username">
                     <div class="form-group">
@@ -85,80 +81,99 @@
 </template>
 
 <script setup>
+/**
+ * 登录页面组件
+ *
+ * 提供用户登录功能，包含表单验证、权限检查和路由跳转。
+ * 支持密码显示/隐藏切换，以及加载状态反馈。
+ */
 import {ref, onMounted, reactive} from 'vue'
 import {useRouter, useRoute} from 'vue-router'
 import {ElMessage} from 'element-plus'
 import {useUserStore} from '@/stores/user'
 
-//router 是用来 操作路由（跳转、前进、后退）
 const router = useRouter()
-//route 是用来 读取当前页面地址信息（路径、参数、查询串）
 const route = useRoute()
-// 用户状态管理
 const userStore = useUserStore()
 
-/*
-登录表单引用
-与模板 ref="formRef" 同名
-挂载前：formRef.value === undefined
-onMounted 后：formRef.value → 表单实例
-*/
+/**
+ * 表单引用，用于触发表单验证
+ * @type {import('vue').Ref}
+ */
 const formRef = ref()
-// 按钮状态
+
+/**
+ * 登录按钮加载状态
+ * @type {import('vue').Ref<boolean>}
+ */
 const loading = ref(false)
-// 密码是否显示
+
+/**
+ * 密码可见性控制
+ * @type {import('vue').Ref<boolean>}
+ */
 const showPassword = ref(false)
-// 登录表单数据
+
+/**
+ * 登录表单数据
+ * @type {{username: string, password: string}}
+ */
 const form = reactive({
     username: '',
     password: '',
 })
 
-// 校验规则
+/**
+ * 表单验证规则
+ */
 const rules = {
-    username: [{required: true, message: '请输入用户名', trigger: 'blur'}],  // blur：输入框失去焦点时校验
+    username: [{required: true, message: '请输入用户名', trigger: 'blur'}],
     password: [{required: true, message: '请输入密码', trigger: 'blur'}],
 }
 
+/**
+ * 组件挂载后的初始化逻辑
+ *
+ * 检查 URL 中是否包含权限错误参数，如果有则显示错误提示。
+ */
 onMounted(() => {
-    /*
-    组件挂载后（页面刚打开）
-    检查 URL 里是否有查询参数 ?error=no_permission
-    如果有，就用 Element Plus 弹出红色错误提示
-    优先显示路由带的 message 参数，没有就用默认文案
-    */
     if (route.query.error === 'no_permission') {
         ElMessage.error(route.query.message || '您没有访问后台管理系统的权限，请联系管理员')
     }
 })
 
-// 处理登录
+/**
+ * 处理用户登录
+ *
+ * 执行流程：
+ * 1. 验证表单数据
+ * 2. 调用登录接口获取 token 和用户信息
+ * 3. 检查用户是否具有后台访问权限 (is_staff)
+ * 4. 权限验证通过后跳转到目标页面
+ *
+ * @throws {Error} 表单验证失败或登录接口错误时抛出异常
+ */
 const handleLogin = async () => {
-    // 1. 表单校验（Element Plus）
+    // 表单校验
     await formRef.value.validate()
-    // 2. 开启加载状态（防重复提交）
-    /*按钮置灰、显示 “登录中...”，防止用户重复点击提交*/
+
     loading.value = true
     try {
-        // 3. 调用Pinia的userStore登录Action
         const data = await userStore.login(form)
 
-        // 4. 权限判断：是否是后台管理员（is_staff）
+        // 权限检查：必须是后台用户 (is_staff)
         if (!data.user?.is_staff) {
-            // 无权限 → 强制登出、提示、终止
             await userStore.logout()
             ElMessage.error('您没有访问后台管理系统的权限，请联系管理员')
             return
         }
-        // 5. 登录+权限都成功 → 提示+跳转
+
         ElMessage.success('登录成功')
         const redirect = route.query.redirect || '/dashboard'
         await router.push(redirect)
     } catch (error) {
-        // 6. 捕获所有错误：表单校验失败/接口报错
         ElMessage.error(error.response?.data?.error || '登录失败')
     } finally {
-        // 7. 无论成功/失败，关闭loading
         loading.value = false
     }
 }

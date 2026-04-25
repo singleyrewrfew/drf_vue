@@ -47,33 +47,71 @@
 </template>
 
 <script setup>
+/**
+ * 权限管理页面
+ *
+ * 提供权限的增删改查功能，包括权限列表展示、新建、编辑、删除操作。
+ * 支持分页加载和表单验证。
+ */
 import {ref, reactive, computed, onMounted} from 'vue'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {getPermissions, createPermission, updatePermission, deletePermission} from '@/api/role'
 import TablePage from '@/components/TablePage.vue'
 import FormDialog from '@/components/FormDialog.vue'
 
+/**
+ * 加载状态控制
+ */
 const loading = ref(false)
 const submitting = ref(false)
+const deleting = ref(false)
+
+/**
+ * 权限列表数据
+ */
 const permissionList = ref([])
+
+/**
+ * 分页参数
+ */
 const page = ref(1)
-const pageSize = ref(20)
+const pageSize = ref(10)
 const total = ref(0)
+
+/**
+ * 对话框状态
+ */
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const editId = ref(null)
 
-let form = reactive({
+/**
+ * 表单默认值模板
+ */
+const defaultForm = {
     name: '',
     code: '',
     description: '',
-})
+}
 
+/**
+ * 表单响应式数据
+ */
+let form = reactive({ ...defaultForm })
+
+/**
+ * 表单验证规则
+ */
 const rules = {
     name: [{required: true, message: '请输入权限名称', trigger: 'blur'}],
     code: [{required: true, message: '请输入权限代码', trigger: 'blur'}],
 }
 
+/**
+ * 获取权限列表数据
+ *
+ * 根据当前页码和每页条数请求后端接口，支持多种数据格式兼容。
+ */
 const fetchPermissions = async () => {
     loading.value = true
     try {
@@ -82,28 +120,53 @@ const fetchPermissions = async () => {
             limit: pageSize.value,
             offset: offset
         })
-        permissionList.value = data.results || data
-        total.value = data.count || permissionList.value.length
+
+        // 兼容不同的后端响应格式
+        if (Array.isArray(data)) {
+            permissionList.value = data
+            total.value = data.length
+        } else if (data && Array.isArray(data.results)) {
+            permissionList.value = data.results
+            total.value = data.count || data.results.length
+        } else {
+            permissionList.value = []
+            total.value = 0
+            console.warn('Unexpected data format:', data)
+        }
     } catch (error) {
-        ElMessage.error('获取权限列表失败')
+        const errorMessage = error.response?.data?.message || '获取权限列表失败'
+        ElMessage.error(errorMessage)
     } finally {
         loading.value = false
     }
 }
 
+/**
+ * 重置表单数据到初始状态
+ */
 const resetForm = () => {
-    form.name = ''
-    form.code = ''
-    form.description = ''
+    Object.assign(form, defaultForm)
     editId.value = null
 }
 
+/**
+ * 处理新建权限按钮点击
+ *
+ * 打开对话框并清空表单，设置为新建模式。
+ */
 const handleCreate = () => {
     isEdit.value = false
     resetForm()
     dialogVisible.value = true
 }
 
+/**
+ * 处理编辑权限按钮点击
+ *
+ * 填充表单数据并打开对话框，设置为编辑模式。
+ *
+ * @param {Object} row - 当前行数据
+ */
 const handleEdit = (row) => {
     isEdit.value = true
     editId.value = row.id
@@ -113,6 +176,11 @@ const handleEdit = (row) => {
     dialogVisible.value = true
 }
 
+/**
+ * 处理表单提交
+ *
+ * 根据是否为编辑模式调用相应的 API 接口，成功后刷新列表。
+ */
 const handleSubmit = async () => {
     submitting.value = true
     try {
@@ -124,31 +192,61 @@ const handleSubmit = async () => {
             ElMessage.success('创建成功')
         }
         dialogVisible.value = false
-        fetchPermissions()
+        await fetchPermissions()
     } catch (error) {
-        ElMessage.error(isEdit.value ? '更新失败' : '创建失败')
+        const errorMessage = error.response?.data?.message || (isEdit.value ? '更新失败' : '创建失败')
+        ElMessage.error(errorMessage)
     } finally {
         submitting.value = false
     }
 }
 
+/**
+ * 处理删除权限
+ *
+ * 显示确认对话框，用户确认后调用删除接口并刷新列表。
+ *
+ * @param {Object} row - 当前行数据
+ */
 const handleDelete = async (row) => {
-    await ElMessageBox.confirm('确定删除该权限？删除后关联角色的权限也会被移除。', '提示', {type: 'warning'})
     try {
+        await ElMessageBox.confirm('确定删除该权限？删除后关联角色的权限也会被移除。', '提示', {
+            type: 'warning',
+            confirmButtonText: '确定',
+            cancelButtonText: '取消'
+        })
+
+        deleting.value = true
         await deletePermission(row.id)
         ElMessage.success('删除成功')
-        fetchPermissions()
+        await fetchPermissions()
     } catch (error) {
-        ElMessage.error('删除失败')
+        // 用户取消操作不显示错误消息
+        if (error !== 'cancel') {
+            const errorMessage = error.response?.data?.message || '删除失败'
+            ElMessage.error(errorMessage)
+        }
+    } finally {
+        deleting.value = false
     }
 }
 
+/**
+ * 处理分页变化
+ *
+ * 更新页码和每页条数，重新加载数据。
+ *
+ * @param {Object} params - 分页参数 {page, pageSize}
+ */
 const handlePageChange = ({page: p, pageSize: ps}) => {
     page.value = p
     pageSize.value = ps
     fetchPermissions()
 }
 
+/**
+ * 组件挂载时加载初始数据
+ */
 onMounted(() => {
     fetchPermissions()
 })
