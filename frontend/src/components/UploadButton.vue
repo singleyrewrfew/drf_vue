@@ -5,7 +5,7 @@
             <polyline points="17 8 12 3 7 8"/>
             <line x1="12" y1="3" x2="12" y2="15"/>
         </svg>
-        <span class="upload-text">{{ loading ? `${loadingText} ${progress}%` : text }}</span>
+        <span class="upload-text">{{ text }}</span>
         <div v-if="loading" class="upload-progress">
             <div class="upload-progress-bar" :style="{ width: progress + '%' }"></div>
         </div>

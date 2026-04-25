@@ -14,6 +14,14 @@ import api from './index'
 export const getMedia = (params = {}) => api.get('/media/', { params })
 
 /**
+ * 获取单个媒体文件详情
+ *
+ * @param {string|number} id - 媒体文件 ID
+ * @returns {Promise} 解析为媒体详情数据
+ */
+export const getMediaDetail = (id) => api.get(`/media/${id}/`)
+
+/**
  * 删除指定媒体文件
  *
  * @param {string|number} id - 媒体文件 ID

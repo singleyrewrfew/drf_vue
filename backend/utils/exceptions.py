@@ -53,10 +53,15 @@ def custom_exception_handler(exc, context):
     内容: {response.data}
     ==============================================
     """)
+    
+    # 提取错误消息（兼容 dict 和 list 格式）
     msg = "未知错误"
-    for key, value in response.data.items():
-        msg = value[0] if isinstance(value, list) else str(value)
-        break
+    if isinstance(response.data, dict):
+        for key, value in response.data.items():
+            msg = value[0] if isinstance(value, list) else str(value)
+            break
+    elif isinstance(response.data, list):
+        msg = str(response.data[0]) if response.data else "未知错误"
     
     # ⚠️ 重要：使用统一的错误响应格式
     # 根据状态码映射对应的错误类型

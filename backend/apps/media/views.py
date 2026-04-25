@@ -223,17 +223,20 @@ def stream_media_file(request, file_path, content_type, filename):
             length = end - start + 1
 
             def file_iterator():
-                with open(file_path, 'rb') as f:
-                    f.seek(start)
-                    remaining = length
-                    chunk_size = 8192
-                    while remaining > 0:
-                        read_size = min(chunk_size, remaining)
-                        data = f.read(read_size)
-                        if not data:
-                            break
-                        yield data
-                        remaining -= len(data)
+                try:
+                    with open(file_path, 'rb') as f:
+                        f.seek(start)
+                        remaining = length
+                        chunk_size = 8192
+                        while remaining > 0:
+                            read_size = min(chunk_size, remaining)
+                            data = f.read(read_size)
+                            if not data:
+                                break
+                            yield data
+                            remaining -= len(data)
+                except PermissionError:
+                    raise
 
             response = HttpResponse(
                 file_iterator(),
@@ -243,22 +246,25 @@ def stream_media_file(request, file_path, content_type, filename):
             response['Content-Length'] = str(length)
             response['Content-Range'] = f'bytes {start}-{end}/{file_size}'
         else:
-            response = FileResponse(
-                open(file_path, 'rb'),
-                content_type=content_type,
-            )
-            response['Content-Length'] = str(file_size)
+            try:
+                response = FileResponse(
+                    open(file_path, 'rb'),
+                    content_type=content_type,
+                )
+                response['Content-Length'] = str(file_size)
+            except PermissionError:
+                raise
 
         response['Accept-Ranges'] = 'bytes'
         response['Content-Disposition'] = f'inline; filename="{filename}"'
         return response
         
     except PermissionError as e:
-        logger.error(f"权限错误: {file_path}, {e}")
-        return api_error(
-            message='文件访问权限错误',
-            error_type=ErrorTypes.FORBIDDEN,
-            status=status.HTTP_403_FORBIDDEN
+        logger.warning(f"文件被占用: {file_path}")
+        return HttpResponse(
+            json.dumps({'message': '视频正在处理中，文件被占用，请稍后再试'}),
+            status=423,
+            content_type='application/json'
         )
     except FileNotFoundError as e:
         logger.error(f"文件不存在: {file_path}, {e}")

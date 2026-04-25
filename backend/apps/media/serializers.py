@@ -116,31 +116,44 @@ class MediaUploadSerializer(serializers.ModelSerializer):
             if hasattr(file, 'temporary_file_path'):
                 temp_file_path = file.temporary_file_path()
             
-            with transaction.atomic():
-                # 使用 get_or_create_by_file 方法（会自动处理去重）
-                media, created = Media.objects.get_or_create_by_file(file, uploader)
-                
-                if not created:
-                    # 如果是重复文件，更新文件名
-                    media.filename = file.name
-                    media.save(update_fields=['filename'])
-                
-                # 验证文件完整性（仅针对新上传的文件）
-                if created and media.file:
-                    media.file.seek(0)
-                    actual_hash = hashlib.md5(media.file.read()).hexdigest()
-                    
-                    if actual_hash != expected_hash:
-                        # 文件损坏，删除数据库记录（事务会自动回滚）
-                        logger.error(f"File integrity check failed: expected={expected_hash}, actual={actual_hash}")
-                        raise serializers.ValidationError('文件上传过程中损坏，请重新上传')
-                
-                # 如果是视频，异步生成缩略图
-                if media.is_video:
-                    media.generate_thumbnails_async()
-                
-                logger.info(f"Media uploaded successfully: {media.id}, filename={media.filename}")
-                return media
+            # SQLite 并发写入重试机制
+            import time
+            max_retries = 5
+            for attempt in range(max_retries):
+                try:
+                    with transaction.atomic():
+                        # 使用 get_or_create_by_file 方法（会自动处理去重）
+                        media, created = Media.objects.get_or_create_by_file(file, uploader)
+                        
+                        if not created:
+                            # 如果是重复文件，更新文件名
+                            media.filename = file.name
+                            media.save(update_fields=['filename'])
+                        
+                        # 验证文件完整性（仅针对新上传的文件）
+                        if created and media.file:
+                            media.file.seek(0)
+                            actual_hash = hashlib.md5(media.file.read()).hexdigest()
+                            
+                            if actual_hash != expected_hash:
+                                # 文件损坏，删除数据库记录（事务会自动回滚）
+                                logger.error(f"File integrity check failed: expected={expected_hash}, actual={actual_hash}")
+                                raise serializers.ValidationError('文件上传过程中损坏，请重新上传')
+                        
+                        # 如果是视频，异步生成缩略图
+                        if media.is_video:
+                            media.generate_thumbnails_async()
+                        
+                        logger.info(f"Media uploaded successfully: {media.id}, filename={media.filename}")
+                        return media
+                        
+                except Exception as db_error:
+                    if 'database is locked' in str(db_error).lower() and attempt < max_retries - 1:
+                        wait_time = 1.0 * (attempt + 1)  # 递增延迟：1s, 2s, 3s, 4s
+                        logger.warning(f"Database locked, retrying in {wait_time}s... (attempt {attempt + 1}/{max_retries})")
+                        time.sleep(wait_time)
+                        continue
+                    raise
                 
         except serializers.ValidationError:
             # 验证错误，重新抛出让事务回滚
@@ -148,13 +161,27 @@ class MediaUploadSerializer(serializers.ModelSerializer):
         except Exception as e:
             # 其他异常，记录日志并转换为友好的错误消息
             logger.error(f"Failed to upload media: {type(e).__name__}: {e}", exc_info=True)
+            logger.error(f"File info: name={file.name if file else 'None'}, size={file.size if file else 'None'}, type={file.content_type if hasattr(file, 'content_type') else 'Unknown'}")
             
-            # 尝试清理临时文件
+            # 尝试清理临时文件（Windows 下可能因文件占用失败）
             if temp_file_path and os.path.exists(temp_file_path):
                 try:
-                    os.remove(temp_file_path)
-                    logger.info(f"Cleaned up temp file: {temp_file_path}")
-                except Exception as cleanup_error:
-                    logger.error(f"Failed to cleanup temp file: {cleanup_error}")
+                    # Windows 下文件可能被占用，延迟删除
+                    import time
+                    for attempt in range(3):
+                        try:
+                            os.remove(temp_file_path)
+                            logger.info(f"Cleaned up temp file: {temp_file_path}")
+                            break
+                        except PermissionError:
+                            if attempt < 2:
+                                time.sleep(0.5)
+                            else:
+                                logger.warning(f"Temp file locked, will be cleaned later: {temp_file_path}")
+                        except Exception as cleanup_error:
+                            logger.error(f"Failed to cleanup temp file: {cleanup_error}")
+                            break
+                except Exception:
+                    pass
             
-            raise serializers.ValidationError('文件上传失败，请稍后重试')
+            raise serializers.ValidationError(f'文件上传失败: {str(e)}')

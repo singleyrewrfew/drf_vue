@@ -1,46 +1,53 @@
 import json
 import logging
 
+from django.conf import settings
+
 logger = logging.getLogger('django')
 
 
 class ResponseLogMiddleware:
+    """API 响应日志中间件
+    
+    仅在 DEBUG 模式下记录 JSON 响应，用于开发调试。
+    生产环境自动禁用，避免性能损耗和信息泄露。
+    """
+    
     def __init__(self, get_response):
         self.get_response = get_response
-        # 可选：只监控特定路径（留空则监控所有）
-        # self.monitored_paths = ['/api/articles/', '/api/comments/']
-        self.monitored_paths = []  # 空列表表示监控所有 JSON 响应
+        # 空列表表示监控所有 JSON 响应
+        self.monitored_paths = []
 
     def __call__(self, request):
-        # 1. 请求先经过这里
         response = self.get_response(request)
 
-        # 2. 视图执行完，返回结果在这里拦截
+        # 仅在生产环境禁用日志输出
+        if not settings.DEBUG:
+            return response
+
         try:
-            # 只处理 JSON 格式的返回
-            if "application/json" in response.get("Content-Type", ""):
+            content_type = response.get("Content-Type", "")
+            if "application/json" not in content_type:
+                return response
 
-                # 如果设置了监控路径，则只打印匹配的路径
-                if self.monitored_paths and not any(request.path.startswith(path) for path in self.monitored_paths):
-                    return response
-                
-                # 读取返回内容
-                response_data = response.content.decode("utf-8")
+            # 如果设置了监控路径，则只打印匹配的路径
+            if self.monitored_paths and not any(
+                request.path.startswith(path) for path in self.monitored_paths
+            ):
+                return response
 
-                # 格式化打印（漂亮格式）
-                print("=" * 80)
-                print(f"📥 接口返回结果 [{request.method}] {request.path}", end=" ")
-                print(f"   状态码: {response.status_code}")
-                try:
-                    # 尝试格式化 JSON，更好看
-                    json_data = json.loads(response_data)
-                    print(json.dumps(json_data, ensure_ascii=False, indent=2))
-                except (json.JSONDecodeError, Exception):
-                    # 不是标准 JSON 就直接打印
-                    print(response_data)
-                print("=" * 80)
+            # 读取并解析响应内容
+            response_data = response.content.decode("utf-8")
+            
+            logger.info(
+                "API Response [%s] %s | Status: %d | Body: %s",
+                request.method,
+                request.path,
+                response.status_code,
+                response_data
+            )
 
         except Exception as e:
-            print(f"中间件打印出错: {e}")
+            logger.error("ResponseLogMiddleware error: %s", str(e))
 
         return response

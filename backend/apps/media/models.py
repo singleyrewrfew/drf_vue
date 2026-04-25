@@ -266,7 +266,7 @@ class Media(BaseModel):
         return self.file_type.startswith('video/')
 
     def generate_thumbnails(self):
-        """生成视频缩略图"""
+        """生成视频缩略图（同步方法，在线程中调用）"""
         print(f"[Thumbnail] generate_thumbnails called for media {self.id}")
         
         if not self.is_video:
@@ -278,9 +278,8 @@ class Media(BaseModel):
             print(f"[Thumbnail] Media {self.id} has no actual file, skipping")
             return False
         
-        print(f"[Thumbnail] Setting status to 'processing' for media {self.id}")
-        self.thumbnail_status = 'processing'
-        self.save(update_fields=['thumbnail_status'])
+        # 注意：状态已在 generate_thumbnails_async() 的任务函数中设置为 'processing'
+        # 这里只需要处理 completed/failed 状态
         
         video_path = actual_file.path
         print(f"[Thumbnail] Video path: {video_path}")
@@ -298,9 +297,22 @@ class Media(BaseModel):
                 self.thumbnails.name = relative_image_path
                 self.thumbnails_count = num_thumbnails
                 self.thumbnail_status = 'completed'
-                self.save(update_fields=['thumbnails', 'thumbnails_count', 'thumbnail_status'])
-                print(f"[Thumbnail] Successfully saved thumbnails for media {self.id}")
-                return True
+                
+                # SQLite 并发保存重试机制
+                import time
+                max_retries = 3
+                for attempt in range(max_retries):
+                    try:
+                        self.save(update_fields=['thumbnails', 'thumbnails_count', 'thumbnail_status'])
+                        print(f"[Thumbnail] Successfully saved thumbnails for media {self.id}")
+                        return True
+                    except Exception as save_error:
+                        if 'database is locked' in str(save_error).lower() and attempt < max_retries - 1:
+                            wait_time = 1.0 * (attempt + 1)
+                            logger.warning(f"[Thumbnail] Database locked during save, retrying in {wait_time}s... (attempt {attempt + 1}/{max_retries})")
+                            time.sleep(wait_time)
+                            continue
+                        raise
             else:
                 print(f"[Thumbnail] No thumbnails generated for media {self.id}")
                 self.thumbnail_status = 'failed'
@@ -323,6 +335,10 @@ class Media(BaseModel):
         if not self.is_video:
             return
         
+        # 保持 pending 状态，表示任务在队列中等待
+        # 任务真正开始执行时才会设置为 processing
+        logger.info(f"[Thumbnail] Media {self.id} status set to 'pending', waiting in queue")
+        
         from utils.task_manager import task_manager, TaskInfo
         
         media_id = self.id
@@ -331,6 +347,7 @@ class Media(BaseModel):
         def _generate():
             import django
             from django.db import connection, transaction
+            import time
             
             # 确保 Django 已初始化
             if not django.apps.apps.ready:
@@ -340,11 +357,20 @@ class Media(BaseModel):
                 from apps.media.models import Media
                 logger.debug(f"[Thumbnail] Fetching media {media_id} from database")
                 
-                # 使用事务获取媒体记录
+                # 使用事务获取媒体记录并更新状态
                 with transaction.atomic():
                     media = Media.objects.select_for_update(skip_locked=True).get(id=media_id)
                     logger.debug(f"[Thumbnail] Media found, current status: {media.thumbnail_status}")
                     
+                    # 任务真正开始执行，设置为 processing
+                    media.thumbnail_status = 'processing'
+                    media.save(update_fields=['thumbnail_status'])
+                    logger.info(f"[Thumbnail] Media {media_id} status changed to 'processing'")
+                
+                # 事务已提交，状态对其他连接可见
+                # 现在执行耗时的缩略图生成（不在事务中）
+                with transaction.atomic():
+                    media = Media.objects.get(id=media_id)
                     result = media.generate_thumbnails()
                     logger.debug(f"[Thumbnail] Generation result: {result}, new status: {media.thumbnail_status}")
                     

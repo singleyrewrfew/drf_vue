@@ -22,10 +22,15 @@
                         :on-success="handleUploadSuccess"
                         :on-error="handleUploadError"
                         :on-progress="handleUploadProgress"
+                        :on-change="handleFileChange"
                         :show-file-list="false"
                         multiple
                     >
-                        <UploadButton :loading="uploading" :progress="uploadProgress"/>
+                        <UploadButton 
+                            :loading="uploading" 
+                            :progress="uploadProgress"
+                            :text="totalUploadFiles > 0 ? (completedFiles === totalUploadFiles ? `已完成 (${completedFiles}/${totalUploadFiles}个文件)` : `上传中 (${completedFiles}/${totalUploadFiles}个文件)`) : '上传文件'"
+                        />
                     </el-upload>
                 </div>
             </template>
@@ -40,13 +45,17 @@
                 <template #default="{ row }">
                     <template v-if="row.is_video">
                         <div class="thumbnail-status">
-                            <el-tag v-if="row.thumbnail_status === 'pending'" type="info" size="small">等待中
+                            <el-tag v-if="row.thumbnail_status === 'pending'" type="info" size="small">
+                                <span style="display: inline-flex; align-items: center; gap: 4px;">
+                                    <el-icon class="is-loading"><Loading/></el-icon>
+                                    <span>等待中</span>
+                                </span>
                             </el-tag>
                             <el-tag v-else-if="row.thumbnail_status === 'processing'" type="warning" size="small">
-                      <span style="display: inline-flex; align-items: center; gap: 4px;">
-                        <el-icon class="is-loading"><Loading/></el-icon>
-                        <span>生成中</span>
-                      </span>
+                                <span style="display: inline-flex; align-items: center; gap: 4px;">
+                                    <el-icon class="is-loading"><Loading/></el-icon>
+                                    <span>生成中</span>
+                                </span>
                             </el-tag>
                             <el-tag v-else-if="row.thumbnail_status === 'completed'" type="success" size="small">
                                 已完成
@@ -90,10 +99,11 @@
                 />
                 <VideoPlayer
                     v-else-if="isVideo"
+                    :key="previewFile?.id"
                     :src="previewUrl"
                     :poster="videoPoster"
-                    :thumbnails="previewFile?.thumbnails_url"
-                    :thumbnails-count="previewFile?.thumbnails_count || 0"
+                    :thumbnails="videoThumbnails"
+                    :thumbnails-count="videoThumbnailsCount"
                     @ready="onVideoReady"
                     @error="onVideoError"
                 />
@@ -116,7 +126,7 @@
 </template>
 
 <script setup>
-import {ref, computed, onMounted, onUnmounted, reactive} from 'vue'
+import {ref, computed, onMounted, onUnmounted, reactive, nextTick} from 'vue'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {Document, Loading} from '@element-plus/icons-vue'
 import {useUserStore} from '@/stores/user'
@@ -126,7 +136,7 @@ import TablePage from '@/components/TablePage.vue'
 import PreviewButton from '@/components/PreviewButton.vue'
 import UploadButton from '@/components/UploadButton.vue'
 import RetryButton from '@/components/RetryButton.vue'
-import {deleteMedia, getMedia, regenerateThumbnails} from '@/api/media'
+import {deleteMedia, getMedia, getMediaDetail, regenerateThumbnails} from '@/api/media'
 
 const pagination = reactive({
     page: 1,
@@ -142,7 +152,12 @@ const previewFile = ref(null)
 const videoPoster = ref('')
 const uploading = ref(false)
 const uploadProgress = ref(0)
+const uploadingFiles = ref([]) // 存储正在上传的文件列表
+const totalUploadFiles = ref(0) // 存储本次上传的总文件数
+const completedFiles = ref(0) // 存储已完成的文件数
+const fileProgressMap = ref(new Map()) // 存储每个文件的进度 {uid: percent}
 let refreshTimer = null
+let eventSources = new Map() // 存储 SSE 连接
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
 const uploadUrl = computed(() => `${baseUrl}/media/`)
@@ -180,6 +195,25 @@ const previewUrl = computed(() => {
     return getMediaUrl(url)
 })
 
+// 只有在缩略图生成完成时才传递缩略图 URL
+const videoThumbnails = computed(() => {
+    if (!previewFile.value) return ''
+    // 只有 completed 状态才返回缩略图 URL
+    if (previewFile.value.thumbnail_status === 'completed' && previewFile.value.thumbnails_url) {
+        return previewFile.value.thumbnails_url
+    }
+    return ''
+})
+
+const videoThumbnailsCount = computed(() => {
+    if (!previewFile.value) return 0
+    // 只有 completed 状态才返回缩略图数量
+    if (previewFile.value.thumbnail_status === 'completed') {
+        return previewFile.value.thumbnails_count || 0
+    }
+    return 0
+})
+
 const handlePageChange = ({page, pageSize}) => {
     pagination.page = page
     pagination.page_size = pageSize
@@ -187,21 +221,115 @@ const handlePageChange = ({page, pageSize}) => {
 }
 
 const hasProcessingThumbnails = () => {
-    return mediaList.value.some(item => item.thumbnail_status === 'pending' || item.thumbnail_status === 'processing')
+    return mediaList.value.some(item => 
+        item.is_video && (item.thumbnail_status === 'pending' || item.thumbnail_status === 'processing')
+    )
 }
 
-const startAutoRefresh = () => {
-    if (refreshTimer) {
-        clearInterval(refreshTimer)
+/**
+ * 为单个视频文件建立 SSE 连接，实时监听状态变化
+ */
+const subscribeToThumbnailStatus = (mediaId) => {
+    // 如果已经存在连接，直接返回（避免重复订阅）
+    if (eventSources.has(mediaId)) {
+        console.log('[SSE] Connection already exists for', mediaId, ', skipping')
+        return
     }
-    refreshTimer = setInterval(() => {
-        if (hasProcessingThumbnails()) {
-            fetchMedia()
-        } else {
-            clearInterval(refreshTimer)
-            refreshTimer = null
+    
+    const token = userStore.accessToken
+    // EventSource 不支持自定义 headers，通过 URL 参数传递 token
+    const url = `${baseUrl}/media/${mediaId}/thumbnail_status/?token=${token}`
+    
+    console.log('[SSE] Subscribing to media:', mediaId)
+    
+    // 创建 EventSource
+    const eventSource = new EventSource(url)
+    
+    eventSource.onopen = () => {
+        console.log('[SSE] Connection opened for media:', mediaId)
+    }
+    
+    eventSource.onmessage = async (event) => {
+        try {
+            const data = JSON.parse(event.data)
+            
+            if (data.error) {
+                console.error('[SSE] Error for', mediaId, ':', data.error)
+                eventSource.close()
+                eventSources.delete(mediaId)
+                return
+            }
+            
+            console.log('[SSE] Received update for', mediaId, ':', data.thumbnail_status)
+            
+            // 更新本地列表中的状态
+            const mediaIndex = mediaList.value.findIndex(m => m.id === data.media_id)
+            if (mediaIndex !== -1) {
+                // 使用 splice 触发 Vue 响应式更新
+                const oldStatus = mediaList.value[mediaIndex].thumbnail_status
+                mediaList.value[mediaIndex].thumbnail_status = data.thumbnail_status
+                
+                console.log('[SSE] Updated media', mediaId, 'from', oldStatus, 'to', data.thumbnail_status)
+                
+                // 如果任务完成，重新获取媒体信息以更新缩略图 URL
+                if (data.thumbnail_status === 'completed') {
+                    console.log('[SSE] Refreshing media info for', mediaId)
+                    try {
+                        const {data: mediaDetail} = await getMediaDetail(mediaId)
+                        
+                        // 更新列表中的完整信息
+                        // 使用 splice 确保触发 Vue 响应式更新
+                        mediaList.value.splice(mediaIndex, 1, {
+                            ...mediaList.value[mediaIndex],
+                            ...mediaDetail
+                        })
+                        console.log('[SSE] Media info refreshed, thumbnails_url:', mediaDetail.thumbnails_url)
+                        
+                        // 如果当前正在预览该视频，强制更新 previewFile 以触发缩略图重载
+                        if (previewFile.value && previewFile.value.id === mediaId) {
+                            await nextTick()
+                            // 使用 nextTick 确保 DOM 更新后再赋值，或者直接替换整个对象引用
+                            const updatedPreview = {
+                                ...mediaDetail,
+                                // 保留一些可能不在 detail 接口返回但预览需要的字段（如果需要的话）
+                            }
+                            previewFile.value = updatedPreview
+                            console.log('[SSE] Force updated previewFile for thumbnail reload', updatedPreview.thumbnails_url)
+                        }
+                    } catch (error) {
+                        console.error('[SSE] Failed to refresh media info:', error)
+                    }
+                }
+                
+                // 如果任务完成或失败，关闭连接
+                if (['completed', 'failed'].includes(data.thumbnail_status)) {
+                    console.log('[SSE] Task finished for', mediaId, ', closing connection')
+                    eventSource.close()
+                    eventSources.delete(mediaId)
+                }
+            } else {
+                console.warn('[SSE] Media not found in list:', data.media_id)
+            }
+        } catch (error) {
+            console.error('[SSE] Parse error:', error)
         }
-    }, 3000)
+    }
+    
+    eventSource.onerror = (error) => {
+        console.error('[SSE] Connection error for', mediaId, ':', error)
+        eventSource.close()
+        eventSources.delete(mediaId)
+    }
+    
+    eventSources.set(mediaId, eventSource)
+}
+
+/**
+ * 关闭所有 SSE 连接
+ */
+const closeAllEventSources = () => {
+    eventSources.forEach((es) => es.close())
+    eventSources.clear()
 }
 
 const fetchMedia = async () => {
@@ -214,9 +342,13 @@ const fetchMedia = async () => {
         })
         mediaList.value = data.results || data
         pagination.total = data.count || mediaList.value.length
-        if (hasProcessingThumbnails()) {
-            startAutoRefresh()
-        }
+        
+        // 为所有 pending/processing 状态的视频建立 SSE 连接
+        mediaList.value.forEach(item => {
+            if (item.is_video && ['pending', 'processing'].includes(item.thumbnail_status)) {
+                subscribeToThumbnailStatus(item.id)
+            }
+        })
     } catch (error) {
         ElMessage.error('获取媒体列表失败')
     } finally {
@@ -230,9 +362,28 @@ const formatSize = (bytes) => {
     return (bytes / (1024 * 1024)).toFixed(2) + ' MB'
 }
 
-const handleUploadProgress = (event) => {
+const handleUploadProgress = (event, file, fileList) => {
     uploading.value = true
-    uploadProgress.value = Math.round(event.percent)
+    
+    // 记录每个文件的进度
+    fileProgressMap.value.set(file.uid, event.percent)
+    
+    // 计算平均进度
+    const totalPercent = Array.from(fileProgressMap.value.values()).reduce((sum, p) => sum + p, 0)
+    const fileCount = fileProgressMap.value.size
+    uploadProgress.value = Math.round(totalPercent / fileCount)
+    
+    // 更新文件列表
+    uploadingFiles.value = fileList
+}
+
+const handleFileChange = (file, fileList) => {
+    // 当文件被添加到上传列表时，设置总文件数
+    if (file.status === 'ready' && totalUploadFiles.value === 0) {
+        totalUploadFiles.value = fileList.length
+        completedFiles.value = 0 // 重置已完成计数
+        console.log('[Upload] Total files selected:', totalUploadFiles.value)
+    }
 }
 
 const beforeUpload = (file) => {
@@ -277,23 +428,101 @@ const beforeUpload = (file) => {
     return true
 }
 
-const handleUploadSuccess = () => {
-    uploading.value = false
-    uploadProgress.value = 0
-    ElMessage.success('上传成功')
-    fetchMedia()
+const handleUploadSuccess = (response, file, fileList) => {
+    // 从进度映射中移除已完成的文件
+    fileProgressMap.value.delete(file.uid)
+    
+    // 增加已完成文件计数
+    completedFiles.value += 1
+    
+    // 更新正在上传的文件列表（用于内部逻辑）
+    uploadingFiles.value = fileList.filter(f => f.status === 'uploading')
+    
+    console.log('[Upload] File uploaded:', response.data?.id, `Completed: ${completedFiles.value}/${totalUploadFiles.value}`)
+    
+    // 如果是视频文件，立即为它建立 SSE 连接
+    if (response.data?.is_video && response.data?.id) {
+        const mediaId = response.data.id
+        
+        // 检查是否已经存在该视频的 SSE 连接
+        if (!eventSources.has(mediaId)) {
+            console.log('[Upload] Subscribing to new video:', mediaId)
+            subscribeToThumbnailStatus(mediaId)
+        } else {
+            console.log('[Upload] SSE already exists for', mediaId, ', skipping')
+        }
+        
+        // 将新上传的视频添加到列表顶部（如果不存在）
+        const exists = mediaList.value.some(m => m.id === mediaId)
+        if (!exists) {
+            mediaList.value.unshift(response.data)
+            pagination.total += 1
+        } else {
+            // 更新现有记录
+            const index = mediaList.value.findIndex(m => m.id === mediaId)
+            if (index !== -1) {
+                mediaList.value[index] = {...mediaList.value[index], ...response.data}
+            }
+        }
+    }
+    
+    // 如果所有文件都上传完成
+    if (completedFiles.value === totalUploadFiles.value) {
+        // uploading.value = false  // 不要立即设置为 false，保持 loading 状态
+        uploadProgress.value = 100 // 保持进度为 100%
+        
+        ElMessage.success(`成功上传 ${fileList.length} 个文件`)
+        
+        // 延迟刷新列表，确保所有数据都已同步
+        setTimeout(() => {
+            fetchMedia()
+        }, 500)
+        
+        // 再延迟 2 秒后重置状态，让用户看到完成状态
+        setTimeout(() => {
+            uploading.value = false // 现在才设置为 false
+            totalUploadFiles.value = 0 // 重置总文件数
+            completedFiles.value = 0 // 重置已完成文件数
+            fileProgressMap.value.clear() // 清空进度映射
+            uploadProgress.value = 0
+        }, 2000)
+    }
 }
 
-const handleUploadError = (error) => {
-    uploading.value = false
-    uploadProgress.value = 0
+const handleUploadError = (error, file, fileList) => {
+    // 从进度映射中移除失败的文件
+    fileProgressMap.value.delete(file.uid)
+    
+    // 增加已完成文件计数（失败也算完成）
+    completedFiles.value += 1
+    
+    // 更新正在上传的文件列表（用于内部逻辑）
+    uploadingFiles.value = fileList.filter(f => f.status === 'uploading')
+    
+    // 如果所有文件都处理完成（成功或失败）
+    if (completedFiles.value === totalUploadFiles.value) {
+        // uploading.value = false  // 不要立即设置为 false，保持 loading 状态
+        uploadProgress.value = 100 // 保持进度为 100%
+        
+        // 延迟 2 秒后重置状态
+        setTimeout(() => {
+            uploading.value = false // 现在才设置为 false
+            totalUploadFiles.value = 0 // 重置总文件数
+            completedFiles.value = 0 // 重置已完成文件数
+            fileProgressMap.value.clear()
+            uploadProgress.value = 0
+        }, 2000)
+    }
+    
     const errorMsg = error?.response?.data?.file?.[0] || error?.response?.data?.error || '上传失败'
-    ElMessage.error(errorMsg)
+    ElMessage.error(`${file.name}: ${errorMsg}`)
 }
 
 const handlePreview = (row) => {
     previewFile.value = row
     previewVisible.value = true
+    // 重置 poster，避免显示旧视频的海报
+    videoPoster.value = ''
 }
 
 const handleCopyLink = (row) => {
@@ -396,6 +625,8 @@ onUnmounted(() => {
         clearInterval(refreshTimer)
         refreshTimer = null
     }
+    // 关闭所有 SSE 连接，防止内存泄漏
+    closeAllEventSources()
 })
 </script>
 
