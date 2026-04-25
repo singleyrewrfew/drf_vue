@@ -8,14 +8,13 @@ class StandardResponse(Response):
     
     设计原则：
     1. 所有数据统一放在 data 字段中
-    2. 成功和错误都使用统一的包装格式
+    2. 使用 HTTP 状态码表示请求结果（符合 RESTful 规范）
     3. 分页时：保留 DRF 的分页格式在 data 中
     
     响应格式示例：
     
     成功（单个对象）:
     {
-        "code": 0,
         "message": "操作成功",
         "data": {
             "id": "uuid",
@@ -23,10 +22,10 @@ class StandardResponse(Response):
             "content": "..."
         }
     }
+    HTTP Status: 200
     
     成功（列表，分页）:
     {
-        "code": 0,
         "message": "操作成功",
         "data": {
             "count": 100,
@@ -35,20 +34,20 @@ class StandardResponse(Response):
             "results": [...]
         }
     }
+    HTTP Status: 200
     
     错误:
     {
-        "code": 400,
         "message": "错误信息",
         "error": "错误类型",
         "data": null
     }
+    HTTP Status: 400/401/403/404/500 等
     """
     
-    def __init__(self, data=None, message='操作成功', code=0, status=200, error_type=None):
+    def __init__(self, data=None, message='操作成功', status=200, error_type=None):
         # 所有数据统一包装在 data 字段中
         response_data = {
-            'code': code,
             'message': message,
             'data': data,
         }
@@ -75,7 +74,7 @@ def api_response(data=None, message='操作成功', status=200):
     return StandardResponse(data=data, message=message, status=status)
 
 
-def api_error(message, error_type=ErrorTypes.BAD_REQUEST, code=None, status=None, data=None):
+def api_error(message, error_type=ErrorTypes.BAD_REQUEST, status=None, data=None):
     """
     统一的错误响应
     
@@ -84,7 +83,6 @@ def api_error(message, error_type=ErrorTypes.BAD_REQUEST, code=None, status=None
     Args:
         message: 错误信息
         error_type: 错误类型（使用 ErrorTypes 常量）
-        code: 业务错误代码（可选，默认使用 status）
         status: HTTP 状态码（可选，根据 error_type 自动推断）
         data: 额外的错误数据（可选）
     
@@ -102,7 +100,6 @@ def api_error(message, error_type=ErrorTypes.BAD_REQUEST, code=None, status=None
     return StandardResponse(
         data=data,
         message=message,
-        code=code if code is not None else status,
         status=status,
         error_type=error_type
     )

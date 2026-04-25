@@ -91,23 +91,19 @@ api.interceptors.request.use(
  *    - Axios 会自动填充 error.response.status 和 error.response.data
  *    - 后端返回的数据会直接放在 error.response.data 中
  * 
- * 2. 【手动构造】业务错误（code !== 0）
- *    - 见下方响应成功拦截器第 179-194 行
- *    - 我们手动构造了 error.response = { status, data }
- * 
  * 🔴 如果需要修改错误响应结构，请务必同步更新此函数的取值逻辑！
  * 🔴 当前支持的错误字段优先级：message > detail > 兜底文本
  *
- * 后端统一响应格式：
- *   成功: { code: 0, message: "操作成功", data: {...} }
- *   错误: { code: 400, message: "错误信息", error: "错误类型", data: null }
+ * 后端统一响应格式（使用 HTTP 状态码）：
+ *   成功: { message: "操作成功", data: {...} }  (HTTP 2xx)
+ *   错误: { message: "错误信息", error: "错误类型", data: null }  (HTTP 4xx/5xx)
  *
  * @param {Error} error - Axios 错误对象，必须包含 error.response 或 error.message
  * @returns {string} 用户友好的错误消息
  * 
  * @example
  * // 场景1：后端返回的业务错误
- * error.response.data = { code: 400, message: "用户名已存在", error: "bad_request" }
+ * error.response.data = { message: "用户名已存在", error: "bad_request" }
  * extractErrorMessage(error) // → "用户名已存在"
  * 
  * @example
@@ -160,9 +156,9 @@ async function handleLogoutAndRedirect(userStore, routerInstance, redirectParams
 /**
  * 响应拦截器：统一处理 API 响应和错误
  *
- * 后端统一响应格式：
- *   成功: { code: 0, message: "操作成功", data: {...} }
- *   错误: { code: HTTP状态码, message: "错误信息", error: "错误类型", data: null }
+ * 后端统一响应格式（使用 HTTP 状态码）：
+ *   成功: { message: "操作成功", data: {...} }  (HTTP 2xx)
+ *   错误: { message: "错误信息", error: "错误类型", data: null }  (HTTP 4xx/5xx)
  *
  * 成功响应：标准化数据格式，提取 data 字段
  * 错误响应：处理 401/403/500 等常见错误，自动刷新 token，记录日志
@@ -172,8 +168,8 @@ api.interceptors.response.use(
      * 响应成功处理函数
      *
      * 处理后端统一响应格式：
-     * - code === 0: 成功，提取 data 字段
-     * - code !== 0: 业务错误，构造错误对象并拒绝 Promise
+     * - HTTP 2xx: 成功，提取 data 字段
+     * - HTTP 4xx/5xx: 错误，构造错误对象并拒绝 Promise
      *
      * @param {Object} response - Axios 响应对象
      * @returns {Object} 处理后的响应对象（data 字段为实际业务数据）
@@ -181,39 +177,12 @@ api.interceptors.response.use(
     (response) => {
         const responseData = response.data
 
-        // 检查是否为后端统一响应格式（包含 code 和 data 字段）
-        if (responseData && typeof responseData.code !== 'undefined' && 'data' in responseData) {
-            if (responseData.code === 0) {
-                // ✅ 成功响应：将实际业务数据挂载到 response.data
-                // 调用方可以直接使用 response.data 获取业务数据
-                response.data = responseData.data
-                return response
-            } else {
-                // ❌ 业务错误：构造标准错误对象并拒绝 Promise
-                // 
-                // 🔴 重要：此处构造的 error.response 结构被 extractErrorMessage 函数依赖
-                //    如需修改结构，请同步更新 index.js 第 83-129 行的 extractErrorMessage 函数
-                // 
-                // 后端错误响应格式：
-                //   {
-                //       code: HTTP状态码 (如 400, 401, 403, 404, 500),
-                //       message: "错误信息",
-                //       error: "错误类型" (如 "bad_request", "unauthorized"),
-                //       data: null
-                //   }
-                // 
-                // 构造的 error 对象格式：
-                //   error.response = {
-                //       status: HTTP状态码,
-                //       data: { code, message, error, data }  // 后端返回的完整数据
-                //   }
-                const error = new Error(responseData.message || '请求失败')
-                error.response = {
-                    status: response.status,
-                    data: responseData
-                }
-                return Promise.reject(error)
-            }
+        // 检查是否为后端统一响应格式（包含 message 和 data 字段）
+        if (responseData && 'message' in responseData && 'data' in responseData) {
+            // ✅ 成功响应（HTTP 2xx）：将实际业务数据挂载到 response.data
+            // 调用方可以直接使用 response.data 获取业务数据
+            response.data = responseData.data
+            return response
         }
 
         // 兼容旧接口或非标准响应：直接返回原始响应
@@ -245,49 +214,32 @@ api.interceptors.response.use(
 
         // 处理 403 禁止访问错误
         if (error.response?.status === CLIENT_ERROR_STATUS.FORBIDDEN) {
-            const errorData = error.response?.data
-
-            // 检查是否是因为失去了后台访问权限
-            // 后端返回格式：{ code: 403, message: "...", error: "no_backend_access", data: null }
-            if (errorData?.error === 'no_backend_access') {
-                await handleLogoutAndRedirect(userStore, router, {
-                    name: 'Login',
-                    query: {error: 'no_permission', message: errorData.message}
-                })
-                return Promise.reject(error)
-            }
-
-            // 其他 403 错误：检查用户权限状态
+            // 主动检查用户权限状态（单一事实来源）
             if (userStore.isLoggedIn()) {
                 try {
                     await userStore.fetchProfile(true)
+                    
+                    // 如果没有后台访问权限，执行登出
                     if (!userStore.canAccessBackend()) {
                         await handleLogoutAndRedirect(userStore, router, {
                             name: 'Login',
-                            query: {error: 'no_permission'}
+                            query: {
+                                error: 'no_permission',
+                                message: error.response?.data?.message || '您没有后台访问权限'
+                            }
                         })
+                        return Promise.reject(error)
                     }
                 } catch (e) {
                     console.error('Failed to fetch user profile:', e)
                 }
             }
-
+            
+            // 其他 403 错误，正常拒绝
             return Promise.reject(error)
         }
 
-        // 记录其他类型的错误日志
-        const errorMessage = extractErrorMessage(error)
-
-        if (error.response?.data?.error) {
-            console.error('API Error:', errorMessage)
-        } else if (error.response?.status === SERVER_ERROR_STATUS.INTERNAL_SERVER_ERROR) {
-            console.error('Server Error:', errorMessage)
-        } else if (error.code === AXIOS_ERROR_CODES.TIMEOUT) {
-            console.error('Request Timeout:', errorMessage)
-        } else {
-            console.error('Unknown Error:', errorMessage)
-        }
-
+        // 其他错误直接拒绝，交给调用方处理
         return Promise.reject(error)
     }
 )
