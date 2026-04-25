@@ -2,13 +2,9 @@
 import axios from 'axios'
 import {useUserStore} from '@/stores/user'
 import router from '@/router'
-
-// HTTP 状态码常量
-const HTTP_STATUS = {
-    UNAUTHORIZED: 401,
-    FORBIDDEN: 403,
-    SERVER_ERROR: 500,
-}
+import { CLIENT_ERROR_STATUS, SERVER_ERROR_STATUS } from '@/constants/httpStatus'
+import { handleTokenRefresh } from '@/utils/tokenRefresh'
+import { buildAuthHeader, AUTH_CONFIG } from '@/constants/authConfig'
 
 // Axios 错误码常量
 const AXIOS_ERROR_CODES = {
@@ -16,8 +12,6 @@ const AXIOS_ERROR_CODES = {
 }
 
 let isLoggingOut = false
-let isRefreshing = false
-let refreshSubscribers = []
 
 /**
  * 创建 Axios 实例并配置默认选项
@@ -39,79 +33,6 @@ const api = axios.create({
     },
 })
 
-/**
- * 通知所有订阅者 token 已刷新
- *
- * 当 access token 成功刷新后，调用此函数通知所有等待的请求重试。
- * 遍历执行所有订阅的回调函数，并清空订阅队列防止重复调用。
- *
- * @param {string} token - 新刷新的 access token
- */
-function onRefreshed(token) {
-    refreshSubscribers.forEach(callback => callback(token))
-    refreshSubscribers = []
-}
-
-/**
- * 添加刷新令牌订阅者
- *
- * 当 access token 过期需要刷新时，将请求回调函数加入队列等待新 token。
- * 多个并发请求会排队等待，token 刷新后统一通知所有订阅者重试请求。
- *
- * @param {Function} callback - 接收新 token 并执行重试请求的回调函数
- * @returns {Promise} 解析为回调函数执行结果的 Promise 对象
- */
-function addRefreshSubscriber(callback) {
-    return new Promise((resolve) => {
-        refreshSubscribers.push((token) => {
-            resolve(callback(token))
-        })
-    })
-}
-
-/**
- * 处理 access token 刷新
- *
- * 当 access token 过期时，使用 refresh token 向服务器请求新的 token 对。
- * 刷新成功后更新本地存储并通知所有等待的请求重试。
- *
- * @returns {Promise<string>} 解析为新的 access token
- * @throws {Error} 当没有 refresh token 或刷新失败时抛出错误
- */
-async function handleTokenRefresh() {
-    const userStore = useUserStore()
-    const currentRefreshToken = localStorage.getItem('refresh')
-
-    // 如果没有 refresh token，说明会话已失效（token 过期或被清除）
-    if (!currentRefreshToken) {
-        throw new Error('Refresh token not found, session expired')
-    }
-
-    try {
-        const response = await axios.post(
-            `${import.meta.env.VITE_API_BASE_URL}/auth/refresh/`,
-            {refresh: currentRefreshToken},
-            {headers: {'Content-Type': 'application/json'}}
-        )
-
-        const {access, refresh} = response.data
-
-        // 更新本地存储的 token
-        userStore.setToken('access', access)
-        if (refresh) {
-            userStore.setToken('refresh', refresh)
-        }
-
-        // 通知所有订阅者 token 已刷新
-        onRefreshed(access)
-        return access
-    } catch (error) {
-        // 刷新失败时清空订阅队列，避免后续请求继续等待
-        refreshSubscribers = []
-        throw error
-    }
-}
-
 
 /**
  * 为请求配置添加 JWT 认证头
@@ -124,7 +45,7 @@ function addAuthHeader(config, token) {
     if (!config.headers) {
         config.headers = {}
     }
-    config.headers.Authorization = `Bearer ${token}`
+    config.headers[AUTH_CONFIG.AUTH_HEADER_NAME] = buildAuthHeader(token)
     return config
 }
 
@@ -160,10 +81,49 @@ api.interceptors.request.use(
 
 
 /**
- * 提取错误消息
+ * 提取用户友好的错误消息
  *
- * @param {Error} error - Axios 错误对象
+ * ⚠️⚠️⚠️ 重要依赖说明 ⚠️⚠️⚠️
+ * 
+ * 此函数依赖于 error.response 对象的存在和结构，该对象由以下两处设置：
+ * 
+ * 1. 【Axios 自动设置】HTTP 错误（如 401/403/500）
+ *    - Axios 会自动填充 error.response.status 和 error.response.data
+ *    - 后端返回的数据会直接放在 error.response.data 中
+ * 
+ * 2. 【手动构造】业务错误（code !== 0）
+ *    - 见下方响应成功拦截器第 179-194 行
+ *    - 我们手动构造了 error.response = { status, data }
+ * 
+ * 🔴 如果需要修改错误响应结构，请务必同步更新此函数的取值逻辑！
+ * 🔴 当前支持的错误字段优先级：message > detail > 兜底文本
+ *
+ * 后端统一响应格式：
+ *   成功: { code: 0, message: "操作成功", data: {...} }
+ *   错误: { code: 400, message: "错误信息", error: "错误类型", data: null }
+ *
+ * @param {Error} error - Axios 错误对象，必须包含 error.response 或 error.message
  * @returns {string} 用户友好的错误消息
+ * 
+ * @example
+ * // 场景1：后端返回的业务错误
+ * error.response.data = { code: 400, message: "用户名已存在", error: "bad_request" }
+ * extractErrorMessage(error) // → "用户名已存在"
+ * 
+ * @example
+ * // 场景2：DRF 标准错误格式（兼容旧接口）
+ * error.response.data = { detail: "未提供有效的认证凭据" }
+ * extractErrorMessage(error) // → "未提供有效的认证凭据"
+ * 
+ * @example
+ * // 场景3：网络错误（无 response 对象）
+ * error.message = "Network Error"
+ * extractErrorMessage(error) // → "Network Error"
+ * 
+ * @example
+ * // 场景4：所有字段都缺失
+ * error = {}
+ * extractErrorMessage(error) // → "请求失败，请稍后重试"
  */
 function extractErrorMessage(error) {
     return error.response?.data?.message ||
@@ -200,6 +160,10 @@ async function handleLogoutAndRedirect(userStore, routerInstance, redirectParams
 /**
  * 响应拦截器：统一处理 API 响应和错误
  *
+ * 后端统一响应格式：
+ *   成功: { code: 0, message: "操作成功", data: {...} }
+ *   错误: { code: HTTP状态码, message: "错误信息", error: "错误类型", data: null }
+ *
  * 成功响应：标准化数据格式，提取 data 字段
  * 错误响应：处理 401/403/500 等常见错误，自动刷新 token，记录日志
  */
@@ -207,20 +171,42 @@ api.interceptors.response.use(
     /**
      * 响应成功处理函数
      *
+     * 处理后端统一响应格式：
+     * - code === 0: 成功，提取 data 字段
+     * - code !== 0: 业务错误，构造错误对象并拒绝 Promise
+     *
      * @param {Object} response - Axios 响应对象
-     * @returns {Object} 处理后的响应对象
+     * @returns {Object} 处理后的响应对象（data 字段为实际业务数据）
      */
     (response) => {
         const responseData = response.data
 
-        // 如果是统一格式（包含 code 和 data 字段）
+        // 检查是否为后端统一响应格式（包含 code 和 data 字段）
         if (responseData && typeof responseData.code !== 'undefined' && 'data' in responseData) {
             if (responseData.code === 0) {
-                // 成功响应：将实际数据挂载到 response.data
+                // ✅ 成功响应：将实际业务数据挂载到 response.data
+                // 调用方可以直接使用 response.data 获取业务数据
                 response.data = responseData.data
                 return response
             } else {
-                // 错误响应：构造标准错误对象并拒绝 Promise
+                // ❌ 业务错误：构造标准错误对象并拒绝 Promise
+                // 
+                // 🔴 重要：此处构造的 error.response 结构被 extractErrorMessage 函数依赖
+                //    如需修改结构，请同步更新 index.js 第 83-129 行的 extractErrorMessage 函数
+                // 
+                // 后端错误响应格式：
+                //   {
+                //       code: HTTP状态码 (如 400, 401, 403, 404, 500),
+                //       message: "错误信息",
+                //       error: "错误类型" (如 "bad_request", "unauthorized"),
+                //       data: null
+                //   }
+                // 
+                // 构造的 error 对象格式：
+                //   error.response = {
+                //       status: HTTP状态码,
+                //       data: { code, message, error, data }  // 后端返回的完整数据
+                //   }
                 const error = new Error(responseData.message || '请求失败')
                 error.response = {
                     status: response.status,
@@ -230,7 +216,7 @@ api.interceptors.response.use(
             }
         }
 
-        // 兼容旧接口：直接返回原始响应
+        // 兼容旧接口或非标准响应：直接返回原始响应
         return response
     },
     /**
@@ -244,31 +230,13 @@ api.interceptors.response.use(
         const originalRequest = error.config
 
         // 处理 401 未授权错误：尝试刷新 token
-        if (error.response?.status === HTTP_STATUS.UNAUTHORIZED && !originalRequest._retry) {
+        if (error.response?.status === CLIENT_ERROR_STATUS.UNAUTHORIZED && !originalRequest._retry) {
             originalRequest._retry = true
 
-            // 如果正在刷新，将请求加入队列等待
-            if (isRefreshing) {
-                try {
-                    const newToken = await addRefreshSubscriber((token) => {
-                        originalRequest.headers.Authorization = `Bearer ${token}`
-                        return api(originalRequest)
-                    })
-                    return newToken
-                } catch (subscribeError) {
-                    return Promise.reject(subscribeError)
-                }
-            }
-
-            // 开始刷新 token
-            isRefreshing = true
             try {
-                const newAccessToken = await handleTokenRefresh()
-                originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
-                isRefreshing = false
-                return api(originalRequest)
+                // 使用 token 刷新工具处理刷新逻辑
+                return await handleTokenRefresh(originalRequest, (config) => api(config))
             } catch (refreshError) {
-                isRefreshing = false
                 // 刷新失败，执行登出流程
                 await handleLogoutAndRedirect(userStore, router)
                 return Promise.reject(refreshError)
@@ -276,10 +244,11 @@ api.interceptors.response.use(
         }
 
         // 处理 403 禁止访问错误
-        if (error.response?.status === HTTP_STATUS.FORBIDDEN) {
+        if (error.response?.status === CLIENT_ERROR_STATUS.FORBIDDEN) {
             const errorData = error.response?.data
 
             // 检查是否是因为失去了后台访问权限
+            // 后端返回格式：{ code: 403, message: "...", error: "no_backend_access", data: null }
             if (errorData?.error === 'no_backend_access') {
                 await handleLogoutAndRedirect(userStore, router, {
                     name: 'Login',
@@ -311,7 +280,7 @@ api.interceptors.response.use(
 
         if (error.response?.data?.error) {
             console.error('API Error:', errorMessage)
-        } else if (error.response?.status === HTTP_STATUS.SERVER_ERROR) {
+        } else if (error.response?.status === SERVER_ERROR_STATUS.INTERNAL_SERVER_ERROR) {
             console.error('Server Error:', errorMessage)
         } else if (error.code === AXIOS_ERROR_CODES.TIMEOUT) {
             console.error('Request Timeout:', errorMessage)

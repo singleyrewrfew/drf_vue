@@ -1,54 +1,67 @@
-import uuid
+"""
+ViewSet Mixin 类
 
-from django.http import Http404
+提供常用的 ViewSet 功能扩展。
+"""
+
+import uuid
 
 
 class SlugOrUUIDMixin:
     """
-    用于 ViewSet 的混入类，支持通过 UUID 或 slug 查找对象。
+    支持通过 slug 或 UUID 查找对象的 Mixin
     
-    此混入类重写了 get_object 方法，允许通过以下方式查找对象：
-    - UUID（主键）
-    - slug 字段
+    使用方法：
+    1. 在 ViewSet 中继承此 Mixin
+    2. 确保模型有 slug 字段和 UUID 主键（或 id 字段）
     
-    使用示例：
-        class MyViewSet(SlugOrUUIDMixin, viewsets.ModelViewSet):
-            queryset = MyModel.objects.all()
-            slug_field = 'slug'  # 可选，默认为 'slug'
+    功能：
+    - 自动识别 lookup_field 的值是 slug 还是 UUID
+    - 如果是 UUID，直接按 ID 查找
+    - 如果是 slug，按 slug 字段查找
+    
+    Example:
+        class CategoryViewSet(SlugOrUUIDMixin, viewsets.ModelViewSet):
+            queryset = Category.objects.all()
+            lookup_field = 'pk'  # 可以是 pk、id 或 slug
     """
-    # 定义 slug 字段名称，默认为 'slug'
-    slug_field = 'slug'
     
     def get_object(self):
         """
-        重写获取对象的方法，支持 UUID 和 slug 两种查找方式。
+        重写获取对象方法，支持 slug 或 UUID
         
-        首先尝试将传入的值解析为 UUID，如果成功则使用默认的 get_object 方法（按主键查找）。
-        如果解析失败，则尝试按 slug 字段查找对象。
+        根据 lookup_field 的值智能判断：
+        - 如果是有效的 UUID 格式，按主键查找
+        - 否则按 slug 字段查找
         """
-        # 获取查找用的 URL 关键字参数，优先使用 lookup_url_kwarg，否则使用 lookup_field
-        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
-        # 从 URL _kwargs 中获取查找值
-        lookup_value = self.kwargs.get(lookup_url_kwarg)
+        queryset = self.filter_queryset(self.get_queryset())
         
-        # 尝试将查找值解析为 UUID
+        # 获取查找字段的值
+        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+        lookup_value = self.kwargs[lookup_url_kwarg]
+        
+        # 尝试判断是否为 UUID
         try:
-            uuid.UUID(lookup_value)
-            # 如果是有效的 UUID，调用父类的 get_object 方法（按主键查找）
-            return super().get_object()
+            uuid.UUID(str(lookup_value))
+            # 是 UUID，按主键查找
+            filter_kwargs = {self.lookup_field: lookup_value}
         except (ValueError, AttributeError):
-            # 如果不是有效的 UUID，尝试按 slug 查找
-            try:
-                # 获取查询集的模型类
-                model_class = self.queryset.model
-                # 构造过滤条件，使用 slug_field 作为查找字段
-                filter_kwargs = {self.slug_field: lookup_value}
-                # 根据 slug 查找对象
-                obj = model_class.objects.get(**filter_kwargs)
-                # 检查用户是否有权限访问该对象
-                self.check_object_permissions(self.request, obj)
-                return obj
-            except model_class.DoesNotExist:
-                # 如果对象不存在，抛出 404 错误
-                model_name = model_class.__name__
-                raise Http404(f'No {model_name} matches the given query.')
+            # 不是 UUID，可能是 slug
+            # 如果 lookup_field 就是 'slug'，直接使用
+            if self.lookup_field == 'slug':
+                filter_kwargs = {'slug': lookup_value}
+            else:
+                # 否则按主键查找（兼容原有逻辑）
+                filter_kwargs = {self.lookup_field: lookup_value}
+        
+        # 执行查询
+        obj = queryset.filter(**filter_kwargs).first()
+        
+        if obj is None:
+            from rest_framework.exceptions import NotFound
+            raise NotFound(f'未找到{self.queryset.model._meta.verbose_name}')
+        
+        # 检查对象权限
+        self.check_object_permissions(self.request, obj)
+        
+        return obj

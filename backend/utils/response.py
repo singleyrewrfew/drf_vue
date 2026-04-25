@@ -1,4 +1,5 @@
 from rest_framework.response import Response
+from utils.error_codes import ErrorTypes, ERROR_STATUS_MAP
 
 
 class StandardResponse(Response):
@@ -74,20 +75,30 @@ def api_response(data=None, message='操作成功', status=200):
     return StandardResponse(data=data, message=message, status=status)
 
 
-def api_error(message, error_type='bad_request', code=None, status=400, data=None):
+def api_error(message, error_type=ErrorTypes.BAD_REQUEST, code=None, status=None, data=None):
     """
     统一的错误响应
     
+    ⚠️ 重要：error_type 应使用 ErrorTypes 常量，避免硬编码字符串
+    
     Args:
         message: 错误信息
-        error_type: 错误类型（bad_request, not_found, unauthorized, forbidden 等）
+        error_type: 错误类型（使用 ErrorTypes 常量）
         code: 业务错误代码（可选，默认使用 status）
-        status: HTTP 状态码
+        status: HTTP 状态码（可选，根据 error_type 自动推断）
         data: 额外的错误数据（可选）
     
     Returns:
         Response: 错误响应对象
+    
+    Example:
+        >>> api_error('用户名已存在', ErrorTypes.DUPLICATE_ENTRY)
+        >>> api_error('权限不足', ErrorTypes.FORBIDDEN, status=403)
     """
+    # 如果没有指定 status，根据 error_type 自动推断
+    if status is None:
+        status = ERROR_STATUS_MAP.get(error_type, 400)
+    
     return StandardResponse(
         data=data,
         message=message,

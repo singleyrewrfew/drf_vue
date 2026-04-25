@@ -11,7 +11,8 @@ from apps.comments.models import Comment
 from apps.contents.models import Content
 from apps.core.models import User
 from apps.media.models import Media
-from utils.response import StandardResponse
+from utils.response import StandardResponse, api_error
+from utils.error_codes import ErrorTypes
 from .permissions import IsAdminUser
 from .serializers import (
     PasswordChangeSerializer,
@@ -97,7 +98,7 @@ class UserViewSet(viewsets.ModelViewSet):
         if not username or not password:
             return api_error(
                 message='用户名和密码不能为空',
-                error_type='bad_request',
+                error_type=ErrorTypes.BAD_REQUEST,
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -106,7 +107,7 @@ class UserViewSet(viewsets.ModelViewSet):
         except User.DoesNotExist:  # get不到对象，抛出不存在的错误
             return api_error(
                 message='用户不存在',
-                error_type='unauthorized',
+                error_type=ErrorTypes.UNAUTHORIZED,
                 status=status.HTTP_401_UNAUTHORIZED
             )
 
@@ -114,7 +115,7 @@ class UserViewSet(viewsets.ModelViewSet):
         if not user.check_password(password):
             return api_error(
                 message='密码错误',
-                error_type='unauthorized',
+                error_type=ErrorTypes.UNAUTHORIZED,
                 status=status.HTTP_401_UNAUTHORIZED
             )
 
@@ -122,7 +123,7 @@ class UserViewSet(viewsets.ModelViewSet):
         if not user.is_active:
             return api_error(
                 message='账户已被禁用',
-                error_type='forbidden',
+                error_type=ErrorTypes.ACCOUNT_DISABLED,
                 status=status.HTTP_403_FORBIDDEN
             )
 
@@ -218,7 +219,7 @@ class UserViewSet(viewsets.ModelViewSet):
         if not refresh_token_str:
             return api_error(
                 message='刷新令牌不能为空',
-                error_type='bad_request',
+                error_type=ErrorTypes.BAD_REQUEST,
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -245,14 +246,14 @@ class UserViewSet(viewsets.ModelViewSet):
             # JWT 相关的特定异常：token 过期、格式错误、已加入黑名单等
             return api_error(
                 message=f'刷新令牌无效或已过期: {str(e)}',
-                error_type='unauthorized',
+                error_type=ErrorTypes.TOKEN_INVALID,
                 status=status.HTTP_401_UNAUTHORIZED
             )
         except Exception as e:
             # 其他未预期的异常
             return api_error(
                 message='服务器内部错误',
-                error_type='server_error',
+                error_type=ErrorTypes.INTERNAL_ERROR,
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 

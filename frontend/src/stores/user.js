@@ -7,14 +7,15 @@
 import {defineStore} from 'pinia'
 import {ref} from 'vue'
 import {getProfile as getProfileApi, login as loginApi, logout as logoutApi} from '@/api/user'
+import { AUTH_CONFIG } from '@/constants/authConfig'
 
 export const useUserStore = defineStore('user', () => {
     /**
      * 响应式状态：从 localStorage 初始化，确保持久化
      */
-    const accessToken = ref(localStorage.getItem('access') || '')
-    const refreshToken = ref(localStorage.getItem('refresh') || '')
-    const user = ref(JSON.parse(localStorage.getItem('user') || 'null'))
+    const accessToken = ref(localStorage.getItem(AUTH_CONFIG.ACCESS_TOKEN_KEY) || '')
+    const refreshToken = ref(localStorage.getItem(AUTH_CONFIG.REFRESH_TOKEN_KEY) || '')
+    const user = ref(JSON.parse(localStorage.getItem(AUTH_CONFIG.USER_INFO_KEY) || 'null'))
 
     /**
      * 设置令牌并同步到本地存储
@@ -23,9 +24,9 @@ export const useUserStore = defineStore('user', () => {
      * @param {string} newToken - 新的令牌值
      */
     const setToken = (tokenName, newToken) => {
-        if (tokenName === 'access') {
+        if (tokenName === AUTH_CONFIG.ACCESS_TOKEN_KEY) {
             accessToken.value = newToken
-        } else if (tokenName === 'refresh') {
+        } else if (tokenName === AUTH_CONFIG.REFRESH_TOKEN_KEY) {
             refreshToken.value = newToken
         }
         localStorage.setItem(tokenName, newToken)
@@ -38,7 +39,7 @@ export const useUserStore = defineStore('user', () => {
      */
     const setUser = (newUser) => {
         user.value = newUser
-        localStorage.setItem('user', JSON.stringify(newUser))
+        localStorage.setItem(AUTH_CONFIG.USER_INFO_KEY, JSON.stringify(newUser))
     }
 
     /**
@@ -51,8 +52,8 @@ export const useUserStore = defineStore('user', () => {
      */
     const login = async (credentials) => {
         const {data} = await loginApi(credentials)
-        setToken('access', data.access)
-        setToken('refresh', data.refresh)
+        setToken(AUTH_CONFIG.ACCESS_TOKEN_KEY, data.access)
+        setToken(AUTH_CONFIG.REFRESH_TOKEN_KEY, data.refresh)
         setUser(data.user)
         return data
     }
@@ -65,9 +66,9 @@ export const useUserStore = defineStore('user', () => {
      */
     const logout = async () => {
         try {
-            const refreshToken = localStorage.getItem('refresh')
-            if (refreshToken) {
-                await logoutApi({refresh: refreshToken})
+            const currentRefreshToken = localStorage.getItem(AUTH_CONFIG.REFRESH_TOKEN_KEY)
+            if (currentRefreshToken) {
+                await logoutApi({ [AUTH_CONFIG.REFRESH_TOKEN_KEY]: currentRefreshToken })
             }
         } catch (e) {
             console.error('Logout API error:', e)
@@ -79,9 +80,9 @@ export const useUserStore = defineStore('user', () => {
         user.value = null
 
         // 清空本地存储
-        localStorage.removeItem('access')
-        localStorage.removeItem('user')
-        localStorage.removeItem('refresh')
+        localStorage.removeItem(AUTH_CONFIG.ACCESS_TOKEN_KEY)
+        localStorage.removeItem(AUTH_CONFIG.USER_INFO_KEY)
+        localStorage.removeItem(AUTH_CONFIG.REFRESH_TOKEN_KEY)
     }
 
     /**

@@ -1,62 +1,55 @@
+"""
+序列化器 Mixin 类
+
+提供常用的序列化器功能扩展。
+"""
+
+from rest_framework import serializers
 from utils.slug_utils import generate_unique_slug
 
 
 class AutoSlugMixin:
     """
-    用于 ModelSerializer 的混入类，自动生成唯一的 slug。
+    自动生成 slug 的 Mixin
     
-    此混入类在序列化器的 validate 方法中自动为模型实例生成 slug，
-    当 slug 字段未提供时，会根据指定的源字段自动生成唯一 slug。
+    使用方法：
+    1. 在序列化器中继承此 Mixin
+    2. 设置 slug_source_field 指定用于生成 slug 的字段名
+    3. slug 字段必须是只读的（read_only_fields 中包含 'slug'）
     
-    属性说明：
-        slug_source_field: 用于生成 slug 的源字段名称，默认为 'name'
-                           该字段的值会被转换为 slug 格式
-        slug_field: 存储 slug 的字段名称，默认为 'slug'
-    
-    使用示例：
-        class MySerializer(AutoSlugMixin, serializers.ModelSerializer):
-            slug_source_field = 'title'  # 使用 title 字段作为 slug 源
-            slug_field = 'slug'          # slug 存储在 slug 字段
+    Example:
+        class CategoryCreateUpdateSerializer(AutoSlugMixin, serializers.ModelSerializer):
+            slug_source_field = 'name'
             
             class Meta:
-                model = MyModel
-                fields = [...]
-    
-    注意事项：
-        - 必须与 serializers.ModelSerializer 一起使用
-        - 源字段的值会在验证阶段被自动转换为 slug
-        - 生成的 slug 保证在数据库中唯一
+                model = Category
+                fields = ['id', 'name', 'slug']
+                read_only_fields = ['id', 'slug']
     """
-    # 定义 slug 源字段名称，默认为 'name'
-    slug_source_field = 'name'
-    # 定义 slug 字段名称，默认为 'slug'
-    slug_field = 'slug'
+    slug_source_field = None  # 需要在子类中指定
     
-    def validate(self, data):
+    def validate(self, attrs):
         """
-        重写验证方法，在数据验证阶段自动生成 slug。
+        验证数据时自动生成 slug
         
-        参数：
-            data: 待验证的序列化数据字典
-        
-        返回：
-            验证通过的数据字典，包含自动生成的 slug 字段
+        如果 slug 字段为空且指定了 slug_source_field，
+        则根据源字段自动生成唯一的 slug。
         """
-        # 调用父类的验证方法
-        data = super().validate(data)
+        if self.slug_source_field and 'slug' not in attrs:
+            source_value = attrs.get(self.slug_source_field)
+            if source_value:
+                # 获取模型类
+                model_class = self.Meta.model
+                
+                # 如果是更新操作，获取当前实例
+                instance = getattr(self, 'instance', None)
+                
+                # 生成唯一 slug
+                attrs['slug'] = generate_unique_slug(
+                    model_class=model_class,
+                    name=source_value,
+                    instance=instance,
+                    field_name='slug'
+                )
         
-        # 如果用户未提供 slug 字段，则自动生成
-        if not data.get(self.slug_field):
-            # 获取源字段的值
-            source_value = data.get(self.slug_source_field, '')
-            # 获取关联的模型类
-            model_class = self.Meta.model
-            # 生成唯一的 slug 并赋值
-            data[self.slug_field] = generate_unique_slug(
-                model_class,
-                source_value,
-                instance=self.instance,
-                slug_field=self.slug_field
-            )
-        
-        return data
+        return super().validate(attrs)

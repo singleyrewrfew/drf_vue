@@ -2,12 +2,9 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
-from rest_framework.response import Response
 
 from services.content_service import ContentService
-from utils.mixins import SlugOrUUIDMixin
-from utils.response import StandardResponse, api_error, api_response
-from utils.response_decorator import auto_response
+from utils.response import StandardResponse, api_error
 from .mixins import ContentPermissionMixin, ContentSerializerMixin, ContentQuerySetMixin
 from .models import Content
 from .serializers import ContentCreateUpdateSerializer, ContentListSerializer, ContentSerializer
@@ -17,7 +14,6 @@ class ContentViewSet(
     ContentQuerySetMixin,
     ContentPermissionMixin,
     ContentSerializerMixin,
-    SlugOrUUIDMixin,
     viewsets.ModelViewSet
 ):
     """内容视图集 - 提供内容的 CRUD 操作及发布、归档功能"""
@@ -52,17 +48,15 @@ class ContentViewSet(
                 pass
         serializer.save(author=self.request.user)
     
-    @auto_response  # 包装响应格式
     def retrieve(self, request, *args, **kwargs):
         """检索单个内容并增加浏览次数"""
         instance = self.get_object()
         instance.increment_view_count()
         serializer = self.get_serializer(instance)
-        return serializer.data  # 装饰器会自动包装
+        return StandardResponse(serializer.data)
     
     @extend_schema(request=None, responses=ContentSerializer)
     @action(detail=True, methods=['post'])
-    @auto_response
     def publish(self, request, pk=None):
         """发布内容（仅限未发布的内容）"""
         content = self.get_object()
@@ -70,7 +64,7 @@ class ContentViewSet(
             service = ContentService()
             published_content = service.publish_content(content)
             serializer = self.get_serializer(published_content)
-            return serializer.data  # 装饰器会自动包装
+            return StandardResponse(serializer.data)
         except ValueError as e:
             return api_error(
                 message=str(e),
@@ -80,14 +74,13 @@ class ContentViewSet(
     
     @extend_schema(request=None, responses=ContentSerializer)
     @action(detail=True, methods=['post'])
-    @auto_response
     def archive(self, request, pk=None):
         """归档内容"""
         content = self.get_object()
         service = ContentService()
         archived_content = service.archive_content(content)
         serializer = self.get_serializer(archived_content)
-        return serializer.data  # 装饰器会自动包装
+        return StandardResponse(serializer.data)
 
     def get_queryset(self):
         """
@@ -167,7 +160,6 @@ class ContentViewSet(
         
         return queryset
 
-    @auto_response
     def list(self, request, *args, **kwargs):
         """
         获取内容列表（统一响应格式）
@@ -191,10 +183,10 @@ class ContentViewSet(
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             paginated_data = self.get_paginated_response(serializer.data).data
-            return paginated_data
+            return StandardResponse(paginated_data)
         
         serializer = self.get_serializer(queryset, many=True)
-        return serializer.data
+        return StandardResponse(serializer.data)
 
     @extend_schema(request=None, responses=ContentSerializer)
     @action(detail=True, methods=['post'])

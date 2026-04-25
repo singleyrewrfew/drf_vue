@@ -1,7 +1,7 @@
 import os
 import shutil
 
-from django.http import FileResponse, HttpResponse
+from django.http import FileResponse
 from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -10,7 +10,8 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 
 from apps.users.permissions import IsOwnerOrAdmin
-from utils.response import StandardResponse
+from utils.response import StandardResponse, api_error
+from utils.error_codes import ErrorTypes
 from .models import Media
 from .serializers import MediaSerializer, MediaUploadSerializer
 
@@ -298,14 +299,18 @@ class MediaViewSet(viewsets.ModelViewSet):
         media = self.get_object()
         
         if not media.is_video:
-            return Response({'error': '只能为视频文件生成缩略图'}, status=status.HTTP_400_BAD_REQUEST)
+            return api_error(
+                message='只能为视频文件生成缩略图',
+                error_type=ErrorTypes.UNSUPPORTED_MEDIA_TYPE,
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
         media.thumbnail_status = 'pending'
         media.save(update_fields=['thumbnail_status'])
         
         media.generate_thumbnails_async()
         
-        return Response({
+        return StandardResponse({
             'message': '缩略图生成任务已启动',
             'thumbnail_status': 'pending'
         })
@@ -342,19 +347,19 @@ def stream_media_file(request, file_path, content_type, filename):
         # 检查文件是否存在
         if not os.path.exists(file_path):
             logger.warning(f"File not found: {file_path}")
-            return HttpResponse(
-                {'error': '文件不存在'},
-                status=status.HTTP_404_NOT_FOUND,
-                content_type='application/json'
+            return api_error(
+                message='文件不存在',
+                error_type=ErrorTypes.NOT_FOUND,
+                status=status.HTTP_404_NOT_FOUND
             )
         
         # 检查文件是否可读
         if not os.access(file_path, os.R_OK):
             logger.error(f"Permission denied: {file_path}")
-            return HttpResponse(
-                {'error': '文件无法访问'},
-                status=status.HTTP_403_FORBIDDEN,
-                content_type='application/json'
+            return api_error(
+                message='文件无法访问',
+                error_type=ErrorTypes.FORBIDDEN,
+                status=status.HTTP_403_FORBIDDEN
             )
         
         file_size = os.path.getsize(file_path)
@@ -403,22 +408,22 @@ def stream_media_file(request, file_path, content_type, filename):
         
     except PermissionError as e:
         logger.error(f"Permission error accessing file {file_path}: {e}")
-        return HttpResponse(
-            {'error': '文件访问权限错误'},
-            status=status.HTTP_403_FORBIDDEN,
-            content_type='application/json'
+        return api_error(
+            message='文件访问权限错误',
+            error_type=ErrorTypes.FORBIDDEN,
+            status=status.HTTP_403_FORBIDDEN
         )
     except FileNotFoundError as e:
         logger.error(f"File not found error: {file_path}, {e}")
-        return HttpResponse(
-            {'error': '文件不存在'},
-            status=status.HTTP_404_NOT_FOUND,
-            content_type='application/json'
+        return api_error(
+            message='文件不存在',
+            error_type=ErrorTypes.NOT_FOUND,
+            status=status.HTTP_404_NOT_FOUND
         )
     except Exception as e:
         logger.error(f"Unexpected error streaming file {file_path}: {type(e).__name__}: {e}", exc_info=True)
-        return HttpResponse(
-            {'error': '文件处理失败'},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content_type='application/json'
+        return api_error(
+            message='文件处理失败',
+            error_type=ErrorTypes.FILE_PROCESSING_ERROR,
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )

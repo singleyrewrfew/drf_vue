@@ -93,9 +93,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',            # 认证中间件
     'django.contrib.messages.middleware.MessageMiddleware',               # 消息中间件
     'django.middleware.clickjacking.XFrameOptionsMiddleware',             # 点击劫持保护
-    # 'middleware.BackendAccessMiddleware.BackendAccessMiddleware',         # 自定义后台访问中间件
-    # 'middleware.error_handler.ErrorHandlerMiddleware',                  # 统一错误处理中间件（必须在最后）
-    'middleware.ApiResultInterceptorMiddleware.ResponseLogMiddleware',    # 日志中间件，记录 API 响应结果
+    'middleware.ApiResultInterceptorMiddleware.ResponseLogMiddleware',    # API 响应日志中间件
 ]
 
 # 根 URL 配置文件

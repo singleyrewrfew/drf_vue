@@ -1,5 +1,6 @@
 from rest_framework.views import exception_handler
-from rest_framework.response import Response
+from utils.response import api_error
+from utils.error_codes import ErrorTypes
 import logging
 
 logger = logging.getLogger('django.request')
@@ -34,7 +35,11 @@ def custom_exception_handler(exc, context):
         错误: {str(exc)}
         ==============================================
         """)
-        return Response({"detail": "服务器内部错误"}, status=500)
+        return api_error(
+            message='服务器内部错误',
+            error_type=ErrorTypes.INTERNAL_ERROR,
+            status=500
+        )
 
     # DRF 正常异常
     status_code = response.status_code
@@ -52,5 +57,21 @@ def custom_exception_handler(exc, context):
     for key, value in response.data.items():
         msg = value[0] if isinstance(value, list) else str(value)
         break
-    # 异常请求直接拦截返回错误
-    return Response({"detail": msg}, status=status_code)
+    
+    # ⚠️ 重要：使用统一的错误响应格式
+    # 根据状态码映射对应的错误类型
+    error_type_map = {
+        400: ErrorTypes.BAD_REQUEST,
+        401: ErrorTypes.UNAUTHORIZED,
+        403: ErrorTypes.FORBIDDEN,
+        404: ErrorTypes.NOT_FOUND,
+        405: ErrorTypes.BAD_REQUEST,
+        500: ErrorTypes.INTERNAL_ERROR,
+    }
+    error_type = error_type_map.get(status_code, ErrorTypes.INTERNAL_ERROR)
+    
+    return api_error(
+        message=msg,
+        error_type=error_type,
+        status=status_code
+    )
