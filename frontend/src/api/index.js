@@ -233,10 +233,12 @@ api.interceptors.response.use(
             // 主动检查用户权限状态（单一事实来源）
             if (userStore.isLoggedIn()) {
                 try {
+                    // 强制从后端重新获取最新的用户信息
                     await userStore.fetchProfile(true)
                     
                     // 如果没有后台访问权限，执行登出
                     if (!userStore.canAccessBackend()) {
+                        console.warn('检测到用户已失去后台访问权限')
                         await handleLogoutAndRedirect(userStore, router, {
                             name: 'Login',
                             query: {

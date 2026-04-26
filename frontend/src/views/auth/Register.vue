@@ -144,7 +144,9 @@ const form = reactive({
 })
 
 const validatePassword = (rule, value, callback) => {
-    if (value !== form.password) {
+    if (!value) {
+        callback(new Error('请确认密码'))
+    } else if (value !== form.password) {
         callback(new Error('两次密码不一致'))
     } else {
         callback()
@@ -172,12 +174,26 @@ const rules = {
 
 const handleRegister = async () => {
     // 校验表单
-    await formRef.value.validate()
+    try {
+        await formRef.value.validate()
+    } catch (error) {
+        ElMessage.error('请检查表单填写是否正确')
+        return
+    }
+    
     loading.value = true
     try {
+        // 提交完整的表单数据，包含 password_confirm 供后端验证
         await register(form)
         ElMessage.success('注册成功，请登录')
-        await router.push('/login')
+        // 重置表单
+        formRef.value.resetFields()
+        form.username = ''
+        form.email = ''
+        form.password = ''
+        form.password_confirm = ''
+        // 跳转到登录页
+        await router.push({ name: 'Login' })
     } catch (error) {
         ElMessage.error(error.response?.data?.detail || '注册失败')
     } finally {
