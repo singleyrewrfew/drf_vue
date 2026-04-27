@@ -358,8 +358,13 @@ class Media(BaseModel):
                 logger.debug(f"[Thumbnail] Fetching media {media_id} from database")
                 
                 # 使用事务获取媒体记录并更新状态
+                # 注意：skip_locked=True 需要 MySQL 8.0+，低版本请移除此参数
                 with transaction.atomic():
-                    media = Media.objects.select_for_update(skip_locked=True).get(id=media_id)
+                    try:
+                        media = Media.objects.select_for_update().get(id=media_id)
+                    except Media.DoesNotExist:
+                        logger.warning(f"[Thumbnail] Media {media_id} not found, skipping")
+                        return
                     logger.debug(f"[Thumbnail] Media found, current status: {media.thumbnail_status}")
                     
                     # 任务真正开始执行，设置为 processing
