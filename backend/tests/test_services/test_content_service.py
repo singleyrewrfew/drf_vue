@@ -11,6 +11,7 @@ from tests.utils import MockUser, MockContent
 
 
 @pytest.mark.unit
+@pytest.mark.django_db
 class TestContentService:
     """内容服务测试类"""
     

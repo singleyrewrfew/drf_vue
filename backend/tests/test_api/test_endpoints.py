@@ -95,11 +95,14 @@ class TestContentAPI:
         
         # 应该返回 200 OK
         assert response.status_code == status.HTTP_200_OK
+        # StandardResponse 格式: {'message': ..., 'data': {...}}
+        response_data = response.data.get('data', response.data)
+        
         # 只应该包含已发布的内容
-        if 'results' in response.data:
-            results = response.data['results']
+        if 'results' in response_data:
+            results = response_data['results']
         else:
-            results = response.data
+            results = response_data
         
         published_count = sum(1 for item in results if item.get('status') == 'published')
         draft_count = sum(1 for item in results if item.get('status') == 'draft')
@@ -147,7 +150,9 @@ class TestContentAPI:
         response = api_client.get(f'/api/contents/{content.id}/')
         
         assert response.status_code == status.HTTP_200_OK
-        assert response.data['title'] == '公开文章'
+        # StandardResponse 格式: {'message': ..., 'data': {...}}
+        response_data = response.data.get('data', response.data)
+        assert response_data['title'] == '公开文章'
     
     def test_content_detail_draft_unauthorized(self, api_client, db):
         """测试公开用户不能查看草稿内容"""

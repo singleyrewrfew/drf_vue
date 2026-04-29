@@ -92,8 +92,18 @@ const fetchArticles = async () => {
       params.author = currentAuthor.value
     }
     const { data } = await getContents(params)
-    articles.value = data.results || data
-    total.value = data.count || articles.value.length
+    // 处理分页数据和非分页数据
+    if (data.results) {
+      articles.value = data.results
+      total.value = data.count || articles.value.length
+    } else if (Array.isArray(data)) {
+      articles.value = data
+      total.value = data.length
+    } else {
+      console.warn('Unexpected articles data format:', data)
+      articles.value = []
+      total.value = 0
+    }
   } catch (e) {
     console.error('Failed to fetch articles:', e)
     if (e.response?.status !== 401) {
@@ -107,7 +117,15 @@ const fetchArticles = async () => {
 const fetchCategories = async () => {
   try {
     const { data } = await getCategories()
-    categories.value = data.results || data
+    // 处理分页数据和非分页数据
+    if (data.results) {
+      categories.value = data.results
+    } else if (Array.isArray(data)) {
+      categories.value = data
+    } else {
+      console.warn('Unexpected categories data format:', data)
+      categories.value = []
+    }
   } catch (e) {
     console.error('Failed to fetch categories:', e)
   }
@@ -116,7 +134,15 @@ const fetchCategories = async () => {
 const fetchTags = async () => {
   try {
     const { data } = await getTags()
-    tags.value = data.results || data
+    // 处理分页数据和非分页数据
+    if (data.results) {
+      tags.value = data.results
+    } else if (Array.isArray(data)) {
+      tags.value = data
+    } else {
+      console.warn('Unexpected tags data format:', data)
+      tags.value = []
+    }
   } catch (e) {
     console.error('Failed to fetch tags:', e)
   }

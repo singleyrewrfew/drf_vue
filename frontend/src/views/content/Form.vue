@@ -116,6 +116,7 @@
                                 class="cover-uploader"
                                 :action="coverUploadUrl"
                                 :headers="uploadHeaders"
+                                name="file"
                                 :show-file-list="false"
                                 :on-success="handleCoverSuccess"
                                 :on-error="handleCoverError"
@@ -295,6 +296,13 @@ const beforeUpload = (file) => {
 }
 
 const beforeCoverUpload = (file) => {
+    console.log('开始上传封面图:', {
+        name: file.name,
+        type: file.type,
+        size: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
+        uploadUrl: coverUploadUrl.value
+    })
+    
     const token = userStore.accessToken
     if (!token) {
         ElMessage.error('请先登录')
@@ -423,41 +431,73 @@ const getMediaBaseUrl = () => {
 
 const handleCoverSuccess = (response, file) => {
     console.log('封面图上传响应:', response)
-    // response 是统一响应格式 { code, message, data }
-    // data 中包含 Media 对象，有 url 字段
-    if (response.code !== 0) {
-        ElMessage.error(response.message || '封面图上传失败')
-        return
+    
+    // 处理 StandardResponse 格式 { code, message, data }
+    // Element Plus upload 组件可能直接传递解析后的 data，或者整个 response
+    let mediaData = null
+    
+    if (response.code === 0 || response.code === undefined) {
+        // 情况1: response 是 StandardResponse 格式
+        mediaData = response.data || response
+    } else {
+        // 情况2: response 直接是 Media 对象（某些情况下）
+        mediaData = response
     }
-
-    const mediaData = response.data
+    
     if (!mediaData) {
         ElMessage.error('封面图上传失败：响应数据为空')
         return
     }
-
+    
+    // 提取 URL
+    let imageUrl = null
     if (mediaData.url) {
+        imageUrl = mediaData.url
+    } else if (mediaData.file) {
+        // 兼容 file 字段
+        imageUrl = mediaData.file
+    }
+    
+    if (imageUrl) {
         const baseUrl = getMediaBaseUrl()
-        form.value.cover_image = mediaData.url.startsWith('http') ? mediaData.url : `${baseUrl}${mediaData.url}`
+        // 如果 URL 不是完整的 HTTP 地址，添加基础 URL
+        form.value.cover_image = imageUrl.startsWith('http') ? imageUrl : `${baseUrl}${imageUrl}`
         console.log('封面图 URL:', form.value.cover_image)
         ElMessage.success('封面图上传成功')
     } else {
-        ElMessage.error('封面图上传失败：响应中缺少 url 字段')
+        console.error('响应中缺少 url 或 file 字段:', mediaData)
+        ElMessage.error('封面图上传失败：响应格式错误')
     }
 }
 
-const handleCoverError = (error) => {
+const handleCoverError = (error, file) => {
     console.error('封面图上传错误:', error)
+    
+    // 尝试从不同格式中提取错误消息
     let errorMessage = '封面图上传失败'
-
-    if (error.response && error.response.status === 401) {
-        errorMessage = '请先登录'
-    } else if (error.response && error.response.status === 403) {
-        errorMessage = '没有上传权限'
+    
+    if (error.response) {
+        // HTTP 错误响应
+        const status = error.response.status
+        const data = error.response.data
+        
+        if (status === 401) {
+            errorMessage = '请先登录'
+        } else if (status === 403) {
+            errorMessage = '没有上传权限'
+        } else if (status === 413) {
+            errorMessage = '文件过大'
+        } else if (data) {
+            // 尝试从响应数据中提取消息
+            errorMessage = data.message || data.detail || data.error || `上传失败 (${status})`
+        }
     } else if (error.message) {
+        // 网络错误或其他错误
         errorMessage = error.message
+    } else if (typeof error === 'string') {
+        errorMessage = error
     }
-
+    
     ElMessage.error(errorMessage)
 }
 

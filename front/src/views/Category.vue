@@ -57,11 +57,24 @@ const fetchData = async () => {
         limit: pageSize.value,
       }),
     ])
+    
+    // 拦截器已经提取了 data 字段
     category.value = catRes.data
-    articles.value = contentRes.data.results || contentRes.data
-    total.value = contentRes.data.count || articles.value.length
+    
+    // 处理分页数据和非分页数据
+    if (contentRes.data.results) {
+      articles.value = contentRes.data.results
+      total.value = contentRes.data.count || articles.value.length
+    } else if (Array.isArray(contentRes.data)) {
+      articles.value = contentRes.data
+      total.value = contentRes.data.length
+    } else {
+      console.warn('Unexpected content data format:', contentRes.data)
+      articles.value = []
+      total.value = 0
+    }
   } catch (e) {
-    console.error(e)
+    console.error('Failed to fetch category data:', e)
     
     // 如果是 404 错误，跳转到 404 页面
     if (e.response?.status === 404) {

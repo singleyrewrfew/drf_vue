@@ -111,12 +111,23 @@ const fetchData = async () => {
       getTags(),
     ])
 
-    featuredContents.value = featuredRes.data.results || featuredRes.data
-    latestArticles.value = latestRes.data.results || latestRes.data
+    // 统一处理分页数据和非分页数据
+    const extractData = (response) => {
+      if (response.results) {
+        return response.results
+      } else if (Array.isArray(response)) {
+        return response
+      }
+      console.warn('Unexpected data format:', response)
+      return []
+    }
+
+    featuredContents.value = extractData(featuredRes.data)
+    latestArticles.value = extractData(latestRes.data)
     total.value = latestRes.data.count || 0
-    hotArticles.value = hotRes.data.results || hotRes.data
-    categories.value = catRes.data.results || catRes.data
-    tags.value = tagRes.data.results || tagRes.data
+    hotArticles.value = extractData(hotRes.data)
+    categories.value = extractData(catRes.data)
+    tags.value = extractData(tagRes.data)
   } catch (e) {
     console.error('Failed to fetch data:', e)
     if (e.response?.status !== 401) {

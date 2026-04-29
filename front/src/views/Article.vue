@@ -465,9 +465,17 @@ const fetchComments = async () => {
     try {
         const articleId = route.params.slug || route.params.id
         const {data} = await getComments({article: articleId})
-        comments.value = data.results || data  // 兼容不同的 API 返回格式
+        // 处理分页数据和非分页数据
+        if (data.results) {
+            comments.value = data.results
+        } else if (Array.isArray(data)) {
+            comments.value = data
+        } else {
+            console.warn('Unexpected comments data format:', data)
+            comments.value = []
+        }
     } catch (e) {
-        console.error(e)
+        console.error('Failed to fetch comments:', e)
     }
 }
 
@@ -482,11 +490,20 @@ const fetchRelatedArticles = async () => {
             params.category = article.value.category  // 按分类筛选
         }
         const {data} = await getContents(params)
-        const results = data.results || data
+        // 处理分页数据和非分页数据
+        let results = []
+        if (data.results) {
+            results = data.results
+        } else if (Array.isArray(data)) {
+            results = data
+        } else {
+            console.warn('Unexpected related articles data format:', data)
+            results = []
+        }
         // 过滤掉当前文章，最多取 5 篇
         relatedArticles.value = results.filter(item => item.id !== article.value.id).slice(0, 5)
     } catch (e) {
-        console.error(e)
+        console.error('Failed to fetch related articles:', e)
     }
 }
 
