@@ -44,6 +44,9 @@ jobs:
           --exclude='.coverage' \
           --exclude='venv' \
           --exclude='.env.development' \
+          --exclude='media' \
+          --exclude='staticfiles' \
+          --exclude='logs' \
           backend/ ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:${{ env.BACKEND_PATH }}/
         
         # 在服务器上执行部署命令
