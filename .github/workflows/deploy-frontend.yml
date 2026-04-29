@@ -5,6 +5,8 @@ on:
     branches: [ main, master ]
     paths:
       - 'frontend/**'
+      - 'mobile/**'
+      - 'front/**'
       - '.github/workflows/deploy-frontend.yml'
   workflow_dispatch:
 
