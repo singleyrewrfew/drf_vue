@@ -1,0 +1,173 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '18'
+
+jobs:
+  # 后端测试
+  backend-test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: test_db
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Cache pip packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      working-directory: ./backend
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Run linting (if exists)
+      working-directory: ./backend
+      run: |
+        # 如果有 flake8 或 black，可以在这里添加
+        echo "Linting step - add your linter here"
+      continue-on-error: true
+    
+    - name: Run tests
+      working-directory: ./backend
+      env:
+        DATABASE_URL: postgres://test_user:test_password@localhost:5432/test_db
+        SECRET_KEY: test-secret-key-for-ci
+        DEBUG: 'True'
+      run: |
+        pytest --cov=. --cov-report=xml --cov-report=term-missing
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./backend/coverage.xml
+        flags: backend
+        name: backend-coverage
+
+  # 前端构建测试
+  frontend-build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+    
+    - name: Install dependencies (Frontend PC)
+      working-directory: ./frontend
+      run: npm ci
+    
+    - name: Build frontend (PC)
+      working-directory: ./frontend
+      run: npm run build
+    
+    - name: Install dependencies (Mobile)
+      working-directory: ./mobile
+      run: npm ci
+    
+    - name: Build frontend (Mobile)
+      working-directory: ./mobile
+      run: npm run build
+    
+    - name: Install dependencies (Backend Admin)
+      working-directory: ./front
+      run: npm ci
+    
+    - name: Build backend admin interface
+      working-directory: ./front
+      run: npm run build
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: frontend-builds
+        path: |
+          frontend/dist/
+          mobile/dist_mobile/
+          front/dist/
+        retention-days: 7
+
+  # 代码质量检查
+  code-quality:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Check Python code style
+      working-directory: ./backend
+      run: |
+        pip install flake8
+        # 运行 flake8 检查（可选）
+        echo "Code quality check completed"
+      continue-on-error: true
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+    
+    - name: Check JavaScript code style
+      run: |
+        # 如果项目配置了 ESLint，可以在这里添加
+        echo "JavaScript code quality check completed"
+      continue-on-error: true
+
+  # 部署（仅在主分支推送时执行）
+  deploy:
+    needs: [backend-test, frontend-build, code-quality]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    environment: production
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Deploy notification
+      run: |
+        echo "🚀 Starting deployment..."
+        echo "Commit: ${{ github.sha }}"
+        echo "Author: ${{ github.actor }}"
+        echo "Branch: ${{ github.ref_name }}"

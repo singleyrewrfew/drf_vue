@@ -1,0 +1,27 @@
+[Unit]
+Description=DRF Vue Backend Gunicorn Service
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/home/DRF_VUE/drf_vue/backend
+Environment="PATH=/home/DRF_VUE/drf_vue/backend/venv/bin"
+ExecStart=/home/DRF_VUE/drf_vue/backend/venv/bin/gunicorn \
+    --workers 3 \
+    --bind 127.0.0.1:8001 \
+    --timeout 300 \
+    --access-logfile /var/log/gunicorn/access.log \
+    --error-logfile /var/log/gunicorn/error.log \
+    config.wsgi:application
+
+# 重启策略
+Restart=on-failure
+RestartSec=5s
+
+# 安全设置
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

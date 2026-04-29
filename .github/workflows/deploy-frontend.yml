@@ -1,0 +1,102 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-frontend.yml'
+  workflow_dispatch:
+
+env:
+  SERVER_HOST: ${{ secrets.SERVER_HOST }}
+  SERVER_USER: ${{ secrets.SERVER_USER }}
+  SERVER_PORT: ${{ secrets.SERVER_PORT }}
+  FRONTEND_PATH: /home/front
+  NODE_VERSION: '18'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+    
+    - name: Install dependencies
+      working-directory: ./frontend
+      run: npm ci
+    
+    - name: Build frontend (PC)
+      working-directory: ./frontend
+      env:
+        VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+      run: npm run build
+    
+    - name: Build frontend (Mobile)
+      working-directory: ./mobile
+      run: |
+        npm ci
+        npm run build
+    
+    - name: Build backend admin interface
+      working-directory: ./front
+      run: |
+        npm ci
+        npm run build
+    
+    - name: Set up SSH
+      uses: webfactory/ssh-agent@v0.9.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+    
+    - name: Add server to known hosts
+      run: |
+        mkdir -p ~/.ssh
+        ssh-keyscan -H -p ${{ env.SERVER_PORT }} ${{ env.SERVER_HOST }} >> ~/.ssh/known_hosts
+    
+    - name: Deploy frontend to server
+      run: |
+        # 创建临时目录用于上传
+        mkdir -p deploy_temp
+        
+        # 复制构建产物
+        cp -r frontend/dist deploy_temp/dist
+        cp -r mobile/dist_mobile deploy_temp/dist_mobile
+        cp -r front/dist deploy_temp/dist_backend
+        
+        # 上传到服务器
+        rsync -avz --delete \
+          deploy_temp/ ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:${{ env.FRONTEND_PATH }}/
+        
+        # 清理临时目录
+        rm -rf deploy_temp
+        
+        # 在服务器上设置权限
+        ssh -p ${{ env.SERVER_PORT }} ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << 'EOF'
+          cd ${{ env.FRONTEND_PATH }}
+          
+          # 设置正确的权限
+          sudo chown -R www-data:www-data dist dist_mobile dist_backend
+          sudo chmod -R 755 dist dist_mobile dist_backend
+          
+          # 重启 Nginx
+          sudo systemctl restart nginx
+          
+          # 检查 Nginx 状态
+          sudo systemctl status nginx --no-pager
+        EOF
+    
+    - name: Deployment notification
+      if: success()
+      run: echo "✅ Frontend deployment successful!"
+    
+    - name: Deployment failure notification
+      if: failure()
+      run: echo "❌ Frontend deployment failed!"
