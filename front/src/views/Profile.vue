@@ -237,9 +237,17 @@ const changePassword = async () => {
 const fetchComments = async () => {
     try {
         const {data} = await getComments({user: userStore.user?.id})
-        comments.value = data.results || data
+        // 处理分页数据和非分页数据
+        if (data.results) {
+            comments.value = data.results
+        } else if (Array.isArray(data)) {
+            comments.value = data
+        } else {
+            console.warn('Unexpected comments data format:', data)
+            comments.value = []
+        }
     } catch (e) {
-        console.error(e)
+        console.error('Failed to fetch comments:', e)
     }
 }
 

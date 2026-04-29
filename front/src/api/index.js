@@ -29,13 +29,16 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     (response) => {
         // 统一处理 API 响应格式
-        // 后端返回格式：{ code, message, data, error? }
+        // 后端返回格式：{ message, data } 或 { code, message, data }
         const responseData = response.data
 
-        // 如果是统一格式（包含 code 和 data 字段）
-        if (responseData && typeof responseData.code !== 'undefined' && 'data' in responseData) {
-            // 成功响应（code 为 0）
-            if (responseData.code === 0) {
+        // 如果是统一格式（包含 data 字段）
+        if (responseData && 'data' in responseData) {
+            // 检查是否有 code 字段，或者直接有 data 字段
+            const hasCode = typeof responseData.code !== 'undefined'
+            const isSuccess = !hasCode || responseData.code === 0
+            
+            if (isSuccess) {
                 // 将实际数据挂载到 response.data，方便使用
                 response.data = responseData.data
                 return response

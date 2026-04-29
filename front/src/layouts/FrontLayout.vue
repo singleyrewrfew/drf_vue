@@ -46,9 +46,21 @@ const handleLogout = async () => {
 const fetchCategories = async () => {
   try {
     const { data } = await getCategories()
-    categories.value = (data.results || data).slice(0, 8)
+    // 处理分页数据和非分页数据
+    let categoriesList = []
+    if (data.results) {
+      // 分页数据格式：{ results: [...], count: N }
+      categoriesList = data.results
+    } else if (Array.isArray(data)) {
+      // 直接返回数组
+      categoriesList = data
+    } else {
+      console.warn('Unexpected categories data format:', data)
+      categoriesList = []
+    }
+    categories.value = categoriesList.slice(0, 8)
   } catch (e) {
-    console.error(e)
+    console.error('Failed to fetch categories:', e)
   }
 }
 

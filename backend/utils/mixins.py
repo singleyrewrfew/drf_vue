@@ -32,7 +32,8 @@ class SlugOrUUIDMixin:
         
         根据 lookup_field 的值智能判断：
         - 如果是有效的 UUID 格式，按主键查找
-        - 否则按 slug 字段查找
+        - 否则尝试按 slug 字段查找（如果模型有 slug 字段）
+        - 最后按主键查找
         """
         queryset = self.filter_queryset(self.get_queryset())
         
@@ -47,11 +48,12 @@ class SlugOrUUIDMixin:
             filter_kwargs = {self.lookup_field: lookup_value}
         except (ValueError, AttributeError):
             # 不是 UUID，可能是 slug
-            # 如果 lookup_field 就是 'slug'，直接使用
-            if self.lookup_field == 'slug':
+            # 优先尝试按 slug 字段查找（如果模型有 slug 字段）
+            model = self.queryset.model
+            if hasattr(model, 'slug'):
                 filter_kwargs = {'slug': lookup_value}
             else:
-                # 否则按主键查找（兼容原有逻辑）
+                # 模型没有 slug 字段，按主键查找
                 filter_kwargs = {self.lookup_field: lookup_value}
         
         # 执行查询
