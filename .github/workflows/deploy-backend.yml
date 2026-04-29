@@ -43,7 +43,7 @@ jobs:
           --exclude='htmlcov' \
           --exclude='.coverage' \
           --exclude='venv' \
-          --exclude='.env' \
+          --exclude='.env.development' \
           backend/ ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:${{ env.BACKEND_PATH }}/
         
         # 在服务器上执行部署命令
