@@ -1,6 +1,7 @@
 import hashlib
 import logging
 import os
+import platform
 import shutil
 import subprocess
 import threading
@@ -23,17 +24,28 @@ def get_ffmpeg_executable(name):
     
     common_paths = [getattr(settings, 'FFMPEG_PATH', None)]
     common_paths.extend(getattr(settings, 'FFMPEG_ADDITIONAL_PATHS', []))
-    common_paths.extend([
-        os.path.join(os.environ.get('LOCALAPPDATA', ''), 'ffmpeg', 'bin'),
-        os.path.join(os.environ.get('PROGRAMFILES', ''), 'ffmpeg', 'bin'),
-    ])
+    
+    if platform.system() == 'Windows':
+        common_paths.extend([
+            os.path.join(os.environ.get('LOCALAPPDATA', ''), 'ffmpeg', 'bin'),
+            os.path.join(os.environ.get('PROGRAMFILES', ''), 'ffmpeg', 'bin'),
+        ])
+        exe_name = f'{name}.exe'
+    else:
+        common_paths.extend([
+            '/usr/bin',
+            '/usr/local/bin',
+            '/opt/ffmpeg/bin',
+        ])
+        exe_name = name
     
     for path in common_paths:
         if path:
-            exe_path = os.path.join(path, f'{name}.exe')
+            exe_path = os.path.join(path, exe_name)
             if os.path.exists(exe_path):
                 return exe_path
-    return name
+    
+    return shutil.which(name) or name
 
 
 FFMPEG = get_ffmpeg_executable('ffmpeg')
