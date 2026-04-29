@@ -88,6 +88,9 @@ def generate_video_thumbnails(video_path, output_dir, interval=5):
             text=True,
             timeout=30
         )
+        if result.returncode != 0:
+            logger.error(f"FFPROBE failed: {result.stderr}")
+            return None, 0
         duration = float(result.stdout.strip())
     except Exception as e:
         logger.error(f"Error getting video duration: {e}")
@@ -101,16 +104,24 @@ def generate_video_thumbnails(video_path, output_dir, interval=5):
     filter_complex = f"fps=1/{interval},scale=160:90,tile={cols}x{rows}"
     
     try:
-        subprocess.run(
+        result = subprocess.run(
             [FFMPEG, '-y', '-i', video_path, '-vf', filter_complex, '-frames:v', '1', thumbnails_image],
             capture_output=True,
+            text=True,
             timeout=300
         )
+        if result.returncode != 0:
+            logger.error(f"FFMPEG failed with code {result.returncode}: {result.stderr}")
+            return None, 0
+    except subprocess.TimeoutExpired:
+        logger.error(f"FFMPEG timeout for video: {video_path}")
+        return None, 0
     except Exception as e:
         logger.error(f"Error generating thumbnails: {e}")
         return None, 0
     
     if not os.path.exists(thumbnails_image):
+        logger.error(f"Thumbnails file not created: {thumbnails_image}")
         return None, 0
     
     return thumbnails_image, num_thumbnails
@@ -335,10 +346,6 @@ class Media(BaseModel):
         if not self.is_video:
             return
         
-        # 保持 pending 状态，表示任务在队列中等待
-        # 任务真正开始执行时才会设置为 processing
-        logger.info(f"[Thumbnail] Media {self.id} status set to 'pending', waiting in queue")
-        
         from utils.task_manager import task_manager, TaskInfo
         
         media_id = self.id
@@ -349,7 +356,6 @@ class Media(BaseModel):
             from django.db import connection, transaction
             import time
             
-            # 确保 Django 已初始化
             if not django.apps.apps.ready:
                 django.setup()
             
@@ -357,23 +363,24 @@ class Media(BaseModel):
                 from apps.media.models import Media
                 logger.debug(f"[Thumbnail] Fetching media {media_id} from database")
                 
-                # 使用事务获取媒体记录并更新状态
-                # 注意：skip_locked=True 需要 MySQL 8.0+，低版本请移除此参数
                 with transaction.atomic():
                     try:
                         media = Media.objects.select_for_update().get(id=media_id)
                     except Media.DoesNotExist:
                         logger.warning(f"[Thumbnail] Media {media_id} not found, skipping")
                         return
-                    logger.debug(f"[Thumbnail] Media found, current status: {media.thumbnail_status}")
                     
-                    # 任务真正开始执行，设置为 processing
+                    current_status = media.thumbnail_status
+                    logger.debug(f"[Thumbnail] Media found, current status: {current_status}")
+                    
+                    if current_status == 'completed':
+                        logger.info(f"[Thumbnail] Media {media_id} already completed, skipping")
+                        return
+                    
                     media.thumbnail_status = 'processing'
                     media.save(update_fields=['thumbnail_status'])
                     logger.info(f"[Thumbnail] Media {media_id} status changed to 'processing'")
                 
-                # 事务已提交，状态对其他连接可见
-                # 现在执行耗时的缩略图生成（不在事务中）
                 with transaction.atomic():
                     media = Media.objects.get(id=media_id)
                     result = media.generate_thumbnails()
@@ -386,18 +393,16 @@ class Media(BaseModel):
                 import traceback
                 traceback.print_exc()
                 
-                # 尝试更新状态为失败
                 try:
+                    from apps.media.models import Media
                     media = Media.objects.get(id=media_id)
                     media.thumbnail_status = 'failed'
                     media.save(update_fields=['thumbnail_status'])
                 except Exception:
                     pass
             finally:
-                # 关闭数据库连接
                 connection.close()
         
-        # 使用任务管理器提交任务
         task_manager.submit(
             func=_generate,
             task_name=f"generate_thumbnails_{media_id}",
