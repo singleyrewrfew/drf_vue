@@ -63,6 +63,18 @@ jobs:
         mkdir -p ~/.ssh
         ssh-keyscan -H -p ${{ env.SERVER_PORT }} ${{ env.SERVER_HOST }} >> ~/.ssh/known_hosts
     
+    - name: Update Nginx config
+      run: |
+        # 上传 nginx 配置到服务器
+        scp -P ${{ env.SERVER_PORT }} nginx.conf ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:/tmp/nginx.conf
+        
+        # 更新配置并重载
+        ssh -p ${{ env.SERVER_PORT }} ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << 'EOF'
+          sudo cp /tmp/nginx.conf /etc/nginx/nginx.conf
+          sudo nginx -t && sudo systemctl reload nginx
+          rm /tmp/nginx.conf
+        EOF
+    
     - name: Deploy frontend to server
       run: |
         mkdir -p deploy_temp
