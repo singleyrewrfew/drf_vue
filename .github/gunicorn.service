@@ -8,6 +8,7 @@ Group=www-data
 WorkingDirectory=/home/DRF_VUE/drf_vue/backend
 Environment="PATH=/home/DRF_VUE/drf_vue/backend/venv/bin"
 Environment="DJANGO_ENV=production"
+Environment="XDG_RUNTIME_DIR=/tmp/runtime-www-data"
 ExecStart=/home/DRF_VUE/drf_vue/backend/venv/bin/gunicorn \
     --workers 3 \
     --bind 127.0.0.1:8000 \
