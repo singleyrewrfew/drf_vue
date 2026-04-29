@@ -48,8 +48,22 @@ def get_ffmpeg_executable(name):
     return shutil.which(name) or name
 
 
+def get_ffprobe_path():
+    path = get_ffmpeg_executable('ffprobe')
+    logger.debug(f"[FFmpeg] FFPROBE path resolved: {path}")
+    return path
+
+
+def get_ffmpeg_path():
+    path = get_ffmpeg_executable('ffmpeg')
+    logger.debug(f"[FFmpeg] FFMPEG path resolved: {path}")
+    return path
+
+
 FFMPEG = get_ffmpeg_executable('ffmpeg')
 FFPROBE = get_ffmpeg_executable('ffprobe')
+
+logger.info(f"[FFmpeg] Module loaded - FFMPEG: {FFMPEG}, FFPROBE: {FFPROBE}")
 
 THUMBNAIL_STATUS_CHOICES = [
     ('pending', '等待中'),
@@ -93,9 +107,15 @@ def generate_video_thumbnails(video_path, output_dir, interval=5):
     
     thumbnails_image = os.path.join(output_dir, 'thumbnails.jpg')
     
+    ffprobe_path = get_ffprobe_path()
+    ffmpeg_path = get_ffmpeg_path()
+    
+    logger.info(f"[Thumbnail] Using FFPROBE: {ffprobe_path}")
+    logger.info(f"[Thumbnail] Using FFMPEG: {ffmpeg_path}")
+    
     try:
         result = subprocess.run(
-            [FFPROBE, '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', video_path],
+            [ffprobe_path, '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', video_path],
             capture_output=True,
             text=True,
             timeout=30
@@ -117,7 +137,7 @@ def generate_video_thumbnails(video_path, output_dir, interval=5):
     
     try:
         result = subprocess.run(
-            [FFMPEG, '-y', '-i', video_path, '-vf', filter_complex, '-frames:v', '1', thumbnails_image],
+            [ffmpeg_path, '-y', '-i', video_path, '-vf', filter_complex, '-frames:v', '1', thumbnails_image],
             capture_output=True,
             text=True,
             timeout=300
