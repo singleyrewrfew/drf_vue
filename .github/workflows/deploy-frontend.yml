@@ -79,9 +79,9 @@ jobs:
       run: |
         mkdir -p deploy_temp
         
-        cp -r frontend/dist_backend deploy_temp/dist
+        cp -r frontend/dist_backend deploy_temp/dist_backend
         cp -r mobile/dist_mobile deploy_temp/dist_mobile
-        cp -r front/dist deploy_temp/dist_backend
+        cp -r front/dist deploy_temp/dist
         
         # 上传到服务器
         rsync -avz --delete \
