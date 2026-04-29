@@ -7,9 +7,10 @@ User=www-data
 Group=www-data
 WorkingDirectory=/home/DRF_VUE/drf_vue/backend
 Environment="PATH=/home/DRF_VUE/drf_vue/backend/venv/bin"
+Environment="DJANGO_ENV=production"
 ExecStart=/home/DRF_VUE/drf_vue/backend/venv/bin/gunicorn \
     --workers 3 \
-    --bind 127.0.0.1:8001 \
+    --bind 127.0.0.1:8000 \
     --timeout 300 \
     --access-logfile /var/log/gunicorn/access.log \
     --error-logfile /var/log/gunicorn/error.log \

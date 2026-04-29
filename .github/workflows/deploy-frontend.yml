@@ -63,11 +63,9 @@ jobs:
     
     - name: Deploy frontend to server
       run: |
-        # 创建临时目录用于上传
         mkdir -p deploy_temp
         
-        # 复制构建产物
-        cp -r frontend/dist deploy_temp/dist
+        cp -r frontend/dist_backend deploy_temp/dist
         cp -r mobile/dist_mobile deploy_temp/dist_mobile
         cp -r front/dist deploy_temp/dist_backend
         

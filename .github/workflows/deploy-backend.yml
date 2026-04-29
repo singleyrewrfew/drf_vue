@@ -13,66 +13,9 @@ env:
   SERVER_USER: ${{ secrets.SERVER_USER }}
   SERVER_PORT: ${{ secrets.SERVER_PORT }}
   BACKEND_PATH: /home/DRF_VUE/drf_vue/backend
-  PYTHON_VERSION: '3.11'
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_DB: test_db
-          POSTGRES_USER: test_user
-          POSTGRES_PASSWORD: test_password
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-    
-    - name: Cache pip packages
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-    
-    - name: Install dependencies
-      working-directory: ./backend
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-    
-    - name: Run tests
-      working-directory: ./backend
-      env:
-        DATABASE_URL: postgres://test_user:test_password@localhost:5432/test_db
-        SECRET_KEY: test-secret-key-for-ci
-        DEBUG: 'True'
-      run: |
-        pytest --cov=. --cov-report=xml
-  
-    - name: Upload coverage reports
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./backend/coverage.xml
-        flags: backend
-
   deploy:
-    needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     

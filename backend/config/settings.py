@@ -16,9 +16,9 @@ from dotenv import load_dotenv
 # ==================== 基础路径配置 ====================
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-ENV = 'development'
 
-# 加载环境变量
+ENV = os.getenv('DJANGO_ENV', 'development')
+
 env_file = BASE_DIR / f'.env.{ENV}'
 if env_file.exists():
     load_dotenv(env_file)
