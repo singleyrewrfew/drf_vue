@@ -13,6 +13,7 @@ env:
   SERVER_USER: ${{ secrets.SERVER_USER }}
   SERVER_PORT: ${{ secrets.SERVER_PORT }}
   BACKEND_PATH: /home/DRF_VUE/drf_vue/backend
+  PYTHON_VERSION: '3.11'
 
 jobs:
   deploy:
@@ -46,16 +47,18 @@ jobs:
           backend/ ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:${{ env.BACKEND_PATH }}/
         
         # 在服务器上执行部署命令
-        ssh -p ${{ env.SERVER_PORT }} ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << 'EOF'
+        ssh -p ${{ env.SERVER_PORT }} ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << EOF
           cd ${{ env.BACKEND_PATH }}
           
-          # 激活虚拟环境或创建新的
-          if [ ! -d "venv" ]; then
-            python3 -m venv venv
-          fi
+          PYTHON_VERSION=${{ env.PYTHON_VERSION }}
+          
+          # 删除旧的虚拟环境并重新创建
+          rm -rf venv
+          python${PYTHON_VERSION} -m venv venv
           source venv/bin/activate
           
           # 安装依赖
+          pip install --upgrade pip
           pip install -r requirements.txt
           
           # 收集静态文件
