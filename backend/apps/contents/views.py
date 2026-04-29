@@ -61,8 +61,7 @@ class ContentViewSet(
         """发布内容（仅限未发布的内容）"""
         content = self.get_object()
         try:
-            service = ContentService()
-            published_content = service.publish_content(content)
+            published_content = ContentService.publish_content(content, request.user)
             serializer = self.get_serializer(published_content)
             return StandardResponse(serializer.data)
         except ValueError as e:
@@ -77,8 +76,7 @@ class ContentViewSet(
     def archive(self, request, pk=None):
         """归档内容"""
         content = self.get_object()
-        service = ContentService()
-        archived_content = service.archive_content(content)
+        archived_content = ContentService.archive_content(content, request.user)
         serializer = self.get_serializer(archived_content)
         return StandardResponse(serializer.data)
 
