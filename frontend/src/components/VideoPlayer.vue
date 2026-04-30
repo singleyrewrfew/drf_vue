@@ -1,5 +1,5 @@
 <template>
-    <div class="artplayer-wrapper">
+    <div class="artplayer-wrapper" :class="{ 'artplayer-dark': isDark }">
         <div ref="artRef" class="artplayer-container"></div>
     </div>
 </template>
@@ -8,6 +8,7 @@
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import Artplayer from 'artplayer'
 import { getMediaUrl } from '@/utils'
+import { useThemeStore } from '@/stores/theme'
 
 const props = defineProps({
     src: { type: String, required: true },
@@ -18,9 +19,13 @@ const props = defineProps({
 
 const emit = defineEmits(['ready', 'error'])
 
+const themeStore = useThemeStore()
+const isDark = ref(themeStore.theme === 'dark')
 const artRef = ref(null)
 let artInstance = null
 let initTimeout = null
+
+const PRIMARY_COLOR = '#0078D4'
 
 const buildThumbnailsConfig = (url, count) => {
     const resolved = getMediaUrl(url)
@@ -65,7 +70,7 @@ const initPlayer = async () => {
         playsInline: true,
         autoPlayback: true,
         airplay: true,
-        theme: '#409eff',
+        theme: PRIMARY_COLOR,
         lang: navigator.language.toLowerCase(),
         moreVideoAttr: { crossOrigin: 'anonymous' },
         lock: false,
@@ -90,6 +95,10 @@ const initPlayer = async () => {
         emit('error', error)
     }
 }
+
+watch(() => themeStore.theme, (newTheme) => {
+    isDark.value = newTheme === 'dark'
+})
 
 watch(() => props.src, async (newSrc, oldSrc) => {
     if (artRef.value && newSrc && newSrc !== oldSrc) {
@@ -129,5 +138,35 @@ onUnmounted(() => {
 .artplayer-container {
     width: 100%;
     height: 100%;
+}
+
+:deep(.art-contextmenu) {
+    background: var(--card-bg, #fff);
+    border-color: var(--border-color, #e5e5e5);
+}
+
+:deep(.art-contextmenu a) {
+    color: var(--text-primary, #1a1a1a);
+}
+
+:deep(.art-contextmenu a:hover) {
+    background: var(--primary-bg, rgba(0, 120, 212, 0.08));
+    color: var(--primary-color, #0078d4);
+}
+
+:deep(.art-setting) {
+    background: var(--card-bg, #fff);
+}
+
+:deep(.art-setting .art-setting-item) {
+    color: var(--text-primary, #1a1a1a);
+}
+
+:deep(.art-setting .art-setting-item:hover) {
+    background: var(--primary-bg, rgba(0, 120, 212, 0.08));
+}
+
+:deep(.art-setting .art-setting-item-right) {
+    color: var(--text-secondary, #616161);
 }
 </style>
