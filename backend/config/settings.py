@@ -258,6 +258,11 @@ LOGGING = {
     'disable_existing_loggers': False,
     
     'formatters': {
+        'simple': {
+            'format': '{asctime} [{levelname}] {message}',
+            'style': '{',
+            'datefmt': '%H:%M:%S'
+        },
         'verbose': {
             'format': '{asctime} [{levelname}] [PID:{process}] [TID:{thread}] {filename}:{funcName}:{lineno} {module} - {message}',
             'style': '{',
@@ -269,7 +274,7 @@ LOGGING = {
         'console': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
-            'formatter': 'verbose'
+            'formatter': 'simple'
         },
         'file': {
             'level': 'DEBUG',
