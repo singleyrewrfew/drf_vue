@@ -1,61 +1,16 @@
 import hashlib
 import logging
 import os
-import platform
-import shutil
-import subprocess
-import threading
 import time
 import uuid
 
-from django.db import models, transaction
 from django.conf import settings
-from apps.core.models import User
+from django.db import models, transaction
+
 from apps.base.models import BaseModel
+from apps.core.models import User
 
 logger = logging.getLogger(__name__)
-
-
-def get_ffmpeg_executable(name):
-    """
-    查找 FFmpeg/FFprobe 可执行文件路径
-
-    搜索顺序：系统 PATH → Django 配置 → 常见安装目录
-    """
-    ffmpeg_path = shutil.which(name)
-    if ffmpeg_path:
-        return ffmpeg_path
-
-    common_paths = [getattr(settings, 'FFMPEG_PATH', None)]
-    common_paths.extend(getattr(settings, 'FFMPEG_ADDITIONAL_PATHS', []))
-
-    if platform.system() == 'Windows':
-        common_paths.extend([
-            os.path.join(os.environ.get('LOCALAPPDATA', ''), 'ffmpeg', 'bin'),
-            os.path.join(os.environ.get('PROGRAMFILES', ''), 'ffmpeg', 'bin'),
-        ])
-        exe_name = f'{name}.exe'
-    else:
-        common_paths.extend([
-            '/usr/bin',
-            '/usr/local/bin',
-            '/opt/ffmpeg/bin',
-        ])
-        exe_name = name
-
-    for path in common_paths:
-        if path:
-            exe_path = os.path.join(path, exe_name)
-            if os.path.exists(exe_path):
-                return exe_path
-
-    return name
-
-
-FFMPEG = get_ffmpeg_executable('ffmpeg')
-FFPROBE = get_ffmpeg_executable('ffprobe')
-
-logger.info(f"[FFmpeg] Module loaded - FFMPEG: {FFMPEG}, FFPROBE: {FFPROBE}")
 
 THUMBNAIL_STATUS_CHOICES = [
     ('pending', '等待中'),
@@ -78,63 +33,6 @@ def upload_to(instance, filename):
 
 def thumbnails_upload_to(instance, filename):
     return f'thumbnails/{instance.uploader.id}/{filename}'
-
-
-def generate_video_thumbnails(video_path, output_dir, interval=5):
-    """
-    生成视频缩略图（Artplayer 格式）
-
-    使用 FFmpeg 将视频按间隔截帧并拼合为一张雪碧图。
-    返回 (缩略图图片路径, 截帧数量)，失败返回 (None, 0)。
-    """
-    os.makedirs(output_dir, exist_ok=True)
-
-    thumbnails_image = os.path.join(output_dir, 'thumbnails.jpg')
-
-    try:
-        result = subprocess.run(
-            [FFPROBE, '-v', 'error', '-show_entries', 'format=duration',
-             '-of', 'default=noprint_wrappers=1:nokey=1', video_path],
-            capture_output=True,
-            text=True,
-            timeout=30
-        )
-        if result.returncode != 0:
-            logger.error(f"[Thumbnail] FFPROBE failed: {result.stderr}")
-            return None, 0
-        duration = float(result.stdout.strip())
-    except Exception as e:
-        logger.error(f"[Thumbnail] Error getting video duration: {e}")
-        return None, 0
-
-    num_thumbnails = max(1, int(duration / interval))
-    cols = min(num_thumbnails, 10)
-    rows = (num_thumbnails + cols - 1) // cols
-    filter_complex = f"fps=1/{interval},scale=160:90,tile={cols}x{rows}"
-
-    try:
-        result = subprocess.run(
-            [FFMPEG, '-y', '-i', video_path, '-vf', filter_complex,
-             '-frames:v', '1', thumbnails_image],
-            capture_output=True,
-            text=True,
-            timeout=300
-        )
-        if result.returncode != 0:
-            logger.error(f"[Thumbnail] FFMPEG failed (code {result.returncode}): {result.stderr}")
-            return None, 0
-    except subprocess.TimeoutExpired:
-        logger.error(f"[Thumbnail] FFMPEG timeout for video: {video_path}")
-        return None, 0
-    except Exception as e:
-        logger.error(f"[Thumbnail] Error generating thumbnails: {e}")
-        return None, 0
-
-    if not os.path.exists(thumbnails_image):
-        logger.error(f"[Thumbnail] Output file not created: {thumbnails_image}")
-        return None, 0
-
-    return thumbnails_image, num_thumbnails
 
 
 class MediaManager(models.Manager):
@@ -187,7 +85,7 @@ class MediaManager(models.Manager):
             uploader=uploader
         )
         media.save()
-        logger.info(f"Created new media record: {media.id}")
+        logger.info(f"创建新媒体记录: {media.id}")
         return media, True
 
 
@@ -263,6 +161,8 @@ class Media(BaseModel):
         包含数据库锁重试机制（应对 SQLite 并发写入）。
         成功返回 True，失败返回 False。
         """
+        from utils.video_utils import generate_video_thumbnails as gen_thumbs
+
         if not self.is_video:
             return False
 
@@ -275,7 +175,7 @@ class Media(BaseModel):
         output_dir = os.path.join(settings.MEDIA_ROOT, 'thumbnails', str(self.uploader.id), str(self.id))
 
         try:
-            thumbnails_image, num_thumbnails = generate_video_thumbnails(video_path, output_dir)
+            thumbnails_image, num_thumbnails = gen_thumbs(video_path, output_dir)
 
             if thumbnails_image and num_thumbnails > 0:
                 relative_image_path = os.path.relpath(thumbnails_image, settings.MEDIA_ROOT)
@@ -320,27 +220,29 @@ class Media(BaseModel):
         from utils.task_manager import task_manager
 
         media_id = self.id
-        logger.info(f"[Thumbnail] Submitting async task for media {media_id}")
+        logger.info(f"[缩略图] 提交媒体文件 {media_id} 的异步生成任务")
 
         def _generate():
             import django
             from django.db import connection, transaction
 
+            # 确保在子线程中 Django 环境已正确初始化
             if not django.apps.apps.ready:
                 django.setup()
 
             try:
+                # 在子线程中显式导入模型，确保 ORM 操作使用当前线程的数据库连接
                 from apps.media.models import Media
 
                 with transaction.atomic():
                     try:
                         media = Media.objects.select_for_update().get(id=media_id)
                     except Media.DoesNotExist:
-                        logger.warning(f"[Thumbnail] Media {media_id} not found, skipping")
+                        logger.warning(f"[缩略图] 媒体文件 {media_id} 不存在，跳过处理")
                         return
 
                     if media.thumbnail_status == 'completed':
-                        logger.info(f"[Thumbnail] Media {media_id} already completed, skipping")
+                        logger.info(f"[缩略图] 媒体文件 {media_id} 已完成，跳过处理")
                         return
 
                     media.thumbnail_status = 'processing'
@@ -351,9 +253,9 @@ class Media(BaseModel):
                     media.generate_thumbnails()
 
             except Media.DoesNotExist:
-                logger.error(f"[Thumbnail] Media {media_id} not found")
+                logger.error(f"[缩略图] 媒体文件 {media_id} 不存在")
             except Exception as e:
-                logger.error(f"[Thumbnail] Async error for media {media_id}: {e}", exc_info=True)
+                logger.error(f"[缩略图] 媒体文件 {media_id} 异步处理出错: {e}", exc_info=True)
 
                 try:
                     from apps.media.models import Media

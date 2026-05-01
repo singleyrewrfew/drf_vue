@@ -25,6 +25,7 @@ export function useMediaUpload(baseUrl) {
     const uploadProgress = ref(0)
     const totalUploadFiles = ref(0)
     const completedFiles = ref(0)
+    const failedFiles = ref(0)
     const fileProgressMap = ref(new Map())
 
     const uploadUrl = computed(() => `${baseUrl}/media/`)
@@ -35,8 +36,9 @@ export function useMediaUpload(baseUrl) {
 
     const uploadButtonText = computed(() => {
         if (totalUploadFiles.value === 0) return '上传文件'
+        const successCount = completedFiles.value - failedFiles.value
         if (completedFiles.value === totalUploadFiles.value) {
-            return `已完成 (${completedFiles.value}/${totalUploadFiles.value}个文件)`
+            return `处理完毕 (成功: ${successCount}, 失败: ${failedFiles.value})`
         }
         return `上传中 (${completedFiles.value}/${totalUploadFiles.value}个文件)`
     })
@@ -45,6 +47,7 @@ export function useMediaUpload(baseUrl) {
         uploading.value = false
         totalUploadFiles.value = 0
         completedFiles.value = 0
+        failedFiles.value = 0
         fileProgressMap.value.clear()
         uploadProgress.value = 0
     }
@@ -76,9 +79,18 @@ export function useMediaUpload(baseUrl) {
     }
 
     const handleFileChange = (file, fileList) => {
-        if (file.status === 'ready' && totalUploadFiles.value === 0) {
-            totalUploadFiles.value = fileList.length
-            completedFiles.value = 0
+        // 只要有新文件进入 ready 状态，就根据当前 fileList 重新初始化计数
+        if (file.status === 'ready') {
+            // 过滤掉已经处理过（成功或失败）的文件，只计算当前待上传的
+            const pendingFiles = fileList.filter(f => f.status === 'ready')
+            
+            // 只有当待上传文件数发生变化时才更新总数，防止重复触发
+            if (pendingFiles.length !== totalUploadFiles.value) {
+                totalUploadFiles.value = pendingFiles.length
+                completedFiles.value = 0
+                failedFiles.value = 0
+                fileProgressMap.value.clear()
+            }
         }
     }
 
@@ -114,6 +126,7 @@ export function useMediaUpload(baseUrl) {
     const handleUploadError = (error, file) => {
         fileProgressMap.value.delete(file.uid)
         completedFiles.value += 1
+        failedFiles.value += 1
 
         if (completedFiles.value === totalUploadFiles.value) {
             uploadProgress.value = 100

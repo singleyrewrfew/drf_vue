@@ -36,19 +36,25 @@ if not SECRET_KEY and DEBUG:
 if not SECRET_KEY and not DEBUG:
     from django.core.exceptions import ImproperlyConfigured
     raise ImproperlyConfigured(
-        "DJANGO_SECRET_KEY environment variable is required for production."
+        "生产环境必须设置 DJANGO_SECRET_KEY 环境变量。"
     )
 
 # DEBUG 警告
 def _warn_if_debug(message: str):
-    if DEBUG:
+    """
+    仅在 DEBUG 模式下发出警告
+    
+    注意：Django 开发服务器会启动两个进程（主进程和工作进程），
+    通过检查 RUN_MAIN 环境变量避免重复警告。
+    """
+    if DEBUG and os.environ.get('RUN_MAIN') != 'true':
         import warnings
         warnings.warn(f"⚠️  WARNING: {message}", RuntimeWarning, stacklevel=2)
 
 if not os.getenv('DJANGO_SECRET_KEY') and DEBUG:
-    _warn_if_debug("Using development SECRET_KEY. Set DJANGO_SECRET_KEY for production!")
+    _warn_if_debug("正在使用开发环境的 SECRET_KEY。生产环境请设置 DJANGO_SECRET_KEY！")
 
-_warn_if_debug("DEBUG mode is enabled! This should never be used in production.")
+_warn_if_debug("DEBUG 模式已启用！切勿在生产环境中使用。")
 
 # 允许的主机
 if DEBUG:
@@ -213,7 +219,7 @@ CORS_ALLOWED_ORIGINS = [
 
 if DEBUG and os.getenv('CORS_ALLOW_ALL_FOR_DEV', 'False') == 'True':
     CORS_ALLOW_ALL_ORIGINS = True
-    print("⚠️  WARNING: CORS allows all origins for development!")
+    print("⚠️  警告：开发环境下 CORS 允许所有来源访问！")
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -253,6 +259,11 @@ FFMPEG_ADDITIONAL_PATHS = [
 ]
 
 # ==================== 日志配置 ====================
+
+# 确保日志目录存在
+LOG_DIR = BASE_DIR / 'logs'
+LOG_DIR.mkdir(exist_ok=True)
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -264,7 +275,7 @@ LOGGING = {
             'datefmt': '%H:%M:%S'
         },
         'verbose': {
-            'format': '{asctime} [{levelname}] [PID:{process}] [TID:{thread}] {filename}:{funcName}:{lineno} {module} - {message}',
+            'format': '{asctime} [{levelname}] [PID:{process}] [TID:{thread}] {filename}:{funcName}:{lineno} - {message}',
             'style': '{',
             'datefmt': '%Y-%m-%d %H:%M:%S'
         },
@@ -279,10 +290,20 @@ LOGGING = {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs', 'django.log'),
-            'maxBytes': 10 * 1024 * 1024,
+            'filename': LOG_DIR / 'django.log',
+            'maxBytes': 10 * 1024 * 1024,  # 10MB
             'backupCount': 5,
-            'formatter': 'verbose'
+            'formatter': 'verbose',
+            'encoding': 'utf-8'
+        },
+        'error_file': {
+            'level': 'ERROR',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOG_DIR / 'error.log',
+            'maxBytes': 10 * 1024 * 1024,  # 10MB
+            'backupCount': 10,
+            'formatter': 'verbose',
+            'encoding': 'utf-8'
         },
     },
     
@@ -294,21 +315,21 @@ LOGGING = {
         },
         'django.request': {
             'handlers': ['console', 'file'],
-            'level': 'DEBUG',
+            'level': 'WARNING',  # 改为 WARNING，避免记录所有 200 OK 请求
+            'propagate': False,
+        },
+        'django.db.backends': {
+            'handlers': ['console'] if DEBUG else [],
+            'level': 'DEBUG' if DEBUG else 'WARNING',  # 仅开发环境打印 SQL
             'propagate': False,
         },
         'apps': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console', 'file', 'error_file'],
             'level': 'DEBUG',
             'propagate': True,
         },
         'apps.media': {
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
-        'myapp': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console', 'file', 'error_file'],
             'level': 'DEBUG',
             'propagate': False,
         },
