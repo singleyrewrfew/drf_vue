@@ -260,9 +260,13 @@ FFMPEG_ADDITIONAL_PATHS = [
 
 # ==================== 日志配置 ====================
 
-# 确保日志目录存在
+# 确保日志目录存在并具备写入权限
 LOG_DIR = BASE_DIR / 'logs'
-LOG_DIR.mkdir(exist_ok=True)
+if not LOG_DIR.exists():
+    try:
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+    except Exception as e:
+        print(f"警告: 无法创建日志目录 {LOG_DIR}: {e}")
 
 LOGGING = {
     'version': 1,
