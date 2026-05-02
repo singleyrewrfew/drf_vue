@@ -2,6 +2,7 @@
   --primary-color: #0078D4;
   --primary-hover: #106EBE;
   --primary-active: #005A9E;
+  --primary-light: #60A5FA;
   --primary-bg: rgba(0, 120, 212, 0.08);
   --primary-bg-hover: rgba(0, 120, 212, 0.12);
 
@@ -71,6 +72,7 @@
   --primary-color: #0078D4;
   --primary-hover: #106EBE;
   --primary-active: #005A9E;
+  --primary-light: #60A5FA;
   --primary-bg: rgba(0, 120, 212, 0.15);
   --primary-bg-hover: rgba(0, 120, 212, 0.2);
 

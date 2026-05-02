@@ -147,7 +147,12 @@
 
                 <el-card shadow="hover" style="margin-top: 20px" v-if="isAdmin">
                     <template #header>
-                        <span>系统信息</span>
+                        <div class="card-header">
+                            <span>系统信息</span>
+                            <el-button text size="small" @click="refreshHealth" :loading="healthLoading">
+                                刷新
+                            </el-button>
+                        </div>
                     </template>
                     <div class="system-info">
                         <div class="info-item">
@@ -177,6 +182,30 @@
                             </div>
                             <span class="info-value">Django + Vue 3</span>
                         </div>
+
+                        <div class="info-divider"></div>
+
+                        <div class="info-item">
+                            <div class="info-content">
+                                <span class="status-dot" :class="serviceStatusClass('database')"></span>
+                                <span class="info-label">数据库</span>
+                            </div>
+                            <span class="info-value">{{ serviceStatusText('database') }}</span>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-content">
+                                <span class="status-dot" :class="serviceStatusClass('redis')"></span>
+                                <span class="info-label">Redis</span>
+                            </div>
+                            <span class="info-value">{{ serviceStatusText('redis') }}</span>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-content">
+                                <span class="status-dot" :class="serviceStatusClass('celery')"></span>
+                                <span class="info-label">Celery</span>
+                            </div>
+                            <span class="info-value">{{ serviceStatusText('celery') }}</span>
+                        </div>
                     </div>
                 </el-card>
             </el-col>
@@ -205,6 +234,7 @@ import ViewAllButton from '@/components/ViewAllButton.vue'
 import StatCard from '@/components/StatCard.vue'
 import QuickActionCard from '@/components/QuickActionCard.vue'
 import {fetchStats} from "@/api/stats.js"
+import {fetchHealth} from "@/api/health.js"
 
 const userStore = useUserStore()
 
@@ -279,8 +309,40 @@ const asyncFetchStats = async () => {
     }
 }
 
+const healthLoading = ref(false)
+const healthData = ref(null)
+
+const serviceStatusClass = (service) => {
+    const status = healthData.value?.services?.[service]?.status
+    return status === 'healthy' ? 'dot-healthy' : status === 'unhealthy' ? 'dot-unhealthy' : 'dot-unknown'
+}
+
+const serviceStatusText = (service) => {
+    const info = healthData.value?.services?.[service]
+    if (!info) return '检测中...'
+    if (info.status === 'healthy') {
+        if (service === 'celery') return `${info.workers} Worker`
+        if (service === 'redis') return info.used_memory_human || '正常'
+        return `${info.response_time_ms}ms`
+    }
+    return '异常'
+}
+
+const refreshHealth = async () => {
+    healthLoading.value = true
+    try {
+        const {data} = await fetchHealth()
+        healthData.value = data
+    } catch (error) {
+        healthData.value = error.response?.data || null
+    } finally {
+        healthLoading.value = false
+    }
+}
+
 onMounted(() => {
     asyncFetchStats()
+    refreshHealth()
 })
 </script>
 
@@ -350,6 +412,33 @@ onMounted(() => {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+}
+
+.info-divider {
+    height: 1px;
+    background: var(--border-light);
+    margin: 8px 0;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.dot-healthy {
+    background: var(--success-color, #67C23A);
+    box-shadow: 0 0 4px var(--success-color, #67C23A);
+}
+
+.dot-unhealthy {
+    background: var(--danger-color, #F56C6C);
+    box-shadow: 0 0 4px var(--danger-color, #F56C6C);
+}
+
+.dot-unknown {
+    background: var(--text-tertiary, #C0C4CC);
 }
 
 @media (max-width: 768px) {

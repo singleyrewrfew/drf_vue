@@ -298,18 +298,18 @@ LOGGING = {
         },
         'file': {
             'level': 'DEBUG',
-            'class': 'logging.handlers.RotatingFileHandler',
+            'class': 'utils.log_handlers.SafeRotatingFileHandler',
             'filename': LOG_DIR / 'django.log',
-            'maxBytes': 10 * 1024 * 1024,  # 10MB
+            'maxBytes': 10 * 1024 * 1024,
             'backupCount': 5,
             'formatter': 'verbose',
             'encoding': 'utf-8'
         },
         'error_file': {
             'level': 'ERROR',
-            'class': 'logging.handlers.RotatingFileHandler',
+            'class': 'utils.log_handlers.SafeRotatingFileHandler',
             'filename': LOG_DIR / 'error.log',
-            'maxBytes': 10 * 1024 * 1024,  # 10MB
+            'maxBytes': 10 * 1024 * 1024,
             'backupCount': 10,
             'formatter': 'verbose',
             'encoding': 'utf-8'
