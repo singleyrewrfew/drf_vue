@@ -1,3 +1,5 @@
+import logging
+
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
@@ -15,6 +17,8 @@ from .serializers import (
     UserSerializer,
     UserUpdateSerializer,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -96,8 +100,10 @@ class UserViewSet(viewsets.ModelViewSet):
             if refresh_token:
                 token = RefreshToken(refresh_token)
                 token.blacklist()
-        except Exception:
-            pass
+        except (TokenError, InvalidToken) as e:
+            logger.warning(f"登出时 Token 黑名单失败: {e}")
+        except Exception as e:
+            logger.error(f"登出异常: {type(e).__name__}: {e}")
         return StandardResponse({'message': '退出成功'})
 
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])

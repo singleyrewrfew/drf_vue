@@ -71,6 +71,8 @@ def custom_exception_handler(exc, context):
         403: ErrorTypes.FORBIDDEN,
         404: ErrorTypes.NOT_FOUND,
         405: ErrorTypes.BAD_REQUEST,
+        409: ErrorTypes.CONFLICT,
+        423: ErrorTypes.CONFLICT,
         500: ErrorTypes.INTERNAL_ERROR,
     }
     error_type = error_type_map.get(status_code, ErrorTypes.INTERNAL_ERROR)

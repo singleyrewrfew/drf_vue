@@ -126,7 +126,11 @@ def stream_media_file(request, file_path, content_type, filename):
             end = int(range_match[1]) if range_match[1] else file_size - 1
 
             if start >= file_size or end >= file_size:
-                return HttpResponse(status=416)
+                return HttpResponse(
+                    json.dumps({'message': '请求范围无效', 'error': 'range_not_satisfiable'}),
+                    status=416,
+                    content_type='application/json'
+                )
 
             length = end - start + 1
 
@@ -169,10 +173,10 @@ def stream_media_file(request, file_path, content_type, filename):
 
     except PermissionError:
         logger.warning(f"文件被占用: {file_path}")
-        return HttpResponse(
-            json.dumps({'message': '视频正在处理中，文件被占用，请稍后再试'}),
-            status=423,
-            content_type='application/json'
+        return api_error(
+            message='视频正在处理中，文件被占用，请稍后再试',
+            error_type=ErrorTypes.CONFLICT,
+            status=status.HTTP_423_LOCKED
         )
     except FileNotFoundError as e:
         logger.error(f"文件不存在: {file_path}, {e}")

@@ -1,7 +1,7 @@
 from django.utils import timezone
 from django.db import transaction
 from django.http import Http404
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import APIException, PermissionDenied, ValidationError
 from apps.contents.models import Content
 
 
@@ -49,7 +49,9 @@ class ContentService:
                 raise PermissionDenied('无发布权限')
         
         if content.status == 'published':
-            raise ValidationError('内容已发布')
+            exc = APIException(detail='内容已发布')
+            exc.status_code = 409
+            raise exc
         
         content.status = 'published'
         content.published_at = timezone.now()

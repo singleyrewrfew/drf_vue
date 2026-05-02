@@ -4,20 +4,15 @@ from utils.html_utils import sanitize_comment
 from .models import Comment
 
 
-class CommentSerializer(serializers.ModelSerializer):
+class CommentUserFieldsMixin:
+    """评论公共字段：用户信息 + is_liked"""
+
     user_name = serializers.CharField(source='user.username', read_only=True)
     user_avatar = serializers.ImageField(source='user.avatar', read_only=True)
     user_id = serializers.CharField(source='user.id', read_only=True)
     reply_to_name = serializers.CharField(source='reply_to.username', read_only=True)
-    replies = serializers.SerializerMethodField()
     is_reply = serializers.ReadOnlyField()
     is_liked = serializers.SerializerMethodField()
-    reply_count = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Comment
-        fields = ['id', 'content', 'article', 'user', 'user_id', 'user_name', 'user_avatar', 'parent', 'reply_to', 'reply_to_name', 'is_reply', 'is_approved', 'like_count', 'is_liked', 'reply_count', 'replies', 'created_at']
-        read_only_fields = ['id', 'user', 'is_approved', 'like_count', 'created_at']
 
     def get_is_liked(self, obj):
         request = self.context.get('request')
@@ -25,6 +20,13 @@ class CommentSerializer(serializers.ModelSerializer):
             liked_comment_ids = getattr(self.context.get('view'), '_liked_comment_ids', set())
             return obj.id in liked_comment_ids
         return False
+
+
+class CommentRepliesMixin:
+    """评论回复相关字段：reply_count + replies"""
+
+    reply_count = serializers.SerializerMethodField()
+    replies = serializers.SerializerMethodField()
 
     def get_reply_count(self, obj):
         return getattr(obj, 'reply_count', 0) or obj.replies.filter(is_approved=True).count()
@@ -36,24 +38,31 @@ class CommentSerializer(serializers.ModelSerializer):
         return CommentReplySerializer(replies, many=True, context=self.context).data
 
 
-class CommentReplySerializer(serializers.ModelSerializer):
-    user_name = serializers.CharField(source='user.username', read_only=True)
-    user_avatar = serializers.ImageField(source='user.avatar', read_only=True)
-    user_id = serializers.CharField(source='user.id', read_only=True)
-    reply_to_name = serializers.CharField(source='reply_to.username', read_only=True)
-    is_reply = serializers.ReadOnlyField()
-    is_liked = serializers.SerializerMethodField()
+class CommentSerializer(CommentUserFieldsMixin, CommentRepliesMixin, serializers.ModelSerializer):
+    """评论详情序列化器（含回复列表）"""
+
+    class Meta:
+        model = Comment
+        fields = ['id', 'content', 'article', 'user', 'user_id', 'user_name', 'user_avatar', 'parent', 'reply_to', 'reply_to_name', 'is_reply', 'is_approved', 'like_count', 'is_liked', 'reply_count', 'replies', 'created_at']
+        read_only_fields = ['id', 'user', 'is_approved', 'like_count', 'created_at']
+
+
+class CommentReplySerializer(CommentUserFieldsMixin, serializers.ModelSerializer):
+    """评论回复序列化器（嵌套在父评论内，不含回复列表）"""
 
     class Meta:
         model = Comment
         fields = ['id', 'content', 'user_id', 'user_name', 'user_avatar', 'reply_to', 'reply_to_name', 'is_reply', 'is_approved', 'like_count', 'is_liked', 'created_at']
 
-    def get_is_liked(self, obj):
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            liked_comment_ids = getattr(self.context.get('view'), '_liked_comment_ids', set())
-            return obj.id in liked_comment_ids
-        return False
+
+class CommentListSerializer(CommentUserFieldsMixin, CommentRepliesMixin, serializers.ModelSerializer):
+    """评论列表序列化器（含文章标题）"""
+
+    article_title = serializers.CharField(source='article.title', read_only=True)
+
+    class Meta:
+        model = Comment
+        fields = ['id', 'content', 'article', 'article_title', 'user_id', 'user_name', 'user_avatar', 'parent', 'reply_to', 'reply_to_name', 'is_reply', 'is_approved', 'like_count', 'is_liked', 'reply_count', 'replies', 'created_at']
 
 
 class CommentCreateSerializer(serializers.ModelSerializer):
@@ -93,35 +102,3 @@ class CommentCreateSerializer(serializers.ModelSerializer):
             except User.DoesNotExist:
                 pass
         return super().create(validated_data)
-
-
-class CommentListSerializer(serializers.ModelSerializer):
-    user_id = serializers.CharField(source='user.id', read_only=True)
-    user_name = serializers.CharField(source='user.username', read_only=True)
-    user_avatar = serializers.ImageField(source='user.avatar', read_only=True)
-    reply_to_name = serializers.CharField(source='reply_to.username', read_only=True)
-    article_title = serializers.CharField(source='article.title', read_only=True)
-    is_reply = serializers.ReadOnlyField()
-    is_liked = serializers.SerializerMethodField()
-    reply_count = serializers.SerializerMethodField()
-    replies = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Comment
-        fields = ['id', 'content', 'article', 'article_title', 'user_id', 'user_name', 'user_avatar', 'parent', 'reply_to', 'reply_to_name', 'is_reply', 'is_approved', 'like_count', 'is_liked', 'reply_count', 'replies', 'created_at']
-
-    def get_is_liked(self, obj):
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            liked_comment_ids = getattr(self.context.get('view'), '_liked_comment_ids', set())
-            return obj.id in liked_comment_ids
-        return False
-
-    def get_reply_count(self, obj):
-        return getattr(obj, 'reply_count', 0) or obj.replies.filter(is_approved=True).count()
-
-    def get_replies(self, obj):
-        replies = getattr(obj, 'prefetched_replies', None)
-        if replies is None:
-            replies = obj.replies.filter(is_approved=True)
-        return CommentReplySerializer(replies, many=True, context=self.context).data

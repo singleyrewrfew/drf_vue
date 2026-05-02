@@ -100,17 +100,10 @@ class ContentViewSet(
     def publish(self, request, pk=None):
         """发布内容（仅限未发布的内容）"""
         content = self.get_object()
-        try:
-            published_content = ContentService.publish_content(content, request.user)
-            self._invalidate_cache()
-            serializer = self.get_serializer(published_content)
-            return StandardResponse(serializer.data)
-        except ValueError as e:
-            return api_error(
-                message=str(e),
-                error_type='bad_request',
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        published_content = ContentService.publish_content(content, request.user)
+        self._invalidate_cache()
+        serializer = self.get_serializer(published_content)
+        return StandardResponse(serializer.data)
 
     @extend_schema(request=None, responses=ContentSerializer)
     @action(detail=True, methods=['post'])
