@@ -3,7 +3,7 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
-from backend.services.content_service import ContentService
+from services.content_service import ContentService
 from utils.query_utils import get_object_by_slug_or_id
 from utils.response import StandardResponse, api_error
 from utils.viewset_mixins import SlugOrUUIDMixin
