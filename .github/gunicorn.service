@@ -1,6 +1,7 @@
 [Unit]
 Description=DRF Vue Backend Gunicorn Service
-After=network.target
+After=network.target redis-server.service mysql.service
+Requires=mysql.service
 
 [Service]
 User=www-data

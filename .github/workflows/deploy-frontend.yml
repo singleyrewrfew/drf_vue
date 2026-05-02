@@ -8,6 +8,7 @@ on:
       - 'mobile/**'
       - 'front/**'
       - '.github/workflows/deploy-frontend.yml'
+      - '.github/nginx.conf'
   workflow_dispatch:
 
 env:
@@ -28,28 +29,30 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: frontend/package-lock.json
     
-    - name: Install dependencies
-      working-directory: ./frontend
-      run: npm ci
+    - name: Cache npm dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.npm
+          frontend/node_modules
+          mobile/node_modules
+          front/node_modules
+        key: ${{ runner.os }}-node-${{ hashFiles('frontend/package-lock.json', 'mobile/package-lock.json', 'front/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
     
-    - name: Build frontend (PC)
-      working-directory: ./frontend
-      run: npm run build
-    
-    - name: Build frontend (Mobile)
-      working-directory: ./mobile
+    - name: Install all dependencies
       run: |
-        npm ci
-        npm run build
+        npm ci --prefix frontend
+        npm ci --prefix mobile
+        npm ci --prefix front
     
-    - name: Build backend admin interface
-      working-directory: ./front
+    - name: Build all frontends
       run: |
-        npm ci
-        npm run build
+        npm run build --prefix frontend
+        npm run build --prefix mobile
+        npm run build --prefix front
     
     - name: Set up SSH
       uses: webfactory/ssh-agent@v0.9.0
@@ -60,18 +63,6 @@ jobs:
       run: |
         mkdir -p ~/.ssh
         ssh-keyscan -H -p ${{ env.SERVER_PORT }} ${{ env.SERVER_HOST }} >> ~/.ssh/known_hosts
-    
-    - name: Update Nginx config
-      run: |
-        # 上传 nginx 配置到服务器
-        scp -P ${{ env.SERVER_PORT }} nginx.conf ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:/tmp/nginx.conf
-        
-        # 更新配置并重载
-        ssh -p ${{ env.SERVER_PORT }} ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << 'EOF'
-          sudo cp /tmp/nginx.conf /etc/nginx/nginx.conf
-          sudo nginx -t && sudo systemctl reload nginx
-          rm /tmp/nginx.conf
-        EOF
     
     - name: Deploy frontend to server
       run: |
@@ -85,16 +76,36 @@ jobs:
         rsync -avz --delete \
           deploy_temp/ ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:${{ env.FRONTEND_PATH }}/
         
+        # 上传 nginx 配置
+        scp -P ${{ env.SERVER_PORT }} .github/nginx.conf ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:/tmp/nginx.conf
+        
         # 清理临时目录
         rm -rf deploy_temp
         
-        # 在服务器上设置权限
+        # 在服务器上执行部署命令
         ssh -p ${{ env.SERVER_PORT }} ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << 'EOF'
-          cd ${{ env.FRONTEND_PATH }}
+          cd /home/front
           
           # 设置正确的权限
           sudo chown -R www-data:www-data dist dist_mobile dist_backend
           sudo chmod -R 755 dist dist_mobile dist_backend
+          
+          # 检查并更新 Nginx 配置（仅在变化时）
+          if ! cmp -s /tmp/nginx.conf /etc/nginx/nginx.conf 2>/dev/null; then
+            echo "Nginx config changed, updating..."
+            sudo cp /tmp/nginx.conf /etc/nginx/nginx.conf
+            if sudo nginx -t; then
+              sudo systemctl reload nginx
+              echo "✅ Nginx config updated and reloaded"
+            else
+              echo "❌ Nginx config test failed, keeping old config"
+              sudo cp /etc/nginx/nginx.conf /tmp/nginx.conf.bak
+              exit 1
+            fi
+          else
+            echo "Nginx config unchanged, skipping update"
+          fi
+          rm -f /tmp/nginx.conf
           
           # 重启 Nginx
           sudo systemctl restart nginx

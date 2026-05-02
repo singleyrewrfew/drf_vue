@@ -6,6 +6,7 @@ on:
     paths:
       - 'backend/**'
       - '.github/workflows/deploy-backend.yml'
+      - '.github/*.service'
   workflow_dispatch:
 
 env:
@@ -49,29 +50,45 @@ jobs:
           --exclude='logs' \
           backend/ ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:${{ env.BACKEND_PATH }}/
         
-        # 上传 gunicorn.service 文件
+        # 上传 systemd service 文件
         ssh -p ${{ env.SERVER_PORT }} ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} "mkdir -p ${{ env.BACKEND_PATH }}/.github"
         scp -P ${{ env.SERVER_PORT }} .github/gunicorn.service ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:${{ env.BACKEND_PATH }}/.github/
+        scp -P ${{ env.SERVER_PORT }} .github/celery-worker.service ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:${{ env.BACKEND_PATH }}/.github/
+        scp -P ${{ env.SERVER_PORT }} .github/celery-beat.service ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:${{ env.BACKEND_PATH }}/.github/
         
         # 在服务器上执行部署命令
-        ssh -p ${{ env.SERVER_PORT }} ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << EOF
-          cd ${{ env.BACKEND_PATH }}
-          
-          PYTHON_VERSION=${{ env.PYTHON_VERSION }}
+        ssh -p ${{ env.SERVER_PORT }} ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << 'EOF'
+          cd /home/DRF_VUE/drf_vue/backend
           
           # 设置生产环境变量
           export DJANGO_ENV=production
           
-          # 更新 gunicorn.service 文件
-          sudo cp .github/gunicorn.service /etc/systemd/system/drf_vue_backend.service
-          sudo systemctl daemon-reload
+          # 检查并更新 systemd service 文件（仅在变化时）
+          SERVICES_CHANGED=false
+          for service in gunicorn.service celery-worker.service celery-beat.service; do
+            if [ -f ".github/$service" ]; then
+              if ! cmp -s ".github/$service" "/etc/systemd/system/drf_vue_${service%.service}.service" 2>/dev/null; then
+                sudo cp ".github/$service" "/etc/systemd/system/drf_vue_${service%.service}.service"
+                SERVICES_CHANGED=true
+                echo "Updated: $service"
+              fi
+            fi
+          done
           
-          # 删除旧的虚拟环境并重新创建
-          rm -rf venv
-          python${PYTHON_VERSION} -m venv venv
+          if [ "$SERVICES_CHANGED" = true ]; then
+            sudo systemctl daemon-reload
+            echo "Systemd services updated"
+          fi
+          
+          # 检查虚拟环境是否存在
+          if [ ! -d "venv" ]; then
+            echo "Creating virtual environment..."
+            python3.11 -m venv venv
+          fi
+          
           source venv/bin/activate
           
-          # 安装依赖
+          # 安装/更新依赖（使用缓存）
           pip install --upgrade pip
           pip install -r requirements.txt
           
@@ -97,11 +114,35 @@ jobs:
             exit 1
           fi
           
-          # 重启 Gunicorn 服务
+          # 重启所有服务
+          echo "Restarting services..."
           sudo systemctl restart drf_vue_backend
+          sudo systemctl restart drf_vue_celery_worker
+          sudo systemctl restart drf_vue_celery_beat
+          
+          # 启用服务开机自启
+          sudo systemctl enable drf_vue_backend
+          sudo systemctl enable drf_vue_celery_worker
+          sudo systemctl enable drf_vue_celery_beat
+          
+          # 等待服务启动
+          sleep 5
+          
+          # 健康检查
+          echo "=== Health Check ==="
+          if curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/api/ | grep -q "200\|401\|403"; then
+            echo "✅ Backend is healthy"
+          else
+            echo "❌ Backend health check failed"
+            sudo systemctl status drf_vue_backend --no-pager
+            exit 1
+          fi
           
           # 检查服务状态
-          sudo systemctl status drf_vue_backend --no-pager
+          echo "=== Service Status ==="
+          sudo systemctl status drf_vue_backend --no-pager -l
+          sudo systemctl status drf_vue_celery_worker --no-pager -l
+          sudo systemctl status drf_vue_celery_beat --no-pager -l
         EOF
       
     - name: Deployment notification

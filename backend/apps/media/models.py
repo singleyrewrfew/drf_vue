@@ -161,8 +161,6 @@ class Media(BaseModel):
         包含数据库锁重试机制（应对 SQLite 并发写入）。
         成功返回 True，失败返回 False。
         """
-        from utils.video_utils import generate_video_thumbnails as gen_thumbs
-
         if not self.is_video:
             return False
 
@@ -175,6 +173,8 @@ class Media(BaseModel):
         output_dir = os.path.join(settings.MEDIA_ROOT, 'thumbnails', str(self.uploader.id), str(self.id))
 
         try:
+            from utils.video_utils import generate_video_thumbnails as gen_thumbs
+            
             thumbnails_image, num_thumbnails = gen_thumbs(video_path, output_dir)
 
             if thumbnails_image and num_thumbnails > 0:
@@ -207,68 +207,26 @@ class Media(BaseModel):
             self.save(update_fields=['thumbnail_status'])
             return False
 
+    def _generate_thumbnails_internal(self):
+        """
+        内部方法：生成缩略图（供 Celery 任务调用）
+        
+        Returns:
+            bool: 成功返回 True，失败返回 False
+        """
+        return self.generate_thumbnails()
+
     def generate_thumbnails_async(self):
         """
-        异步生成视频缩略图
-
-        通过任务管理器在线程池中执行，包含完整的错误处理和状态回退机制。
-        延迟导入 Django 和 Media 模型以适应子线程环境。
+        异步生成视频缩略图（使用 Celery）
+        
+        将任务提交到 Celery 队列异步执行，支持自动重试。
         """
         if not self.is_video:
             return
 
-        from utils.task_manager import task_manager
+        from apps.media.tasks import generate_video_thumbnails
 
-        media_id = self.id
-        logger.info(f"[缩略图] 提交媒体文件 {media_id} 的异步生成任务")
-
-        def _generate():
-            import django
-            from django.db import connection, transaction
-
-            # 确保在子线程中 Django 环境已正确初始化
-            if not django.apps.apps.ready:
-                django.setup()
-
-            try:
-                # 在子线程中显式导入模型，确保 ORM 操作使用当前线程的数据库连接
-                from apps.media.models import Media
-
-                with transaction.atomic():
-                    try:
-                        media = Media.objects.select_for_update().get(id=media_id)
-                    except Media.DoesNotExist:
-                        logger.warning(f"[缩略图] 媒体文件 {media_id} 不存在，跳过处理")
-                        return
-
-                    if media.thumbnail_status == 'completed':
-                        logger.info(f"[缩略图] 媒体文件 {media_id} 已完成，跳过处理")
-                        return
-
-                    media.thumbnail_status = 'processing'
-                    media.save(update_fields=['thumbnail_status'])
-
-                with transaction.atomic():
-                    media = Media.objects.get(id=media_id)
-                    media.generate_thumbnails()
-
-            except Media.DoesNotExist:
-                logger.error(f"[缩略图] 媒体文件 {media_id} 不存在")
-            except Exception as e:
-                logger.error(f"[缩略图] 媒体文件 {media_id} 异步处理出错: {e}", exc_info=True)
-
-                try:
-                    from apps.media.models import Media
-                    media = Media.objects.get(id=media_id)
-                    media.thumbnail_status = 'failed'
-                    media.save(update_fields=['thumbnail_status'])
-                except Exception:
-                    pass
-            finally:
-                connection.close()
-
-        task_manager.submit(
-            func=_generate,
-            task_name=f"generate_thumbnails_{media_id}",
-            max_retries=2,
-        )
+        logger.info(f"[Celery] 提交视频缩略图生成任务: media_id={self.id}")
+        
+        generate_video_thumbnails.delay(str(self.id))

@@ -1,0 +1,26 @@
+[Unit]
+Description=Celery Worker for DRF Vue Backend
+After=network.target redis-server.service mysql.service
+Requires=redis-server.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/home/DRF_VUE/drf_vue/backend
+Environment="DJANGO_ENV=production"
+Environment="PATH=/home/DRF_VUE/drf_vue/backend/venv/bin"
+ExecStart=/home/DRF_VUE/drf_vue/backend/venv/bin/celery -A config.celery worker -l info --concurrency=2
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s TERM $MAINPID
+Restart=always
+RestartSec=10s
+StandardOutput=append:/home/DRF_VUE/drf_vue/backend/logs/celery-worker.log
+StandardError=append:/home/DRF_VUE/drf_vue/backend/logs/celery-worker-error.log
+
+# 安全设置
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

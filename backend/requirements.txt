@@ -10,6 +10,10 @@ gunicorn>=21.0
 pymysql>=1.1
 redis>=4.5
 bleach>=6.0
+celery>=5.3
+django-celery-beat>=2.5
+django-celery-results>=2.5
+eventlet>=0.33
 
 pytest>=7.4
 pytest-django>=4.7
