@@ -4,13 +4,16 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
 from services.content_service import ContentService
+from utils.query_utils import get_object_by_slug_or_id
 from utils.response import StandardResponse, api_error
+from utils.viewset_mixins import SlugOrUUIDMixin
 from .mixins import ContentPermissionMixin, ContentSerializerMixin, ContentQuerySetMixin
 from .models import Content
 from .serializers import ContentCreateUpdateSerializer, ContentListSerializer, ContentSerializer
 
 
 class ContentViewSet(
+    SlugOrUUIDMixin,
     ContentQuerySetMixin,
     ContentPermissionMixin,
     ContentSerializerMixin,
@@ -81,29 +84,9 @@ class ContentViewSet(
         return StandardResponse(serializer.data)
 
     def get_queryset(self):
-        """
-        获取动态过滤后的查询集
-        
-        根据请求参数和用户角色对内容数据进行多层过滤：
-        - 按用户角色过滤：
-          * 管理员/超级用户：可查看所有内容，可按状态过滤
-          * 编辑：只能查看自己的内容，可按状态过滤
-          * 普通用户/未认证：只能查看已发布的内容
-        - category 参数：通过分类 ID、slug 或 UUID 过滤内容
-        - tag 参数：通过标签 ID、slug 或 UUID 过滤内容
-        - author 参数：通过作者 ID 过滤内容
-        - search 参数：按标题搜索内容
-        - 结果按置顶状态和创建时间降序排列
-        
-        Returns:
-            QuerySet: 经过过滤的内容查询集
-        
-        Raises:
-            无
-        """
         queryset = super().get_queryset()
         status_filter = self.request.query_params.get('status')
-        
+
         if self.action == 'list':
             if self.request.user.is_authenticated:
                 if self.request.user.is_admin or self.request.user.is_superuser:
@@ -117,46 +100,28 @@ class ContentViewSet(
                     queryset = queryset.filter(status='published')
             else:
                 queryset = queryset.filter(status='published')
-        
+
         category_id = self.request.query_params.get('category')
         if category_id:
-            # 支持通过 slug 或 UUID 查找分类
-            try:
-                import uuid
-                uuid.UUID(category_id)
-                queryset = queryset.filter(category_id=category_id)
-            except (ValueError, AttributeError):
-                from apps.categories.models import Category
-                try:
-                    category = Category.objects.get(slug=category_id)
-                    queryset = queryset.filter(category_id=category.id)
-                except Category.DoesNotExist:
-                    queryset = queryset.none()
+            from apps.categories.models import Category
+            category = get_object_by_slug_or_id(Category, category_id)
+            queryset = queryset.filter(category=category) if category else queryset.none()
+
         tag_id = self.request.query_params.get('tag')
         if tag_id:
-            # 支持通过 slug 或 UUID 查找标签
-            try:
-                import uuid
-                uuid.UUID(tag_id)
-                queryset = queryset.filter(tags__id=tag_id)
-            except (ValueError, AttributeError):
-                from apps.tags.models import Tag
-                try:
-                    tag = Tag.objects.get(slug=tag_id)
-                    queryset = queryset.filter(tags__id=tag.id)
-                except Tag.DoesNotExist:
-                    queryset = queryset.none()
+            from apps.tags.models import Tag
+            tag = get_object_by_slug_or_id(Tag, tag_id)
+            queryset = queryset.filter(tags=tag) if tag else queryset.none()
+
         author_id = self.request.query_params.get('author')
         if author_id:
             queryset = queryset.filter(author_id=author_id)
+
         search = self.request.query_params.get('search')
         if search:
             queryset = queryset.filter(title__icontains=search)
-        
-        # 确保置顶文章排在前面
-        queryset = queryset.order_by('-is_top', '-created_at')
-        
-        return queryset
+
+        return queryset.order_by('-is_top', '-created_at')
 
     def list(self, request, *args, **kwargs):
         """

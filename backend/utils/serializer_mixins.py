@@ -31,25 +31,29 @@ class AutoSlugMixin:
     def validate(self, attrs):
         """
         验证数据时自动生成 slug
-        
+
         如果 slug 字段为空且指定了 slug_source_field，
         则根据源字段自动生成唯一的 slug。
         """
-        if self.slug_source_field and 'slug' not in attrs:
-            source_value = attrs.get(self.slug_source_field)
-            if source_value:
-                # 获取模型类
-                model_class = self.Meta.model
-                
-                # 如果是更新操作，获取当前实例
-                instance = getattr(self, 'instance', None)
-                
-                # 生成唯一 slug
-                attrs['slug'] = generate_unique_slug(
-                    model_class=model_class,
-                    name=source_value,
-                    instance=instance,
-                    field_name='slug'
-                )
-        
+        if not self.slug_source_field:
+            return super().validate(attrs)
+
+        slug_value = attrs.get('slug')
+        if slug_value:
+            return super().validate(attrs)
+
+        source_value = attrs.get(self.slug_source_field)
+        if not source_value:
+            return super().validate(attrs)
+
+        model_class = self.Meta.model
+        instance = getattr(self, 'instance', None)
+
+        attrs['slug'] = generate_unique_slug(
+            model_class=model_class,
+            name=source_value,
+            instance=instance,
+            field_name='slug'
+        )
+
         return super().validate(attrs)

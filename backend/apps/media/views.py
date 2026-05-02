@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import shutil
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 class MediaViewSet(viewsets.ModelViewSet):
     """媒体文件视图集
-    
+
     提供媒体文件的 CRUD 操作，支持文件上传、流式下载、删除及缩略图管理。
     实现基于角色的权限控制和智能文件清理机制。
     """
@@ -49,7 +50,7 @@ class MediaViewSet(viewsets.ModelViewSet):
 
     def _delete_physical_files(self, instance):
         """删除物理文件和缩略图目录
-        
+
         Args:
             instance: 媒体对象实例
         """
@@ -76,7 +77,7 @@ class MediaViewSet(viewsets.ModelViewSet):
                     logger.warning(f"文件不存在: {file_path}")
             except Exception as e:
                 logger.error(f"删除文件异常: {e}")
-        
+
         # 删除缩略图目录
         if instance.thumbnails:
             try:
@@ -89,11 +90,11 @@ class MediaViewSet(viewsets.ModelViewSet):
 
     def perform_destroy(self, instance):
         """删除媒体对象及关联文件
-        
+
         使用引用计数机制，只有当没有引用时才删除物理文件。
         """
         instance_id = str(instance.id)  # 删除前保存 ID
-        
+
         # 如果是引用记录，减少原始文件的引用计数
         if instance.reference:
             original = instance.reference
@@ -102,12 +103,12 @@ class MediaViewSet(viewsets.ModelViewSet):
         else:
             # 原始文件：只有引用计数为 0 且无引用记录时才删除物理文件
             logger.info(f"删除原始文件 {instance_id}，引用计数: {instance.reference_count}，引用记录数: {instance.references.count()}")
-            
+
             if instance.reference_count == 0 and not instance.references.exists():
                 self._delete_physical_files(instance)
             else:
                 logger.info(f"保留物理文件（仍有引用）")
-        
+
         instance.delete()
         logger.info(f"已删除数据库记录: {instance_id}")
 
@@ -122,30 +123,30 @@ class MediaViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """根据用户角色和参数过滤查询集"""
         queryset = super().get_queryset()
-        
+
         # 非管理员只能查看自己的文件（检索除外）
-        if (self.action != 'retrieve' and 
-            self.request.user.is_authenticated and 
+        if (self.action != 'retrieve' and
+            self.request.user.is_authenticated and
             not self.request.user.is_admin):
             queryset = queryset.filter(uploader=self.request.user)
-        
+
         # 按文件类型过滤
         file_type = self.request.query_params.get('file_type')
         if file_type:
             queryset = queryset.filter(file_type__startswith=file_type)
-        
+
         return queryset
 
     def list(self, request, *args, **kwargs):
         """获取媒体列表（统一响应格式）"""
         queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
-        
+
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             paginated_data = self.get_paginated_response(serializer.data).data
             return StandardResponse(paginated_data)
-        
+
         serializer = self.get_serializer(queryset, many=True)
         return StandardResponse(serializer.data)
 
@@ -160,18 +161,18 @@ class MediaViewSet(viewsets.ModelViewSet):
     def regenerate_thumbnails(self, request, pk=None):
         """重新生成视频缩略图"""
         media = self.get_object()
-        
+
         if not media.is_video:
             return api_error(
                 message='只能为视频文件生成缩略图',
                 error_type=ErrorTypes.UNSUPPORTED_MEDIA_TYPE,
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         media.thumbnail_status = 'pending'
         media.save(update_fields=['thumbnail_status'])
         media.generate_thumbnails_async()
-        
+
         return StandardResponse({
             'message': '缩略图生成任务已启动',
             'thumbnail_status': 'pending'
@@ -180,13 +181,13 @@ class MediaViewSet(viewsets.ModelViewSet):
 
 def stream_media_file(request, file_path, content_type, filename):
     """流式传输媒体文件，支持 HTTP Range 请求
-    
+
     Args:
         request: HTTP 请求对象
         file_path: 文件绝对路径
         content_type: MIME 类型
         filename: 显示名称
-    
+
     Returns:
         HttpResponse: 文件流响应（206/200/404/403/416）
     """
@@ -199,7 +200,7 @@ def stream_media_file(request, file_path, content_type, filename):
                 error_type=ErrorTypes.NOT_FOUND,
                 status=status.HTTP_404_NOT_FOUND
             )
-        
+
         if not os.access(file_path, os.R_OK):
             logger.error(f"文件无法访问: {file_path}")
             return api_error(
@@ -207,7 +208,7 @@ def stream_media_file(request, file_path, content_type, filename):
                 error_type=ErrorTypes.FORBIDDEN,
                 status=status.HTTP_403_FORBIDDEN
             )
-        
+
         file_size = os.path.getsize(file_path)
         range_header = request.headers.get('Range', '')
 
@@ -258,7 +259,7 @@ def stream_media_file(request, file_path, content_type, filename):
         response['Accept-Ranges'] = 'bytes'
         response['Content-Disposition'] = f'inline; filename="{filename}"'
         return response
-        
+
     except PermissionError as e:
         logger.warning(f"文件被占用: {file_path}")
         return HttpResponse(

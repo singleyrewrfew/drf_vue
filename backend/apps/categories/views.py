@@ -2,7 +2,7 @@ from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
 from apps.users.permissions import IsEditorUser
-from utils.mixins import SlugOrUUIDMixin
+from utils.viewset_mixins import SlugOrUUIDMixin
 from utils.response import StandardResponse
 
 from .models import Category

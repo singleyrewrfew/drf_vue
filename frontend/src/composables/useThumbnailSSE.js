@@ -4,12 +4,67 @@ import { useUserStore } from '@/stores/user'
 
 const FINAL_STATES = ['completed', 'failed']
 
-/**
- * 缩略图生成状态实时监控（基于 SSE）
- *
- * 通过 EventSource 订阅后端缩略图生成进度，状态变更时触发回调。
- * 连接在终态（completed/failed）时自动关闭，组件卸载时清理全部连接。
- */
+class FetchEventSource {
+    constructor(url, options = {}) {
+        this.url = url
+        this.options = options
+        this.controller = null
+        this.closed = false
+        this.reader = null
+    }
+
+    async connect() {
+        this.controller = new AbortController()
+
+        try {
+            const response = await fetch(this.url, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'text/event-stream',
+                    'Cache-Control': 'no-cache',
+                    ...this.options.headers,
+                },
+                signal: this.controller.signal,
+            })
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`)
+            }
+
+            this.reader = response.body.getReader()
+            const decoder = new TextDecoder()
+            let buffer = ''
+
+            while (!this.closed) {
+                const { done, value } = await this.reader.read()
+
+                if (done) break
+
+                buffer += decoder.decode(value, { stream: true })
+                const lines = buffer.split('\n')
+                buffer = lines.pop() || ''
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const data = line.slice(6)
+                        this.options.onMessage?.(data)
+                    }
+                }
+            }
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                this.options.onError?.(error)
+            }
+        }
+    }
+
+    close() {
+        this.closed = true
+        this.controller?.abort()
+        this.reader?.cancel()
+    }
+}
+
 export function useThumbnailSSE(baseUrl) {
     const userStore = useUserStore()
     const connections = new Map()
@@ -18,61 +73,56 @@ export function useThumbnailSSE(baseUrl) {
         if (connections.has(mediaId)) return
 
         const token = userStore.accessToken
-        const url = `${baseUrl}/media/${mediaId}/thumbnail_status/?token=${token}`
-        const eventSource = new EventSource(url)
-        let lastStatus = null
-        let closed = false
+        const url = `${baseUrl}/media/${mediaId}/thumbnail_status/`
 
-        const cleanup = () => {
-            if (closed) return
-            closed = true
-            connections.delete(mediaId)
-            eventSource.close()
-        }
+        const eventSource = new FetchEventSource(url, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
+            onMessage: (rawData) => {
+                try {
+                    const data = JSON.parse(rawData)
 
-        connections.set(mediaId, { eventSource, cleanup })
+                    if (data.error) {
+                        closeConnection(mediaId)
+                        return
+                    }
 
-        eventSource.onmessage = (event) => {
-            if (closed) return
-
-            try {
-                const data = JSON.parse(event.data)
-
-                if (data.error) {
-                    cleanup()
-                    return
-                }
-
-                const status = data.thumbnail_status
-
-                if (status !== lastStatus) {
-                    lastStatus = status
                     callbacks.onStatusChange?.(data)
-                }
 
-                if (FINAL_STATES.includes(status)) {
-                    cleanup()
-                    callbacks.onComplete?.(data)
+                    if (FINAL_STATES.includes(data.thumbnail_status)) {
+                        closeConnection(mediaId)
+                        callbacks.onComplete?.(data)
+                    }
+                } catch (e) {
+                    console.error('[SSE] Parse error:', e)
                 }
-            } catch (e) {
-                console.error('[SSE] Parse error:', e)
-            }
-        }
+            },
+            onError: () => {
+                closeConnection(mediaId)
+                ElMessage.warning('缩略图状态监控连接中断')
+            },
+        })
 
-        eventSource.onerror = () => {
-            if (closed) return
-            cleanup()
-            ElMessage.warning('缩略图状态监控连接中断')
+        connections.set(mediaId, eventSource)
+        eventSource.connect()
+    }
+
+    const closeConnection = (mediaId) => {
+        const conn = connections.get(mediaId)
+        if (conn) {
+            conn.close()
+            connections.delete(mediaId)
         }
     }
 
     const closeAllConnections = () => {
-        connections.forEach(({ cleanup }) => cleanup())
+        connections.forEach((conn) => conn.close())
         connections.clear()
     }
 
     const subscribeToPendingVideos = (mediaList, callbacks = {}) => {
-        mediaList.forEach(item => {
+        mediaList.forEach((item) => {
             if (item.is_video && ['pending', 'processing'].includes(item.thumbnail_status)) {
                 subscribeToThumbnailStatus(item.id, callbacks)
             }

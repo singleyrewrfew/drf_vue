@@ -7,14 +7,6 @@ logger = logging.getLogger(__name__)
 
 
 def event_stream(media_id):
-    """
-    SSE 事件流生成器
-
-    每秒轮询数据库检查缩略图状态，状态变更时推送事件。
-    到达终态（completed/failed）后自动关闭流。
-
-    延迟导入 Media 模型以避免循环引用。
-    """
     from apps.media.models import Media
 
     last_status = None
@@ -59,31 +51,37 @@ def event_stream(media_id):
         logger.info(f"[SSE] Stream closed for media {media_id}")
 
 
-def thumbnail_status_stream(request, media_id):
-    """
-    缩略图状态 SSE 端点
-
-    通过 URL 参数传递 JWT Token 进行认证（EventSource 不支持自定义 Header）。
-    仅管理员或文件上传者可访问。
-    """
-    token = request.GET.get('token')
-    if not token:
-        return HttpResponseForbidden('缺少认证 Token')
-
+def authenticate_request(request):
     from rest_framework_simplejwt.tokens import AccessToken
+    from django.contrib.auth import get_user_model
+
+    auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+    if auth_header.startswith('Bearer '):
+        token = auth_header[7:]
+    else:
+        token = request.GET.get('token')
+
+    if not token:
+        return None
+
     try:
         access_token = AccessToken(token)
         user_id = access_token['user_id']
-        from django.contrib.auth import get_user_model
         User = get_user_model()
-        request.user = User.objects.get(id=user_id)
+        return User.objects.get(id=user_id)
     except Exception:
-        return HttpResponseForbidden('无效的 Token')
+        return None
+
+
+def thumbnail_status_stream(request, media_id):
+    user = authenticate_request(request)
+    if not user:
+        return HttpResponseForbidden('认证失败')
 
     from apps.media.models import Media
     try:
         media = Media.objects.get(id=media_id)
-        if not request.user.is_admin and media.uploader != request.user:
+        if not user.is_admin and media.uploader != user:
             return HttpResponseForbidden('无权访问此资源')
     except Media.DoesNotExist:
         return HttpResponseForbidden('媒体文件不存在')
