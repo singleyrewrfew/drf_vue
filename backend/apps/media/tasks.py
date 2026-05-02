@@ -4,12 +4,40 @@
 提供视频缩略图生成等异步任务。
 """
 
+import json
 import logging
 import traceback
 
+import redis
 from celery import shared_task
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
+
+THUMBNAIL_CHANNEL_PREFIX = 'thumbnail:'
+
+
+def _get_redis_client():
+    return redis.Redis.from_url(settings.CACHES['default']['LOCATION'])
+
+
+def _publish_thumbnail_event(media_id, event_data):
+    """
+    通过 Redis Pub/Sub 发布缩略图状态变更事件
+
+    SSE 视图订阅该频道，实现实时推送（替代轮询）。
+
+    Args:
+        media_id: 媒体文件 ID
+        event_data: 事件数据字典
+    """
+    try:
+        client = _get_redis_client()
+        channel = f'{THUMBNAIL_CHANNEL_PREFIX}{media_id}'
+        client.publish(channel, json.dumps(event_data))
+        logger.debug(f"[Celery] 发布缩略图事件: channel={channel}, status={event_data.get('thumbnail_status')}")
+    except Exception as e:
+        logger.warning(f"[Celery] 发布缩略图事件失败（不影响任务执行）: {e}")
 
 
 @shared_task(
@@ -42,6 +70,10 @@ def generate_video_thumbnails(self, media_id: str):
     try:
         Media.objects.filter(id=media_id).update(thumbnail_status='processing')
         logger.info(f"[Celery] 状态更新为 processing: media_id={media_id}")
+        _publish_thumbnail_event(media_id, {
+            'media_id': str(media_id),
+            'thumbnail_status': 'processing',
+        })
         
         success = _do_generate_thumbnails(media)
         
@@ -52,6 +84,15 @@ def generate_video_thumbnails(self, media_id: str):
                 thumbnails_count=media.thumbnails_count
             )
             logger.info(f"[Celery] 视频缩略图生成成功: media_id={media_id}")
+
+            from apps.media.models import Media as MediaModel
+            refreshed = MediaModel.objects.only('thumbnails', 'thumbnails_count').get(id=media_id)
+            _publish_thumbnail_event(media_id, {
+                'media_id': str(media_id),
+                'thumbnail_status': 'completed',
+                'thumbnails_url': refreshed.thumbnails.url if refreshed.thumbnails else None,
+                'thumbnails_count': refreshed.thumbnails_count,
+            })
             
             from apps.media.signals import video_thumbnail_generated
             video_thumbnail_generated.send(
@@ -64,6 +105,11 @@ def generate_video_thumbnails(self, media_id: str):
         else:
             Media.objects.filter(id=media_id).update(thumbnail_status='failed')
             logger.error(f"[Celery] 视频缩略图生成失败: media_id={media_id}")
+
+            _publish_thumbnail_event(media_id, {
+                'media_id': str(media_id),
+                'thumbnail_status': 'failed',
+            })
             
             from apps.media.signals import video_thumbnail_generated
             video_thumbnail_generated.send(
@@ -82,7 +128,12 @@ def generate_video_thumbnails(self, media_id: str):
             Media.objects.filter(id=media_id).update(thumbnail_status='failed')
         except Exception:
             pass
-        
+
+        _publish_thumbnail_event(media_id, {
+            'media_id': str(media_id),
+            'thumbnail_status': 'failed',
+        })
+
         if self.request.retries < self.max_retries:
             logger.info(f"[Celery] 将重试任务: media_id={media_id}, retry={self.request.retries + 1}")
             raise self.retry(exc=e)

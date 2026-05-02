@@ -6,6 +6,7 @@ import uuid
 
 from django.conf import settings
 from django.db import models, transaction
+from django.db.models import F
 
 from apps.base.models import BaseModel
 from apps.core.models import User
@@ -125,13 +126,12 @@ class Media(BaseModel):
         return self.filename
 
     def increment_reference_count(self):
-        self.reference_count += 1
-        self.save(update_fields=['reference_count'])
+        Media.objects.filter(id=self.id).update(reference_count=F('reference_count') + 1)
+        self.refresh_from_db(fields=['reference_count'])
 
     def decrement_reference_count(self):
-        if self.reference_count > 0:
-            self.reference_count -= 1
-            self.save(update_fields=['reference_count'])
+        Media.objects.filter(id=self.id, reference_count__gt=0).update(reference_count=F('reference_count') - 1)
+        self.refresh_from_db(fields=['reference_count'])
 
     @property
     def url(self):
