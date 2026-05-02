@@ -151,9 +151,12 @@ else:
             'OPTIONS': {
                 'charset': 'utf8mb4',
                 'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+                # MySQL 连接池配置
+                'connect_timeout': 10,
             },
-            'CONN_MAX_AGE': int(os.getenv('DB_CONN_MAX_AGE', '0')),
-            'CONN_HEALTH_CHECKS': os.getenv('DB_CONN_HEALTH_CHECKS', 'True') == 'True',
+            # 连接池配置（从环境变量读取，开发环境默认关闭，生产环境建议开启）
+            'CONN_MAX_AGE': int(os.getenv('DB_CONN_MAX_AGE', '0' if DEBUG else '300')),
+            'CONN_HEALTH_CHECKS': os.getenv('DB_CONN_HEALTH_CHECKS', 'False' if DEBUG else 'True') == 'True',
         }
     }
 
