@@ -34,19 +34,15 @@ def event_stream(media_id):
     last_status = None
 
     try:
-        # 持续轮询媒体文件状态直到处理完成或失败
         while True:
             try:
-                # 仅查询必要的字段以优化性能
                 media = Media.objects.only(
                     'id', 'thumbnail_status', 'thumbnails', 'thumbnails_count'
                 ).get(id=media_id)
                 current_status = media.thumbnail_status
 
-                # 仅在状态发生变化时推送事件，避免重复推送
                 if current_status != last_status:
                     last_status = current_status
-                    # 构建事件数据，根据状态决定是否包含额外信息
                     event_data = {
                         'media_id': str(media.id),
                         'thumbnail_status': current_status,
@@ -55,14 +51,11 @@ def event_stream(media_id):
                         event_data['thumbnails_url'] = media.thumbnails.url if media.thumbnails else None
                         event_data['thumbnails_count'] = media.thumbnails_count
 
-                    # 按照SSE协议格式推送数据
                     yield f"data: {json.dumps(event_data)}\n\n"
 
-                    # 终态（完成或失败）时结束流
                     if current_status in ('completed', 'failed'):
                         break
 
-                # 控制轮询间隔，避免对数据库性能造成过大压力
                 time.sleep(10)
 
             except Media.DoesNotExist:
@@ -94,15 +87,10 @@ def authenticate_request(request):
     Returns:
         User对象: 认证成功时返回对应的用户对象
         None: 认证失败、令牌无效或令牌缺失时返回None
-
-    Note:
-        - 使用SimpleJWT的AccessToken进行令牌验证
-        - 任何异常都会被视为认证失败并返回None
     """
     from rest_framework_simplejwt.tokens import AccessToken
     from django.contrib.auth import get_user_model
 
-    # 优先从Authorization头获取令牌，其次从URL参数获取
     auth_header = request.META.get('HTTP_AUTHORIZATION', '')
     if auth_header.startswith('Bearer '):
         token = auth_header[7:]
@@ -110,60 +98,52 @@ def authenticate_request(request):
         token = request.GET.get('token')
 
     if not token:
+        logger.warning("[SSE] 未提供认证令牌")
         return None
 
     try:
         access_token = AccessToken(token)
         user_id = access_token['user_id']
         User = get_user_model()
-        return User.objects.get(id=user_id)
-    except Exception:
+        user = User.objects.select_related('role').prefetch_related('role__permissions').get(id=user_id)
+        logger.info(f"[SSE] 认证成功: user_id={user_id}, username={user.username}")
+        return user
+    except Exception as e:
+        logger.warning(f"[SSE] 令牌验证失败: {e}")
         return None
 
 
 def thumbnail_status_stream(request, media_id):
     """
     SSE视图函数，用于建立媒体缩略图状态的实时推送连接。
-
-    该函数执行以下操作：
-    1. 验证用户身份（通过JWT令牌）
-    2. 检查用户对媒体文件的访问权限（管理员或上传者）
-    3. 创建SSE响应流开始实时推送状态更新
-
-    Args:
-        request: Django HTTP请求对象，必须包含有效的JWT认证信息
-        media_id: 媒体文件的唯一标识符（UUID或整数）
-
-    Returns:
-        StreamingHttpResponse: 配置好的SSE响应对象，包含：
-            - content_type: 'text/event-stream'
-            - Cache-Control: 'no-cache'（禁用缓存确保实时性）
-            - X-Accel-Buffering: 'no'（禁用Nginx缓冲）
-        HttpResponseForbidden: 认证失败或无权访问时返回403响应
-
-    Raises:
-        不抛出异常，所有错误都通过HTTP响应码返回
-
-    Note:
-        - 只有管理员或文件上传者才能查看缩略图状态
-        - 响应头配置确保了SSE流的实时性和稳定性
     """
-    # 验证用户身份，未认证用户直接拒绝访问
+    from apps.media.models import Media
+
     user = authenticate_request(request)
     if not user:
+        logger.warning(f"[SSE] 认证失败: media_id={media_id}")
         return HttpResponseForbidden('认证失败')
 
-    # 验证媒体文件存在性及用户访问权限
-    from apps.media.models import Media
     try:
-        media = Media.objects.get(id=media_id)
-        # 非管理员只能访问自己上传的文件
-        if not user.is_admin and media.uploader != user:
+        media = Media.objects.select_related('uploader').get(id=media_id)
+        
+        is_admin = user.is_admin or user.is_superuser
+        is_owner = media.uploader_id == user.id
+        
+        logger.info(
+            f"[SSE] 权限检查: media_id={media_id}, "
+            f"user={user.username}, uploader={media.uploader.username if media.uploader else 'None'}, "
+            f"is_admin={is_admin}, is_owner={is_owner}"
+        )
+        
+        if not is_admin and not is_owner:
+            logger.warning(f"[SSE] 权限拒绝: user={user.username} 无权访问 media_id={media_id}")
             return HttpResponseForbidden('无权访问此资源')
+            
     except Media.DoesNotExist:
+        logger.warning(f"[SSE] 媒体不存在: media_id={media_id}")
         return HttpResponseForbidden('媒体文件不存在')
 
-    # 创建SSE流式响应，禁用缓存和代理缓冲以确保实时推送
     response = StreamingHttpResponse(
         event_stream(media_id),
         content_type='text/event-stream',
