@@ -23,15 +23,18 @@ def event_stream(media_id):
             - thumbnails_url: 缩略图URL（仅在状态为completed时提供）
             - thumbnails_count: 缩略图数量（仅在状态为completed时提供）
             - error: 错误信息（仅在发生错误时提供）
+            - heartbeat: 心跳信号（每30秒发送一次，保持连接活跃）
 
     Note:
-        - 每1秒轮询一次数据库
+        - 每5秒轮询一次数据库，平衡实时性和数据库负载
+        - 每30秒发送心跳防止代理服务器断开连接
         - 使用GeneratorExit优雅处理客户端断开连接
         - 所有异常都会被捕获并记录到日志中
     """
     from apps.media.models import Media
 
     last_status = None
+    last_heartbeat = time.time()
 
     try:
         while True:
@@ -40,6 +43,14 @@ def event_stream(media_id):
                     'id', 'thumbnail_status', 'thumbnails', 'thumbnails_count'
                 ).get(id=media_id)
                 current_status = media.thumbnail_status
+
+                current_time = time.time()
+                
+                # 每30秒发送心跳，防止代理服务器断开空闲连接
+                if current_time - last_heartbeat >= 30:
+                    yield ": heartbeat\n\n"
+                    last_heartbeat = current_time
+                    logger.debug(f"[SSE] 发送心跳: media_id={media_id}")
 
                 if current_status != last_status:
                     last_status = current_status
@@ -56,7 +67,7 @@ def event_stream(media_id):
                     if current_status in ('completed', 'failed'):
                         break
 
-                time.sleep(10)
+                time.sleep(5)
 
             except Media.DoesNotExist:
                 logger.error(f"[SSE] 媒体文件 {media_id} 不存在")

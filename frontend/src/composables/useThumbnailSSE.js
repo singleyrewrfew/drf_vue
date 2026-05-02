@@ -11,6 +11,9 @@ class FetchEventSource {
         this.controller = null
         this.closed = false
         this.reader = null
+        this.reconnectAttempts = 0
+        this.maxReconnectAttempts = options.maxReconnectAttempts || 3
+        this.reconnectDelay = options.reconnectDelay || 2000
     }
 
     async connect() {
@@ -32,6 +35,9 @@ class FetchEventSource {
                 throw new Error(`HTTP ${response.status}`)
             }
 
+            // 连接成功，重置重连计数
+            this.reconnectAttempts = 0
+
             this.reader = response.body.getReader()
             const decoder = new TextDecoder()
             let buffer = ''
@@ -46,6 +52,7 @@ class FetchEventSource {
                 buffer = lines.pop() || ''
 
                 for (const line of lines) {
+                    // 跳过心跳消息和注释
                     if (line.startsWith('data: ')) {
                         const data = line.slice(6)
                         this.options.onMessage?.(data)
@@ -55,7 +62,20 @@ class FetchEventSource {
         } catch (error) {
             if (error.name !== 'AbortError') {
                 console.error('[SSE] Connection error:', error)
-                this.options.onError?.(error)
+                
+                // 尝试重连
+                if (!this.closed && this.reconnectAttempts < this.maxReconnectAttempts) {
+                    this.reconnectAttempts++
+                    console.log(`[SSE] 尝试重连 (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`)
+                    
+                    setTimeout(() => {
+                        if (!this.closed) {
+                            this.connect()
+                        }
+                    }, this.reconnectDelay * this.reconnectAttempts)
+                } else {
+                    this.options.onError?.(error)
+                }
             }
         }
     }
@@ -103,13 +123,15 @@ export function useThumbnailSSE(baseUrl) {
                         callbacks.onComplete?.(data)
                     }
                 } catch (e) {
-                    console.error('[SSE] Parse error:', e)
+                    // 心跳消息不是 JSON，忽略
+                    if (!rawData.includes('heartbeat')) {
+                        console.error('[SSE] Parse error:', e)
+                    }
                 }
             },
             onError: (error) => {
-                console.error('[SSE] Connection error:', error)
-                closeConnection(mediaId)
-                ElMessage.warning('缩略图状态监控连接中断')
+                console.error('[SSE] Connection error after retries:', error)
+                ElMessage.warning('缩略图状态监控连接中断，请刷新页面重试')
             },
         })
 
