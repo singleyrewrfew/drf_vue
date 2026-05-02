@@ -6,13 +6,14 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from services.content_service import ContentService
 from utils.query_utils import get_object_by_slug_or_id
 from utils.response import StandardResponse, api_error
-from utils.viewset_mixins import SlugOrUUIDMixin
+from utils.viewset_mixins import SlugOrUUIDMixin, StandardListMixin
 from .mixins import ContentPermissionMixin, ContentSerializerMixin, ContentQuerySetMixin
 from .models import Content
 from .serializers import ContentCreateUpdateSerializer, ContentListSerializer, ContentSerializer
 
 
 class ContentViewSet(
+    StandardListMixin,
     SlugOrUUIDMixin,
     ContentQuerySetMixin,
     ContentPermissionMixin,
@@ -122,32 +123,4 @@ class ContentViewSet(
             queryset = queryset.filter(title__icontains=search)
 
         return queryset.order_by('-is_top', '-created_at')
-
-    def list(self, request, *args, **kwargs):
-        """
-        获取内容列表（统一响应格式）
-
-        重写父类方法以使用统一的响应格式。
-
-        Args:
-            request: HTTP 请求对象
-            *args: 位置参数
-            **kwargs: 关键字参数
-
-        Returns:
-            Response: 包含分页数据的统一格式响应，HTTP 状态码为 200
-
-        Raises:
-            无
-        """
-        queryset = self.filter_queryset(self.get_queryset())
-        page = self.paginate_queryset(queryset)
-
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            paginated_data = self.get_paginated_response(serializer.data).data
-            return StandardResponse(paginated_data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return StandardResponse(serializer.data)
 

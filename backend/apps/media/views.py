@@ -14,13 +14,14 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from apps.users.permissions import IsOwnerOrAdmin
 from utils.response import StandardResponse, api_error
 from utils.error_codes import ErrorTypes
+from utils.viewset_mixins import StandardListMixin
 from .models import Media
 from .serializers import MediaSerializer, MediaUploadSerializer
 
 logger = logging.getLogger(__name__)
 
 
-class MediaViewSet(viewsets.ModelViewSet):
+class MediaViewSet(StandardListMixin, viewsets.ModelViewSet):
     """媒体文件视图集
 
     提供媒体文件的 CRUD 操作，支持文件上传、流式下载、删除及缩略图管理。
@@ -136,19 +137,6 @@ class MediaViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(file_type__startswith=file_type)
 
         return queryset
-
-    def list(self, request, *args, **kwargs):
-        """获取媒体列表（统一响应格式）"""
-        queryset = self.filter_queryset(self.get_queryset())
-        page = self.paginate_queryset(queryset)
-
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            paginated_data = self.get_paginated_response(serializer.data).data
-            return StandardResponse(paginated_data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return StandardResponse(serializer.data)
 
     @extend_schema(exclude=True)
     def retrieve(self, request, *args, **kwargs):

@@ -9,6 +9,7 @@ pypinyin>=0.51
 gunicorn>=21.0
 pymysql>=1.1
 redis>=4.5
+bleach>=6.0
 
 pytest>=7.4
 pytest-django>=4.7

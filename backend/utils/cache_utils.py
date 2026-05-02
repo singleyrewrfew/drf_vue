@@ -63,12 +63,23 @@ def invalidate_pattern(pattern: str):
     """
     使匹配模式的所有缓存失效
 
+    使用 Redis SCAN 命令安全地查找并删除匹配的键。
+
     Args:
-        pattern: 缓存键模式（支持通配符）
+        pattern: 缓存键模式（不含前缀，如 'categories:list'）
     """
-    keys = cache.keys(f'{settings.CACHE_KEY_PREFIX}:{pattern}*')
-    if keys:
-        cache.delete_many(keys)
+    try:
+        client = cache.client.get_client(write=True)
+        full_pattern = f'{settings.CACHE_KEY_PREFIX}:{pattern}*'
+        cursor = 0
+        while True:
+            cursor, keys = client.scan(cursor, match=full_pattern, count=100)
+            if keys:
+                client.delete(*keys)
+            if cursor == 0:
+                break
+    except Exception:
+        pass
 
 
 def get_or_set(key: str, func, timeout: int = None):

@@ -1,12 +1,9 @@
-from django.core.cache import cache
 from django.db.models import Count, Prefetch, Q
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
 from apps.users.permissions import IsEditorUser
-from utils.viewset_mixins import SlugOrUUIDMixin
-from utils.response import StandardResponse
-from utils.cache_utils import get_cache_key
+from utils.viewset_mixins import CachedListMixin, SlugOrUUIDMixin
 
 from .models import Category
 from .serializers import (
@@ -15,8 +12,6 @@ from .serializers import (
     CategoryListSerializer,
     CategorySerializer,
 )
-
-CACHE_KEY_CATEGORIES = 'categories:list'
 
 
 class CategorySerializerMixin:
@@ -40,11 +35,13 @@ class CategoryPermissionMixin:
 
 
 class CategoryViewSet(
+    CachedListMixin,
     CategoryPermissionMixin,
     CategorySerializerMixin,
     SlugOrUUIDMixin,
     viewsets.ModelViewSet
 ):
+    cache_key_prefix = 'categories:list'
     queryset = Category.objects.all()
     permission_classes = [IsAuthenticatedOrReadOnly]
     lookup_field = 'pk'
@@ -68,34 +65,3 @@ class CategoryViewSet(
             )
 
         return queryset
-
-    def list(self, request, *args, **kwargs):
-        cache_key = get_cache_key(CACHE_KEY_CATEGORIES)
-        cached_data = cache.get(cache_key)
-        if cached_data:
-            return StandardResponse(cached_data)
-
-        queryset = self.filter_queryset(self.get_queryset())
-        page = self.paginate_queryset(queryset)
-
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            paginated_data = self.get_paginated_response(serializer.data).data
-            cache.set(cache_key, paginated_data, 300)
-            return StandardResponse(paginated_data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        cache.set(cache_key, serializer.data, 300)
-        return StandardResponse(serializer.data)
-
-    def perform_create(self, serializer):
-        serializer.save()
-        cache.delete(get_cache_key(CACHE_KEY_CATEGORIES))
-
-    def perform_update(self, serializer):
-        serializer.save()
-        cache.delete(get_cache_key(CACHE_KEY_CATEGORIES))
-
-    def perform_destroy(self, instance):
-        instance.delete()
-        cache.delete(get_cache_key(CACHE_KEY_CATEGORIES))

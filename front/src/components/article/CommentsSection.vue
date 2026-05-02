@@ -9,11 +9,10 @@
         <CommentForm 
             v-if="isLoggedIn"
             v-model:content="commentContent"
-            :user-avatar="userAvatar"
+            :user="userStore.user"
             :emojis="emojis"
             :loading="submitting"
             @submit="handleSubmit"
-            @emoji-insert="insertEmoji"
         />
         
         <!-- 登录提示 -->
@@ -29,6 +28,7 @@
                 :key="comment.id"
                 :comment="comment"
                 :is-replying="replyToParent === comment.id"
+                :is-expanded="expandedReplies.includes(comment.id)"
                 :reply-content="replyContent"
                 :reply-to-name="replyToName"
                 @like="handleLike"
@@ -66,6 +66,7 @@
                     :key="comment.id"
                     :comment="comment"
                     :is-replying="replyToParent === comment.id"
+                    :is-expanded="expandedReplies.includes(comment.id)"
                     :reply-content="replyContent"
                     :reply-to-name="replyToName"
                     @like="handleLike"
@@ -81,7 +82,6 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
 import { ChatDotRound } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import CommentForm from './CommentForm.vue'
@@ -100,7 +100,6 @@ const props = defineProps({
 
 const emit = defineEmits(['submit', 'like', 'reply'])
 
-const router = useRouter()
 const userStore = useUserStore()
 
 const commentContent = ref('')
@@ -109,12 +108,10 @@ const replyToParent = ref(null)
 const replyToName = ref('')
 const replyToUser = ref(null)
 const submitting = ref(false)
-const submittingReply = ref(false)
 const expandedReplies = ref([])
 const showDialog = ref(false)
 
 const isLoggedIn = computed(() => userStore.isLoggedIn)
-const userAvatar = computed(() => userStore.user?.avatar)
 const commentCount = computed(() => props.comments.length)
 const displayComments = computed(() => props.comments.slice(0, 2))
 
@@ -163,10 +160,6 @@ const toggleReplies = (commentId) => {
     } else {
         expandedReplies.value.push(commentId)
     }
-}
-
-const insertEmoji = (emoji) => {
-    commentContent.value += emoji
 }
 
 defineExpose({

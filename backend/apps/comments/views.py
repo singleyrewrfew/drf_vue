@@ -8,11 +8,12 @@ from rest_framework.response import Response
 
 from apps.users.permissions import IsOwnerOrAdmin
 from utils.response import StandardResponse
+from utils.viewset_mixins import StandardListMixin
 from .models import Comment, CommentLike
 from .serializers import CommentCreateSerializer, CommentListSerializer, CommentSerializer
 
 
-class CommentViewSet(viewsets.ModelViewSet):
+class CommentViewSet(StandardListMixin, viewsets.ModelViewSet):
     queryset = Comment.objects.select_related('user', 'article', 'parent', 'reply_to')
     permission_classes = [IsAuthenticatedOrReadOnly]
 
@@ -80,18 +81,6 @@ class CommentViewSet(viewsets.ModelViewSet):
                 queryset = queryset.filter(is_approved=is_approved.lower() == 'true')
 
         return queryset
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-        page = self.paginate_queryset(queryset)
-
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            paginated_data = self.get_paginated_response(serializer.data).data
-            return StandardResponse(paginated_data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return StandardResponse(serializer.data)
 
     @extend_schema(request=None, responses=CommentSerializer)
     @action(detail=True, methods=['post'])

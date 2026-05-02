@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from apps.tags.serializers import TagSerializer
 from utils.serializer_mixins import AutoSlugMixin
+from utils.html_utils import sanitize_html
 from .models import Content
 
 
@@ -89,6 +90,12 @@ class ContentCreateUpdateSerializer(AutoSlugMixin, serializers.ModelSerializer):
         if not value:
             return None
         return value
+
+    def validate_content(self, value):
+        return sanitize_html(value)
+
+    def validate_summary(self, value):
+        return sanitize_html(value) if value else value
 
     def create(self, validated_data):
         tags_data = validated_data.pop('tags', [])

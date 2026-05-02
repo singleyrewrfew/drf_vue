@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from utils.html_utils import sanitize_comment
 from .models import Comment
 
 
@@ -78,6 +79,9 @@ class CommentCreateSerializer(serializers.ModelSerializer):
                 return Content.objects.get(slug=value)
             except Content.DoesNotExist:
                 raise serializers.ValidationError('文章不存在')
+
+    def validate_content(self, value):
+        return sanitize_comment(value)
 
     def create(self, validated_data):
         validated_data['user'] = self.context['request'].user

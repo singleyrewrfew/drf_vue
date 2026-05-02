@@ -1,6 +1,20 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 const MEDIA_BASE_URL = import.meta.env.VITE_MEDIA_BASE_URL || ''
 
+import DOMPurify from 'dompurify'
+
+const ALLOWED_TAGS = ['p', 'br', 'strong', 'em', 'b', 'i', 'u', 'a', 'pre', 'code']
+const ALLOWED_ATTR = ['href', 'title', 'class']
+
+export const sanitizeHtml = (html) => {
+  if (!html) return ''
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS,
+    ALLOWED_ATTR,
+    ALLOW_DATA_ATTR: false,
+  })
+}
+
 export const getMediaUrl = (path) => {
   if (!path) return ''
   if (path.startsWith('http')) return path

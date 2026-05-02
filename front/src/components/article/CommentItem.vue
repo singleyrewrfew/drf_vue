@@ -11,7 +11,7 @@
                     <span class="comment-time">{{ formattedTime }}</span>
                 </div>
                 
-                <p class="comment-text">{{ comment.content }}</p>
+                <p class="comment-text" v-html="sanitizedContent"></p>
                 
                 <div class="comment-actions">
                     <span
@@ -96,7 +96,7 @@
                                 <span class="reply-time">{{ formatRelativeTime(reply.created_at) }}</span>
                             </div>
                             
-                            <p class="reply-text">{{ reply.content }}</p>
+                            <p class="reply-text" v-html="sanitizeReplyContent(reply.content)"></p>
                             
                             <div class="reply-actions">
                                 <span
@@ -125,9 +125,9 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { Pointer, ChatDotRound, ArrowRight } from '@element-plus/icons-vue'
-import { getAvatarUrl } from '@/utils'
+import { sanitizeHtml, formatRelativeTime } from '@/utils'
 import { useCommentAuth } from '@/composables/useCommentAuth'
 
 const { requireAuth } = useCommentAuth()
@@ -139,6 +139,10 @@ const props = defineProps({
         default: () => ({})
     },
     isReplying: {
+        type: Boolean,
+        default: false
+    },
+    isExpanded: {
         type: Boolean,
         default: false
     },
@@ -167,39 +171,20 @@ const formattedTime = computed(() => {
     return formatRelativeTime(props.comment.created_at)
 })
 
+const sanitizedContent = computed(() => {
+    return sanitizeHtml(props.comment.content)
+})
+
+const sanitizeReplyContent = (content) => {
+    return sanitizeHtml(content)
+}
+
 const isLiked = computed(() => props.comment.is_liked)
 const likeCount = computed(() => props.comment.like_count || 0)
 const hasReplies = computed(() => props.comment.reply_count > 0)
-const isExpanded = computed(() => false) // 由父组件控制
 const toggleText = computed(() => {
-    return isExpanded.value ? '收起回复' : `${props.comment.reply_count} 条回复`
+    return props.isExpanded ? '收起回复' : `${props.comment.reply_count} 条回复`
 })
-
-const submittingReply = ref(false)
-
-// 工具函数
-const formatRelativeTime = (dateStr) => {
-    const date = new Date(dateStr)
-    const now = new Date()
-    const diff = now - date
-    
-    const seconds = Math.floor(diff / 1000)
-    const minutes = Math.floor(seconds / 60)
-    const hours = Math.floor(minutes / 60)
-    const days = Math.floor(hours / 24)
-    
-    if (days > 30) {
-        return date.toLocaleDateString('zh-CN')
-    } else if (days > 0) {
-        return `${days}天前`
-    } else if (hours > 0) {
-        return `${hours}小时前`
-    } else if (minutes > 0) {
-        return `${minutes}分钟前`
-    } else {
-        return '刚刚'
-    }
-}
 
 const handleLike = () => {
     if (!requireAuth('点赞')) return
@@ -276,6 +261,58 @@ const handleReplyToReply = (reply) => {
     color: var(--text-primary);
     margin: 12px 0;
     word-wrap: break-word;
+}
+
+.comment-text :deep(pre),
+.reply-text :deep(pre) {
+    background: var(--bg-tertiary);
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    overflow-x: auto;
+    margin: 12px 0;
+    font-size: 13px;
+    line-height: 1.5;
+    border: 1px solid var(--border-color);
+}
+
+.comment-text :deep(code),
+.reply-text :deep(code) {
+    font-family: 'Fira Code', 'Consolas', monospace;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.comment-text :deep(pre code),
+.reply-text :deep(pre code) {
+    background: transparent;
+    padding: 0;
+}
+
+[data-theme="dark"] .comment-text :deep(pre),
+[data-theme="dark"] .reply-text :deep(pre) {
+    background: var(--bg-tertiary);
+    border-color: var(--border-dark);
+}
+
+.comment-text :deep(p),
+.reply-text :deep(p) {
+    margin: 8px 0;
+}
+
+.comment-text :deep(strong),
+.reply-text :deep(strong) {
+    font-weight: 600;
+}
+
+.comment-text :deep(a),
+.reply-text :deep(a) {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.comment-text :deep(a:hover),
+.reply-text :deep(a:hover) {
+    text-decoration: underline;
 }
 
 .comment-actions {
