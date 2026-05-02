@@ -102,7 +102,11 @@ def authenticate_request(request):
     from rest_framework_simplejwt.tokens import AccessToken
     from django.contrib.auth import get_user_model
 
+    # 调试：打印所有请求头
     auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+    logger.info(f"[SSE] 认证调试 - HTTP_AUTHORIZATION: {auth_header[:20] if auth_header else 'EMPTY'}...")
+    logger.info(f"[SSE] 认证调试 - request.META keys: {[k for k in request.META.keys() if 'AUTH' in k or 'TOKEN' in k]}")
+    
     if auth_header.startswith('Bearer '):
         token = auth_header[7:]
     else:
