@@ -165,6 +165,4 @@ def thumbnail_status_stream(request, media_id):
     )
     response['Cache-Control'] = 'no-cache'
     response['X-Accel-Buffering'] = 'no'
-    # 分块传输编码，确保实时推送
-    response['Transfer-Encoding'] = 'chunked'
     return response
