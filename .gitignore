@@ -78,3 +78,4 @@ coverage.xml
 
 htmlcov
 /python_prodrfVuedrf_vue.claudeskillsexcalidraw-diagram/
+backend/apps/comments/serializers.py

@@ -4,9 +4,7 @@ from utils.html_utils import sanitize_comment
 from .models import Comment
 
 
-class CommentUserFieldsMixin:
-    """评论公共字段：用户信息 + is_liked"""
-
+class CommentUserFieldsMixin(serializers.Serializer):
     user_name = serializers.CharField(source='user.username', read_only=True)
     user_avatar = serializers.ImageField(source='user.avatar', read_only=True)
     user_id = serializers.CharField(source='user.id', read_only=True)
@@ -22,9 +20,7 @@ class CommentUserFieldsMixin:
         return False
 
 
-class CommentRepliesMixin:
-    """评论回复相关字段：reply_count + replies"""
-
+class CommentRepliesMixin(serializers.Serializer):
     reply_count = serializers.SerializerMethodField()
     replies = serializers.SerializerMethodField()
 
