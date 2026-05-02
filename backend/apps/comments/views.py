@@ -4,9 +4,9 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.request import Request
-from rest_framework.response import Response
 
 from apps.users.permissions import IsOwnerOrAdmin
+from services.comment_service import CommentService
 from utils.response import StandardResponse
 from utils.viewset_mixins import StandardListMixin
 from .models import Comment, CommentLike
@@ -59,10 +59,7 @@ class CommentViewSet(StandardListMixin, viewsets.ModelViewSet):
             )
 
             if request.user.is_authenticated:
-                liked_ids = set(
-                    CommentLike.objects.filter(user=request.user).values_list('comment_id', flat=True)
-                )
-                self._liked_comment_ids = liked_ids
+                self._liked_comment_ids = CommentService.get_user_liked_comment_ids(request.user)
 
         article_id = request.query_params.get('article')
         if article_id:
@@ -86,23 +83,12 @@ class CommentViewSet(StandardListMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
         comment = self.get_object()
-        comment.is_approved = True
-        comment.save()
+        comment = CommentService.approve_comment(comment)
         return StandardResponse(CommentSerializer(comment).data)
 
     @extend_schema(request=None, responses=CommentSerializer)
     @action(detail=True, methods=['post'])
     def like(self, request, pk=None):
         comment = self.get_object()
-        like, created = CommentLike.objects.get_or_create(
-            comment=comment,
-            user=request.user
-        )
-        if created:
-            comment.like_count += 1
-            comment.save(update_fields=['like_count'])
-        else:
-            like.delete()
-            comment.like_count -= 1
-            comment.save(update_fields=['like_count'])
+        comment, is_liked = CommentService.toggle_like(comment, request.user)
         return StandardResponse(CommentSerializer(comment, context={'request': request}).data)

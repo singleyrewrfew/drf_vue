@@ -12,9 +12,19 @@ Services Package
 
 from services.base import BaseService, ModelService
 from services.content_service import ContentService
+from services.media_service import MediaService
+from services.comment_service import CommentService
+from services.user_service import UserService
+from services.category_service import CategoryService
+from services.tag_service import TagService
 
 __all__ = [
     'BaseService',
     'ModelService',
     'ContentService',
+    'MediaService',
+    'CommentService',
+    'UserService',
+    'CategoryService',
+    'TagService',
 ]

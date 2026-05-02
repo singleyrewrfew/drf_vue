@@ -1,8 +1,6 @@
 import json
 import logging
 import os
-import shutil
-import time
 
 from django.http import FileResponse, HttpResponse
 from drf_spectacular.utils import extend_schema
@@ -12,6 +10,7 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from apps.users.permissions import IsOwnerOrAdmin
+from services.media_service import MediaService
 from utils.response import StandardResponse, api_error
 from utils.error_codes import ErrorTypes
 from utils.viewset_mixins import StandardListMixin
@@ -49,69 +48,9 @@ class MediaViewSet(StandardListMixin, viewsets.ModelViewSet):
         """保存媒体对象"""
         serializer.save()
 
-    def _delete_physical_files(self, instance):
-        """删除物理文件和缩略图目录
-
-        Args:
-            instance: 媒体对象实例
-        """
-        # 删除主文件
-        if instance.file:
-            try:
-                file_path = instance.file.path
-                if os.path.isfile(file_path):
-                    # Windows 下文件可能被占用，尝试多次删除
-                    for attempt in range(3):
-                        try:
-                            os.remove(file_path)
-                            logger.info(f"已删除文件: {file_path}")
-                            break
-                        except PermissionError:
-                            if attempt < 2:
-                                time.sleep(1)
-                            else:
-                                logger.error(f"删除文件失败（被占用）: {file_path}")
-                        except Exception as e:
-                            logger.error(f"删除文件异常: {e}")
-                            break
-                else:
-                    logger.warning(f"文件不存在: {file_path}")
-            except Exception as e:
-                logger.error(f"删除文件异常: {e}")
-
-        # 删除缩略图目录
-        if instance.thumbnails:
-            try:
-                thumbnails_dir = os.path.dirname(instance.thumbnails.path)
-                if os.path.isdir(thumbnails_dir):
-                    shutil.rmtree(thumbnails_dir)
-                    logger.info(f"已删除缩略图目录: {thumbnails_dir}")
-            except Exception as e:
-                logger.error(f"删除缩略图失败: {e}")
-
     def perform_destroy(self, instance):
-        """删除媒体对象及关联文件
-
-        使用引用计数机制，只有当没有引用时才删除物理文件。
-        """
-        instance_id = str(instance.id)  # 删除前保存 ID
-
-        # 如果是引用记录，减少原始文件的引用计数
-        if instance.reference:
-            original = instance.reference
-            original.decrement_reference_count()
-            logger.info(f"删除引用记录 {instance_id}，原始文件 {original.id} 引用计数: {original.reference_count}")
-        else:
-            # 原始文件：只有引用计数为 0 且无引用记录时才删除物理文件
-            logger.info(f"删除原始文件 {instance_id}，引用计数: {instance.reference_count}，引用记录数: {instance.references.count()}")
-
-            if instance.reference_count == 0 and not instance.references.exists():
-                self._delete_physical_files(instance)
-            else:
-                logger.info(f"保留物理文件（仍有引用）")
-
-        instance.delete()
-        logger.info(f"已删除数据库记录: {instance_id}")
+        """删除媒体对象及关联文件"""
+        MediaService.delete_media(instance)
 
     @extend_schema(request=MediaUploadSerializer, responses=MediaSerializer)
     def create(self, request, *args, **kwargs):
@@ -125,13 +64,11 @@ class MediaViewSet(StandardListMixin, viewsets.ModelViewSet):
         """根据用户角色和参数过滤查询集"""
         queryset = super().get_queryset()
 
-        # 非管理员只能查看自己的文件（检索除外）
         if (self.action != 'retrieve' and
             self.request.user.is_authenticated and
             not self.request.user.is_admin):
             queryset = queryset.filter(uploader=self.request.user)
 
-        # 按文件类型过滤
         file_type = self.request.query_params.get('file_type')
         if file_type:
             queryset = queryset.filter(file_type__startswith=file_type)
@@ -150,37 +87,20 @@ class MediaViewSet(StandardListMixin, viewsets.ModelViewSet):
         """重新生成视频缩略图"""
         media = self.get_object()
 
-        if not media.is_video:
+        try:
+            result = MediaService.regenerate_thumbnails(media)
+            return StandardResponse(result)
+        except ValueError as e:
             return api_error(
-                message='只能为视频文件生成缩略图',
+                message=str(e),
                 error_type=ErrorTypes.UNSUPPORTED_MEDIA_TYPE,
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        media.thumbnail_status = 'pending'
-        media.save(update_fields=['thumbnail_status'])
-        media.generate_thumbnails_async()
-
-        return StandardResponse({
-            'message': '缩略图生成任务已启动',
-            'thumbnail_status': 'pending'
-        })
-
 
 def stream_media_file(request, file_path, content_type, filename):
-    """流式传输媒体文件，支持 HTTP Range 请求
-
-    Args:
-        request: HTTP 请求对象
-        file_path: 文件绝对路径
-        content_type: MIME 类型
-        filename: 显示名称
-
-    Returns:
-        HttpResponse: 文件流响应（206/200/404/403/416）
-    """
+    """流式传输媒体文件，支持 HTTP Range 请求"""
     try:
-        # 检查文件是否存在和可读
         if not os.path.exists(file_path):
             logger.warning(f"文件不存在: {file_path}")
             return api_error(
@@ -200,7 +120,6 @@ def stream_media_file(request, file_path, content_type, filename):
         file_size = os.path.getsize(file_path)
         range_header = request.headers.get('Range', '')
 
-        # 处理 Range 请求
         if range_header:
             range_match = range_header.replace('bytes=', '').split('-')
             start = int(range_match[0]) if range_match[0] else 0
@@ -248,7 +167,7 @@ def stream_media_file(request, file_path, content_type, filename):
         response['Content-Disposition'] = f'inline; filename="{filename}"'
         return response
 
-    except PermissionError as e:
+    except PermissionError:
         logger.warning(f"文件被占用: {file_path}")
         return HttpResponse(
             json.dumps({'message': '视频正在处理中，文件被占用，请稍后再试'}),
