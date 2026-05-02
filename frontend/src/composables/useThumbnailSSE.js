@@ -14,18 +14,23 @@ class FetchEventSource {
         this.reconnectAttempts = 0
         this.maxReconnectAttempts = options.maxReconnectAttempts || 3
         this.reconnectDelay = options.reconnectDelay || 2000
+        // 支持动态获取 Token（用于重连时更新）
+        this.getToken = options.getToken || (() => options.headers?.Authorization || '')
     }
 
     async connect() {
         this.controller = new AbortController()
 
         try {
+            // 每次连接/重连时获取最新 Token
+            const currentToken = this.getToken()
+            
             const response = await fetch(this.url, {
                 method: 'GET',
                 headers: {
                     'Accept': 'text/event-stream',
                     'Cache-Control': 'no-cache',
-                    ...this.options.headers,
+                    'Authorization': currentToken,
                 },
                 signal: this.controller.signal,
             })
@@ -102,10 +107,14 @@ export function useThumbnailSSE(baseUrl) {
 
         const url = `${baseUrl}/media/${mediaId}/thumbnail_status/`
 
+        // 动态获取最新 Token 的函数
+        const getLatestToken = () => {
+            const token = userStore.accessToken
+            return token ? `Bearer ${token}` : ''
+        }
+
         const eventSource = new FetchEventSource(url, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-            },
+            getToken: getLatestToken,  // 传入动态获取 Token 的函数
             onMessage: (rawData) => {
                 try {
                     const data = JSON.parse(rawData)
