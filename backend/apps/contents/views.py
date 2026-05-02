@@ -3,17 +3,19 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
+from django.conf import settings
 from services.content_service import ContentService
+from utils.cache_utils import get_cache_key, invalidate_pattern
 from utils.query_utils import get_object_by_slug_or_id
 from utils.response import StandardResponse, api_error
-from utils.viewset_mixins import SlugOrUUIDMixin, StandardListMixin
+from utils.viewset_mixins import CachedListMixin, SlugOrUUIDMixin
 from .mixins import ContentPermissionMixin, ContentSerializerMixin, ContentQuerySetMixin
 from .models import Content
 from .serializers import ContentCreateUpdateSerializer, ContentListSerializer, ContentSerializer
 
 
 class ContentViewSet(
-    StandardListMixin,
+    CachedListMixin,
     SlugOrUUIDMixin,
     ContentQuerySetMixin,
     ContentPermissionMixin,
@@ -25,9 +27,42 @@ class ContentViewSet(
     permission_classes = [IsAuthenticatedOrReadOnly]
     lookup_field = 'pk'
     lookup_url_kwarg = 'pk'
+    cache_key_prefix = 'contents:list'
+    cache_timeout = settings.CACHE_TTL['CONTENT_LIST']
 
-    # 默认序列化器（用于 retrieve 等未配置的操作）
     default_serializer_class = ContentSerializer
+
+    def _invalidate_cache(self):
+        """内容变更时，同时清除列表、统计和热门作者缓存"""
+        super()._invalidate_cache()
+        invalidate_pattern('stats')
+        invalidate_pattern('popular_authors')
+
+    def get_cache_scope(self, request):
+        """
+        内容列表按数据范围隔离缓存
+
+        - admin/superuser: 看全部内容 → scope='all'
+        - editor: 只看自己的内容 → scope='own:{user_id}'（必须按 user_id 隔离，否则不同编辑会看到彼此的数据）
+        - 普通用户/匿名: 只看已发布 → scope='published'
+        """
+        if request.user.is_authenticated:
+            if request.user.is_admin or request.user.is_superuser:
+                return 'all'
+            elif request.user.is_editor:
+                return f'own:{request.user.id}'
+        return 'published'
+
+    def _get_cache_key(self, request):
+        """
+        内容列表额外受查询参数影响（category/tag/search/status 等），
+        需要将查询参数拼入缓存 key，否则不同筛选条件会命中同一份缓存
+        """
+        scope = self.get_cache_scope(request)
+        query_params = '&'.join(
+            f'{k}={v}' for k, v in sorted(request.query_params.items())
+        )
+        return get_cache_key(self.cache_key_prefix, scope, query_params)
 
     def _get_serializer_mapping(self):
         """获取序列化器映射配置"""
@@ -41,16 +76,17 @@ class ContentViewSet(
     def perform_create(self, serializer):
         """创建内容时自动设置作者（管理员可指定其他作者）"""
         author_id = self.request.data.get('author')
-        # 如果有作者，执行操作
         if author_id and (self.request.user.is_admin or self.request.user.is_superuser):
             from apps.core.models import User
             try:
                 author = User.objects.get(id=author_id)
                 serializer.save(author=author)
+                self._invalidate_cache()
                 return
             except User.DoesNotExist:
                 pass
         serializer.save(author=self.request.user)
+        self._invalidate_cache()
 
     def retrieve(self, request, *args, **kwargs):
         """检索单个内容并增加浏览次数"""
@@ -66,6 +102,7 @@ class ContentViewSet(
         content = self.get_object()
         try:
             published_content = ContentService.publish_content(content, request.user)
+            self._invalidate_cache()
             serializer = self.get_serializer(published_content)
             return StandardResponse(serializer.data)
         except ValueError as e:
@@ -81,6 +118,7 @@ class ContentViewSet(
         """归档内容"""
         content = self.get_object()
         archived_content = ContentService.archive_content(content, request.user)
+        self._invalidate_cache()
         serializer = self.get_serializer(archived_content)
         return StandardResponse(serializer.data)
 

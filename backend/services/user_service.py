@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db.models import Count, Sum, Q
 
 from apps.comments.models import Comment
@@ -5,6 +6,7 @@ from apps.contents.models import Content
 from apps.core.models import User
 from apps.media.models import Media
 from services.base import ModelService
+from utils.cache_utils import cache_get, cache_set, get_cache_key
 
 
 class UserService(ModelService):
@@ -54,13 +56,18 @@ class UserService(ModelService):
         Returns:
             list: 热门作者列表
         """
+        cache_key = get_cache_key('popular_authors', limit)
+        cached = cache_get(cache_key)
+        if cached is not None:
+            return cached
+
         users = User.objects.filter(
             contents__status='published'
         ).annotate(
             article_count=Count('contents')
         ).order_by('-article_count')[:limit]
 
-        return [
+        result = [
             {
                 'id': str(user.id),
                 'username': user.username,
@@ -70,6 +77,9 @@ class UserService(ModelService):
             for user in users
         ]
 
+        cache_set(cache_key, result, settings.CACHE_TTL['POPULAR'])
+        return result
+
     @classmethod
     def get_admin_statistics(cls):
         """
@@ -78,6 +88,11 @@ class UserService(ModelService):
         Returns:
             dict: 统计数据
         """
+        cache_key = get_cache_key('stats', 'admin')
+        cached = cache_get(cache_key)
+        if cached is not None:
+            return cached
+
         content_stats = Content.objects.aggregate(
             total=Count('id'),
             published=Count('id', filter=Q(status='published')),
@@ -89,7 +104,7 @@ class UserService(ModelService):
             status='published'
         ).select_related('author').order_by('-created_at')[:5]
 
-        return {
+        result = {
             'contents': content_stats['total'],
             'published': content_stats['published'],
             'drafts': content_stats['drafts'],
@@ -109,6 +124,9 @@ class UserService(ModelService):
             ],
         }
 
+        cache_set(cache_key, result, settings.CACHE_TTL['STATS'])
+        return result
+
     @classmethod
     def get_user_statistics(cls, user):
         """
@@ -120,6 +138,11 @@ class UserService(ModelService):
         Returns:
             dict: 统计数据
         """
+        cache_key = get_cache_key('stats', 'user', user.id)
+        cached = cache_get(cache_key)
+        if cached is not None:
+            return cached
+
         content_stats = Content.objects.filter(author=user).aggregate(
             total=Count('id'),
             published=Count('id', filter=Q(status='published')),
@@ -132,7 +155,7 @@ class UserService(ModelService):
             status='published'
         ).order_by('-created_at')[:5]
 
-        return {
+        result = {
             'my_contents': content_stats['total'],
             'my_published': content_stats['published'],
             'my_drafts': content_stats['drafts'],
@@ -148,6 +171,9 @@ class UserService(ModelService):
                 for content in recent_contents
             ],
         }
+
+        cache_set(cache_key, result, settings.CACHE_TTL['STATS'])
+        return result
 
     @classmethod
     def change_password(cls, user, old_password, new_password):

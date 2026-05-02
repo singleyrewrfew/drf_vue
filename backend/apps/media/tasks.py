@@ -8,17 +8,12 @@ import json
 import logging
 import traceback
 
-import redis
 from celery import shared_task
-from django.conf import settings
+from utils.cache_utils import get_redis_client
 
 logger = logging.getLogger(__name__)
 
 THUMBNAIL_CHANNEL_PREFIX = 'thumbnail:'
-
-
-def _get_redis_client():
-    return redis.Redis.from_url(settings.CACHES['default']['LOCATION'])
 
 
 def _publish_thumbnail_event(media_id, event_data):
@@ -32,7 +27,7 @@ def _publish_thumbnail_event(media_id, event_data):
         event_data: 事件数据字典
     """
     try:
-        client = _get_redis_client()
+        client = get_redis_client()
         channel = f'{THUMBNAIL_CHANNEL_PREFIX}{media_id}'
         client.publish(channel, json.dumps(event_data))
         logger.debug(f"[Celery] 发布缩略图事件: channel={channel}, status={event_data.get('thumbnail_status')}")

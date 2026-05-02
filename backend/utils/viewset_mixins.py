@@ -5,8 +5,7 @@ ViewSet Mixin 类
 """
 
 import uuid
-from django.core.cache import cache
-from utils.cache_utils import get_cache_key, invalidate_pattern
+from utils.cache_utils import cache_get, cache_set, get_cache_key, invalidate_pattern
 from utils.response import StandardResponse
 
 
@@ -39,32 +38,71 @@ class CachedListMixin:
     功能：
     - 自动缓存列表数据
     - 支持分页（每页独立缓存）
+    - 通过 get_cache_scope() 按数据范围隔离缓存，避免不同权限用户数据串读
     - 返回 StandardResponse 格式的响应
 
     使用方法：
     1. 在 ViewSet 中继承此 Mixin
     2. 设置 cache_key_prefix 属性（如 'categories:list'）
+    3. 如果不同角色看到的数据不同，覆盖 get_cache_scope() 返回数据范围标识
 
     Example:
         class CategoryViewSet(CachedListMixin, viewsets.ModelViewSet):
             cache_key_prefix = 'categories:list'
+            # 数据不随角色变化，无需覆盖 get_cache_scope
+
+        class ContentViewSet(CachedListMixin, viewsets.ModelViewSet):
+            cache_key_prefix = 'contents:list'
+
+            def get_cache_scope(self, request):
+                # 不同角色看到的数据范围不同，需按范围隔离
+                if request.user.is_admin or request.user.is_superuser:
+                    return 'all'                        # 管理员看全部
+                elif request.user.is_editor:
+                    return f'own:{request.user.id}'     # 编辑只看自己的，按 user_id 隔离
+                return 'published'                      # 其他用户和匿名看已发布
     """
 
     cache_key_prefix = None
     cache_timeout = 300
 
+    def get_cache_scope(self, request):
+        """
+        返回当前请求的数据范围标识，用于缓存 key 隔离
+
+        默认返回 'all'（所有用户共享同一份数据）。
+        如果不同角色/用户看到的数据不同，必须在子类中覆盖此方法。
+
+        返回值会作为缓存 key 的一部分，相同 scope 的请求共享缓存。
+        因此 scope 必须准确反映数据范围，否则会导致：
+        - scope 过大：数据泄露（低权限用户看到高权限数据）
+        - scope 过小：缓存命中率低（相同数据存多份）
+
+        Returns:
+            str: 数据范围标识，如 'all'、'published'、'own:{user_id}'
+        """
+        return 'all'
+
     def _get_cache_key(self, request):
-        """生成包含分页参数的缓存键"""
-        limit = request.query_params.get('limit', '')
-        offset = request.query_params.get('offset', '')
-        return get_cache_key(self.cache_key_prefix, limit, offset)
+        """生成包含数据范围和分页参数的缓存键"""
+        scope = self.get_cache_scope(request)
+        parts = [scope]
+
+        limit = request.query_params.get('limit')
+        offset = request.query_params.get('offset')
+        if limit is not None:
+            parts.append(f'limit:{limit}')
+        if offset is not None:
+            parts.append(f'offset:{offset}')
+
+        return get_cache_key(self.cache_key_prefix, *parts)
 
     def list(self, request, *args, **kwargs):
         if not self.cache_key_prefix:
             return super().list(request, *args, **kwargs)
 
         cache_key = self._get_cache_key(request)
-        cached_data = cache.get(cache_key)
+        cached_data = cache_get(cache_key)
         if cached_data:
             return StandardResponse(cached_data)
 
@@ -74,11 +112,11 @@ class CachedListMixin:
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             paginated_data = self.get_paginated_response(serializer.data).data
-            cache.set(cache_key, paginated_data, self.cache_timeout)
+            cache_set(cache_key, paginated_data, self.cache_timeout)
             return StandardResponse(paginated_data)
 
         serializer = self.get_serializer(queryset, many=True)
-        cache.set(cache_key, serializer.data, self.cache_timeout)
+        cache_set(cache_key, serializer.data, self.cache_timeout)
         return StandardResponse(serializer.data)
 
     def _invalidate_cache(self):

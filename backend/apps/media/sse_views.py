@@ -2,9 +2,8 @@ import json
 import logging
 import time
 
-import redis
-from django.conf import settings
 from django.http import StreamingHttpResponse, HttpResponseForbidden
+from utils.cache_utils import get_redis_client
 
 logger = logging.getLogger(__name__)
 
@@ -12,10 +11,6 @@ THUMBNAIL_CHANNEL_PREFIX = 'thumbnail:'
 HEARTBEAT_INTERVAL = 30
 SSE_TIMEOUT = 600
 DB_FALLBACK_INTERVAL = 10
-
-
-def _get_redis_client():
-    return redis.Redis.from_url(settings.CACHES['default']['LOCATION'])
 
 
 def _get_current_status(media_id):
@@ -73,7 +68,7 @@ def event_stream(media_id):
     pubsub = None
 
     try:
-        client = _get_redis_client()
+        client = get_redis_client()
         pubsub = client.pubsub()
         pubsub.subscribe(channel)
 

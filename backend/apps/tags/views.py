@@ -1,5 +1,6 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from django.conf import settings
 
 from apps.users.permissions import IsEditorUser
 from utils.viewset_mixins import CachedListMixin, SlugOrUUIDMixin
@@ -34,6 +35,7 @@ class TagViewSet(
     viewsets.ModelViewSet
 ):
     cache_key_prefix = 'tags:list'
+    cache_timeout = settings.CACHE_TTL['TAG_LIST']
     queryset = Tag.objects.all()
     permission_classes = [IsAuthenticatedOrReadOnly]
     lookup_field = 'pk'

@@ -1,4 +1,5 @@
 from django.db.models import Count, Prefetch, Q
+from django.conf import settings
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
@@ -42,6 +43,7 @@ class CategoryViewSet(
     viewsets.ModelViewSet
 ):
     cache_key_prefix = 'categories:list'
+    cache_timeout = settings.CACHE_TTL['CATEGORY_LIST']
     queryset = Category.objects.all()
     permission_classes = [IsAuthenticatedOrReadOnly]
     lookup_field = 'pk'

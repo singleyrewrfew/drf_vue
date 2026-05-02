@@ -349,17 +349,19 @@ LOGGING = {
 REST_FRAMEWORK["EXCEPTION_HANDLER"] = 'utils.exceptions.custom_exception_handler'
 
 # ==================== 缓存配置 ====================
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/1'),
-        'KEY_PREFIX': 'cms',
-        'TIMEOUT': 300,
-    }
-}
-
-REDIS_CACHE_TIMEOUT = int(os.getenv('REDIS_CACHE_TIMEOUT', '300'))
+REDIS_URL = os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/1')
 CACHE_KEY_PREFIX = 'cms'
+
+CACHE_TTL = {
+    'DEFAULT': 300,
+    'STATS': 120,
+    'POPULAR': 300,
+    'CONTENT_LIST': 120,
+    'CATEGORY_LIST': 300,
+    'TAG_LIST': 300,
+    'ROLE_LIST': 600,
+    'PERMISSION_LIST': 600,
+}
 
 # ==================== Celery 配置 ====================
 CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0'))
