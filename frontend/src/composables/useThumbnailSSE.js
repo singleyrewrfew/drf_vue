@@ -99,7 +99,7 @@ export function useThumbnailSSE(baseUrl) {
     const subscribeToThumbnailStatus = (mediaId, callbacks = {}) => {
         if (connections.value.has(mediaId)) return
 
-        const token = userStore.access
+        const token = userStore.accessToken
         if (!token) {
             console.warn('[SSE] No access token available')
             return
@@ -109,7 +109,7 @@ export function useThumbnailSSE(baseUrl) {
 
         // 动态获取最新 Token 的函数
         const getLatestToken = () => {
-            const token = userStore.access
+            const token = userStore.accessToken
             return token ? `Bearer ${token}` : ''
         }
 
