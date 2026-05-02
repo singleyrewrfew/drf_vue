@@ -21,15 +21,38 @@ class CommentSerializer(serializers.ModelSerializer):
     def get_is_liked(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
-            return obj.likes.filter(user=request.user).exists()
+            liked_comment_ids = getattr(self.context.get('view'), '_liked_comment_ids', set())
+            return obj.id in liked_comment_ids
         return False
 
     def get_reply_count(self, obj):
-        return obj.replies.filter(is_approved=True).count()
+        return getattr(obj, 'reply_count', 0) or obj.replies.filter(is_approved=True).count()
 
     def get_replies(self, obj):
-        replies = obj.replies.filter(is_approved=True)
-        return CommentSerializer(replies, many=True).data
+        replies = getattr(obj, 'prefetched_replies', None)
+        if replies is None:
+            replies = obj.replies.filter(is_approved=True)
+        return CommentReplySerializer(replies, many=True, context=self.context).data
+
+
+class CommentReplySerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(source='user.username', read_only=True)
+    user_avatar = serializers.ImageField(source='user.avatar', read_only=True)
+    user_id = serializers.CharField(source='user.id', read_only=True)
+    reply_to_name = serializers.CharField(source='reply_to.username', read_only=True)
+    is_reply = serializers.ReadOnlyField()
+    is_liked = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Comment
+        fields = ['id', 'content', 'user_id', 'user_name', 'user_avatar', 'reply_to', 'reply_to_name', 'is_reply', 'is_approved', 'like_count', 'is_liked', 'created_at']
+
+    def get_is_liked(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            liked_comment_ids = getattr(self.context.get('view'), '_liked_comment_ids', set())
+            return obj.id in liked_comment_ids
+        return False
 
 
 class CommentCreateSerializer(serializers.ModelSerializer):
@@ -43,8 +66,7 @@ class CommentCreateSerializer(serializers.ModelSerializer):
     def validate_article(self, value):
         from apps.contents.models import Content
         import uuid
-        
-        # 尝试通过 UUID 查找
+
         try:
             uuid.UUID(value)
             try:
@@ -52,7 +74,6 @@ class CommentCreateSerializer(serializers.ModelSerializer):
             except Content.DoesNotExist:
                 raise serializers.ValidationError('文章不存在')
         except (ValueError, AttributeError):
-            # 如果不是有效的 UUID，尝试通过 slug 查找
             try:
                 return Content.objects.get(slug=value)
             except Content.DoesNotExist:
@@ -88,12 +109,15 @@ class CommentListSerializer(serializers.ModelSerializer):
     def get_is_liked(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
-            return obj.likes.filter(user=request.user).exists()
+            liked_comment_ids = getattr(self.context.get('view'), '_liked_comment_ids', set())
+            return obj.id in liked_comment_ids
         return False
 
     def get_reply_count(self, obj):
-        return obj.replies.filter(is_approved=True).count()
+        return getattr(obj, 'reply_count', 0) or obj.replies.filter(is_approved=True).count()
 
     def get_replies(self, obj):
-        replies = obj.replies.filter(is_approved=True)
-        return CommentListSerializer(replies, many=True).data
+        replies = getattr(obj, 'prefetched_replies', None)
+        if replies is None:
+            replies = obj.replies.filter(is_approved=True)
+        return CommentReplySerializer(replies, many=True, context=self.context).data

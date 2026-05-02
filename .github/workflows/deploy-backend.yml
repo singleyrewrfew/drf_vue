@@ -81,6 +81,22 @@ jobs:
           # 执行数据库迁移
           python manage.py migrate --noinput
           
+          # 检查并启动 Redis 服务
+          echo "Checking Redis service..."
+          if ! systemctl is-active --quiet redis-server; then
+            echo "Redis is not running, attempting to start..."
+            sudo systemctl start redis-server
+            sudo systemctl enable redis-server
+          fi
+          
+          # 验证 Redis 连接
+          if redis-cli ping | grep -q "PONG"; then
+            echo "✅ Redis is running and responding"
+          else
+            echo "❌ Redis is not responding properly"
+            exit 1
+          fi
+          
           # 重启 Gunicorn 服务
           sudo systemctl restart drf_vue_backend
           

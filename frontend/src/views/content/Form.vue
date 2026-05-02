@@ -112,24 +112,47 @@
                 <el-row :gutter="20">
                     <el-col :span="12">
                         <el-form-item label="封面图">
-                            <el-upload
-                                class="cover-uploader"
-                                :action="coverUploadUrl"
-                                :headers="uploadHeaders"
-                                name="file"
-                                :show-file-list="false"
-                                :on-success="handleCoverSuccess"
-                                :on-error="handleCoverError"
-                                :before-upload="beforeCoverUpload"
-                            >
-                                <img v-if="form.cover_image" :src="form.cover_image" class="cover-image"/>
-                                <div v-else class="cover-placeholder">
-                                    <el-icon class="cover-uploader-icon">
-                                        <Plus/>
-                                    </el-icon>
-                                    <span>点击上传封面</span>
+                            <div class="cover-wrapper">
+                                <div class="cover-uploader" @click="triggerCoverSelect">
+                                    <img v-if="coverPreviewUrl" :src="coverPreviewUrl" class="cover-image"/>
+                                    <div v-else class="cover-placeholder">
+                                        <el-icon class="cover-uploader-icon">
+                                            <Plus/>
+                                        </el-icon>
+                                        <span>点击上传封面</span>
+                                    </div>
                                 </div>
-                            </el-upload>
+                                <div v-if="coverPreviewUrl" class="cover-actions">
+                                    <button
+                                        v-if="pendingCoverFile"
+                                        type="button"
+                                        class="cover-btn cover-btn-warning"
+                                        @click.stop="triggerCoverSelect"
+                                    >
+                                        <el-icon><Upload /></el-icon>
+                                        <span>更换</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="cover-btn cover-btn-danger"
+                                        @click.stop="clearCover"
+                                    >
+                                        <el-icon><Delete /></el-icon>
+                                        <span>移除</span>
+                                    </button>
+                                </div>
+                                <div v-if="pendingCoverFile" class="cover-status-bar">
+                                    <el-icon class="status-icon"><Clock /></el-icon>
+                                    <span>封面图将在提交时上传</span>
+                                </div>
+                            </div>
+                            <input
+                                ref="coverInputRef"
+                                type="file"
+                                accept="image/jpeg,image/png,image/gif,image/webp"
+                                style="display: none"
+                                @change="handleCoverSelect"
+                            />
                             <div class="cover-tip">建议尺寸：1920x1080，支持 jpg/png 格式</div>
                         </el-form-item>
                     </el-col>
@@ -199,7 +222,7 @@
 import {ref, reactive, computed, onMounted, onUnmounted, watch} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {ElMessage, ElMessageBox} from 'element-plus'
-import {Plus, Loading, Upload} from '@element-plus/icons-vue'
+import {Plus, Loading, Upload, Delete, Clock} from '@element-plus/icons-vue'
 import {MdEditor} from 'md-editor-v3'
 import 'md-editor-v3/lib/style.css'
 import {createContent, updateContent, getContent} from '@/api/content'
@@ -240,7 +263,10 @@ const newTagSlug = ref('')
 const creatingCategory = ref(false)
 const creatingTag = ref(false)
 
-// 根据主题设置编辑器和代码主题
+const coverInputRef = ref(null)
+const pendingCoverFile = ref(null)
+const coverPreviewUrl = ref('')
+
 const updateEditorTheme = () => {
     const isDark = themeStore.theme === 'dark'
     previewTheme.value = isDark ? 'mk-cute' : 'github'
@@ -263,62 +289,6 @@ const form = ref({
 const rules = {
     title: [{required: true, message: '请输入标题', trigger: 'blur'}],
     content: [{required: true, message: '请输入内容', trigger: 'blur'}],
-}
-
-const uploadUrl = computed(() => `${import.meta.env.VITE_API_BASE_URL || '/api'}/media/`)
-// 封面图上传使用通用媒体上传接口
-const coverUploadUrl = computed(() => `${import.meta.env.VITE_API_BASE_URL || '/api'}/media/`)
-const uploadHeaders = computed(() => {
-    const token = userStore.accessToken
-    console.log('上传 Token:', token ? '存在' : '为空')
-    return {
-        'Authorization': `Bearer ${token}`
-    }
-})
-
-const beforeUpload = (file) => {
-    const token = userStore.accessToken
-    if (!token) {
-        ElMessage.error('请先登录')
-        return false
-    }
-    const isValidType = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)
-    if (!isValidType) {
-        ElMessage.error('只能上传 JPG/PNG/GIF/WEBP 格式的图片')
-        return false
-    }
-    const isLt10M = file.size / 1024 / 1024 < 10
-    if (!isLt10M) {
-        ElMessage.error('图片大小不能超过 10MB')
-        return false
-    }
-    return true
-}
-
-const beforeCoverUpload = (file) => {
-    console.log('开始上传封面图:', {
-        name: file.name,
-        type: file.type,
-        size: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
-        uploadUrl: coverUploadUrl.value
-    })
-    
-    const token = userStore.accessToken
-    if (!token) {
-        ElMessage.error('请先登录')
-        return false
-    }
-    const isValidType = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)
-    if (!isValidType) {
-        ElMessage.error('只能上传 JPG/PNG/GIF/WEBP 格式的图片')
-        return false
-    }
-    const isLt10M = file.size / 1024 / 1024 < 10
-    if (!isLt10M) {
-        ElMessage.error('图片大小不能超过 10MB')
-        return false
-    }
-    return true
 }
 
 const toolbars = [
@@ -424,81 +394,76 @@ const autoSave = async () => {
     }
 }
 
-const getMediaBaseUrl = () => {
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
-    return apiBaseUrl.replace(/\/api\/?$/, '')
+const triggerCoverSelect = () => {
+    coverInputRef.value?.click()
 }
 
-const handleCoverSuccess = (response, file) => {
-    console.log('封面图上传响应:', response)
-    
-    // 处理 StandardResponse 格式 { code, message, data }
-    // Element Plus upload 组件可能直接传递解析后的 data，或者整个 response
-    let mediaData = null
-    
-    if (response.code === 0 || response.code === undefined) {
-        // 情况1: response 是 StandardResponse 格式
-        mediaData = response.data || response
-    } else {
-        // 情况2: response 直接是 Media 对象（某些情况下）
-        mediaData = response
-    }
-    
-    if (!mediaData) {
-        ElMessage.error('封面图上传失败：响应数据为空')
+const handleCoverSelect = (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    const isValidType = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)
+    if (!isValidType) {
+        ElMessage.error('只能上传 JPG/PNG/GIF/WEBP 格式的图片')
+        event.target.value = ''
         return
     }
-    
-    // 提取 URL
-    let imageUrl = null
-    if (mediaData.url) {
-        imageUrl = mediaData.url
-    } else if (mediaData.file) {
-        // 兼容 file 字段
-        imageUrl = mediaData.file
+
+    const isLt10M = file.size / 1024 / 1024 < 10
+    if (!isLt10M) {
+        ElMessage.error('图片大小不能超过 10MB')
+        event.target.value = ''
+        return
     }
-    
-    if (imageUrl) {
-        const baseUrl = getMediaBaseUrl()
-        // 如果 URL 不是完整的 HTTP 地址，添加基础 URL
-        form.value.cover_image = imageUrl.startsWith('http') ? imageUrl : `${baseUrl}${imageUrl}`
-        console.log('封面图 URL:', form.value.cover_image)
-        ElMessage.success('封面图上传成功')
-    } else {
-        console.error('响应中缺少 url 或 file 字段:', mediaData)
-        ElMessage.error('封面图上传失败：响应格式错误')
+
+    if (coverPreviewUrl.value && coverPreviewUrl.value.startsWith('blob:')) {
+        URL.revokeObjectURL(coverPreviewUrl.value)
     }
+
+    pendingCoverFile.value = file
+    coverPreviewUrl.value = URL.createObjectURL(file)
+    form.value.cover_image = ''
+    event.target.value = ''
 }
 
-const handleCoverError = (error, file) => {
-    console.error('封面图上传错误:', error)
-    
-    // 尝试从不同格式中提取错误消息
-    let errorMessage = '封面图上传失败'
-    
-    if (error.response) {
-        // HTTP 错误响应
-        const status = error.response.status
-        const data = error.response.data
-        
-        if (status === 401) {
-            errorMessage = '请先登录'
-        } else if (status === 403) {
-            errorMessage = '没有上传权限'
-        } else if (status === 413) {
-            errorMessage = '文件过大'
-        } else if (data) {
-            // 尝试从响应数据中提取消息
-            errorMessage = data.message || data.detail || data.error || `上传失败 (${status})`
-        }
-    } else if (error.message) {
-        // 网络错误或其他错误
-        errorMessage = error.message
-    } else if (typeof error === 'string') {
-        errorMessage = error
+const clearCover = () => {
+    if (coverPreviewUrl.value && coverPreviewUrl.value.startsWith('blob:')) {
+        URL.revokeObjectURL(coverPreviewUrl.value)
     }
-    
-    ElMessage.error(errorMessage)
+    pendingCoverFile.value = null
+    coverPreviewUrl.value = ''
+    form.value.cover_image = ''
+}
+
+const uploadCoverImage = async (file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
+    const token = userStore.accessToken
+
+    const response = await fetch(`${baseUrl}/media/`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        },
+        body: formData
+    })
+
+    if (!response.ok) {
+        throw new Error('封面图上传失败')
+    }
+
+    const result = await response.json()
+    const mediaData = result.data || result
+
+    if (mediaData.url) {
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
+        const mediaBaseUrl = apiBaseUrl.replace(/\/api\/?$/, '')
+        return mediaData.url.startsWith('http') ? mediaData.url : `${mediaBaseUrl}${mediaData.url}`
+    }
+
+    throw new Error('响应格式错误')
 }
 
 const fetchCategories = async () => {
@@ -535,9 +500,7 @@ const createCategory = async () => {
         showCategoryDialog.value = false
         newCategoryName.value = ''
         newCategorySlug.value = ''
-        // 先添加到分类列表，确保显示
         categories.value = [...categories.value, data]
-        // 然后设置选中的分类
         form.value.category = data.id
     } catch (error) {
         ElMessage.error('创建分类失败')
@@ -563,9 +526,7 @@ const createTag = async () => {
         showTagDialog.value = false
         newTagName.value = ''
         newTagSlug.value = ''
-        // 先添加到标签列表，确保显示
         tags.value = [...tags.value, data]
-        // 然后添加到已选标签
         if (!form.value.tags) form.value.tags = []
         form.value.tags.push(data.id)
     } catch (error) {
@@ -603,6 +564,9 @@ const fetchContent = async () => {
             is_top: data.is_top,
             author: data.author?.id || data.author,
         })
+        if (data.cover_image) {
+            coverPreviewUrl.value = data.cover_image
+        }
         lastSaveContent.value = data.content
     } catch (error) {
         ElMessage.error('获取内容失败')
@@ -616,7 +580,19 @@ const handleSubmit = async () => {
     await formRef.value.validate()
     loading.value = true
     try {
-        const submitData = {...form.value}
+        let coverImageUrl = form.value.cover_image
+
+        if (pendingCoverFile.value) {
+            try {
+                coverImageUrl = await uploadCoverImage(pendingCoverFile.value)
+            } catch (error) {
+                ElMessage.error('封面图上传失败')
+                loading.value = false
+                return
+            }
+        }
+
+        const submitData = {...form.value, cover_image: coverImageUrl}
         if (!submitData.category) delete submitData.category
         if (!submitData.cover_image) delete submitData.cover_image
         if (submitData.tags.length === 0) delete submitData.tags
@@ -644,7 +620,19 @@ const handleSaveDraft = async () => {
     }
     loading.value = true
     try {
-        const submitData = {...form.value, status: 'draft'}
+        let coverImageUrl = form.value.cover_image
+
+        if (pendingCoverFile.value) {
+            try {
+                coverImageUrl = await uploadCoverImage(pendingCoverFile.value)
+            } catch (error) {
+                ElMessage.error('封面图上传失败')
+                loading.value = false
+                return
+            }
+        }
+
+        const submitData = {...form.value, status: 'draft', cover_image: coverImageUrl}
         if (!submitData.category) delete submitData.category
         if (!submitData.cover_image) delete submitData.cover_image
         if (submitData.tags.length === 0) delete submitData.tags
@@ -673,7 +661,6 @@ onMounted(async () => {
         fetchContent(),
     ])
 
-    // 初始化编辑器主题
     updateEditorTheme()
 
     setTimeout(() => {
@@ -681,7 +668,6 @@ onMounted(async () => {
     }, 100)
 })
 
-// 监听主题变化
 watch(() => themeStore.theme, () => {
     updateEditorTheme()
 })
@@ -689,6 +675,9 @@ watch(() => themeStore.theme, () => {
 onUnmounted(() => {
     if (autoSaveTimer.value) {
         clearTimeout(autoSaveTimer.value)
+    }
+    if (coverPreviewUrl.value && coverPreviewUrl.value.startsWith('blob:')) {
+        URL.revokeObjectURL(coverPreviewUrl.value)
     }
 })
 </script>
@@ -756,6 +745,12 @@ onUnmounted(() => {
     font-size: 32px;
 }
 
+.cover-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
 .cover-uploader {
     border: 1px dashed var(--border-color);
     border-radius: var(--radius-sm);
@@ -793,6 +788,65 @@ onUnmounted(() => {
     max-height: 100%;
     display: block;
     object-fit: contain;
+}
+
+.cover-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.cover-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border: none;
+    border-radius: var(--radius-xs);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.cover-btn .el-icon {
+    font-size: 12px;
+}
+
+.cover-btn-warning {
+    background: var(--warning-color, #e6a23c);
+    color: #fff;
+}
+
+.cover-btn-warning:hover {
+    background: var(--warning-hover, #ebb563);
+}
+
+.cover-btn-danger {
+    background: var(--danger-color);
+    color: #fff;
+}
+
+.cover-btn-danger:hover {
+    background: var(--danger-hover);
+}
+
+.cover-status-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--warning-bg, #fdf6ec);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    color: var(--warning-color, #e6a23c);
+}
+
+.cover-status-bar .status-icon {
+    font-size: 14px;
+}
+
+[data-theme="dark"] .cover-status-bar {
+    background: rgba(230, 162, 60, 0.1);
 }
 
 .cover-tip {

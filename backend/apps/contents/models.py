@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import F
 
 from apps.base.models import BaseModel
 from apps.categories.models import Category
@@ -52,5 +53,4 @@ class Content(BaseModel):
         return self.title
 
     def increment_view_count(self):
-        self.view_count += 1
-        self.save(update_fields=['view_count'])
+        Content.objects.filter(pk=self.pk).update(view_count=F('view_count') + 1)

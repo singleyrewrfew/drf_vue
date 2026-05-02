@@ -1,62 +1,62 @@
+from django.core.cache import cache
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
+
 from apps.users.permissions import IsAdminUser
+from utils.cache_utils import get_cache_key
 from .models import Permission, Role
 from .serializers import PermissionSerializer, RoleListSerializer, RoleSerializer
 
 
+CACHE_KEY_ROLES = 'roles:list'
+CACHE_KEY_PERMISSIONS = 'permissions:list'
+
+
 class PermissionViewSet(viewsets.ModelViewSet):
-    """
-    权限视图集
-
-    提供对权限模型的完整 CRUD 操作，仅允许认证且具备管理员权限的用户访问。
-
-    Attributes:
-        queryset: 查询集，包含所有权限对象
-        serializer_class: 序列化器类，用于处理权限数据的序列化和反序列化
-        permission_classes: 权限类列表，要求用户必须认证且为管理员
-    """
-    # 1. 查询集：获取所有 Permission 模型的对象
     queryset = Permission.objects.all()
-    # 2. 序列化器：定义权限数据的返回/接收格式
     serializer_class = PermissionSerializer
-    # 3. 权限控制：仅认证的管理员可访问所有操作
     permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def list(self, request, *args, **kwargs):
+        cache_key = get_cache_key(CACHE_KEY_PERMISSIONS)
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            from utils.response import StandardResponse
+            return StandardResponse(cached_data)
+
+        response = super().list(request, *args, **kwargs)
+        cache.set(cache_key, response.data, 300)
+        return response
 
 
 class RoleViewSet(viewsets.ModelViewSet):
-    """
-    角色视图集
-
-    提供对角色模型的完整 CRUD 操作，支持预加载关联的权限数据，
-    仅允许认证且具备管理员权限的用户访问。
-
-    Attributes:
-        queryset: 查询集，包含所有角色对象并预加载关联的权限数据
-        permission_classes: 权限类列表，要求用户必须认证且为管理员
-
-    Methods:
-        get_serializer_class: 根据当前动作动态返回对应的序列化器类
-    """
-    # 1. 查询集：预加载permissions关联数据，避免N+1查询（核心性能优化）
     queryset = Role.objects.prefetch_related('permissions')
-    # 2. 权限控制：仅已认证的管理员可访问所有CRUD操作
     permission_classes = [IsAuthenticated, IsAdminUser]
 
     def get_serializer_class(self):
-        """
-        获取序列化器类
-
-        根据当前的 action 动态选择使用列表序列化器还是详细序列化器。
-        列表操作使用简化版序列化器，其他操作使用完整版序列化器。
-
-        Returns:
-            type: 序列化器类，RoleListSerializer 或 RoleSerializer
-
-        Raises:
-            无
-        """
-        # 列表页返回简化数据，其他操作（retrieve/create/update/destroy）返回完整数据
         if self.action == 'list':
             return RoleListSerializer
         return RoleSerializer
+
+    def list(self, request, *args, **kwargs):
+        cache_key = get_cache_key(CACHE_KEY_ROLES)
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            from utils.response import StandardResponse
+            return StandardResponse(cached_data)
+
+        response = super().list(request, *args, **kwargs)
+        cache.set(cache_key, response.data, 300)
+        return response
+
+    def perform_create(self, serializer):
+        serializer.save()
+        cache.delete(get_cache_key(CACHE_KEY_ROLES))
+
+    def perform_update(self, serializer):
+        serializer.save()
+        cache.delete(get_cache_key(CACHE_KEY_ROLES))
+
+    def perform_destroy(self, instance):
+        instance.delete()
+        cache.delete(get_cache_key(CACHE_KEY_ROLES))

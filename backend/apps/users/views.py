@@ -104,17 +104,16 @@ class UserViewSet(viewsets.ModelViewSet):
 
         try:
             user = User.objects.get(username=username)
-        except User.DoesNotExist:  # get不到对象，抛出不存在的错误
+        except User.DoesNotExist:
             return api_error(
-                message='用户不存在',
+                message='用户名或密码错误',
                 error_type=ErrorTypes.UNAUTHORIZED,
                 status=status.HTTP_401_UNAUTHORIZED
             )
 
-        # 密码校验
         if not user.check_password(password):
             return api_error(
-                message='密码错误',
+                message='用户名或密码错误',
                 error_type=ErrorTypes.UNAUTHORIZED,
                 status=status.HTTP_401_UNAUTHORIZED
             )
