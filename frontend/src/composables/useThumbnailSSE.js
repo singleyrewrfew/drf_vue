@@ -1,4 +1,4 @@
-import { onUnmounted } from 'vue'
+import { onUnmounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 
@@ -28,6 +28,7 @@ class FetchEventSource {
             })
 
             if (!response.ok) {
+                console.error(`[SSE] HTTP Error: ${response.status}`)
                 throw new Error(`HTTP ${response.status}`)
             }
 
@@ -53,6 +54,7 @@ class FetchEventSource {
             }
         } catch (error) {
             if (error.name !== 'AbortError') {
+                console.error('[SSE] Connection error:', error)
                 this.options.onError?.(error)
             }
         }
@@ -67,12 +69,17 @@ class FetchEventSource {
 
 export function useThumbnailSSE(baseUrl) {
     const userStore = useUserStore()
-    const connections = new Map()
+    const connections = ref(new Map())
 
     const subscribeToThumbnailStatus = (mediaId, callbacks = {}) => {
-        if (connections.has(mediaId)) return
+        if (connections.value.has(mediaId)) return
 
         const token = userStore.accessToken
+        if (!token) {
+            console.warn('[SSE] No access token available')
+            return
+        }
+
         const url = `${baseUrl}/media/${mediaId}/thumbnail_status/`
 
         const eventSource = new FetchEventSource(url, {
@@ -84,6 +91,7 @@ export function useThumbnailSSE(baseUrl) {
                     const data = JSON.parse(rawData)
 
                     if (data.error) {
+                        console.error('[SSE] Server error:', data.error)
                         closeConnection(mediaId)
                         return
                     }
@@ -98,27 +106,28 @@ export function useThumbnailSSE(baseUrl) {
                     console.error('[SSE] Parse error:', e)
                 }
             },
-            onError: () => {
+            onError: (error) => {
+                console.error('[SSE] Connection error:', error)
                 closeConnection(mediaId)
                 ElMessage.warning('缩略图状态监控连接中断')
             },
         })
 
-        connections.set(mediaId, eventSource)
+        connections.value.set(mediaId, eventSource)
         eventSource.connect()
     }
 
     const closeConnection = (mediaId) => {
-        const conn = connections.get(mediaId)
+        const conn = connections.value.get(mediaId)
         if (conn) {
             conn.close()
-            connections.delete(mediaId)
+            connections.value.delete(mediaId)
         }
     }
 
     const closeAllConnections = () => {
-        connections.forEach((conn) => conn.close())
-        connections.clear()
+        connections.value.forEach((conn) => conn.close())
+        connections.value.clear()
     }
 
     const subscribeToPendingVideos = (mediaList, callbacks = {}) => {

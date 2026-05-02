@@ -12,8 +12,10 @@ Environment="DJANGO_ENV=production"
 Environment="XDG_RUNTIME_DIR=/tmp/runtime-www-data"
 ExecStart=/home/DRF_VUE/drf_vue/backend/venv/bin/gunicorn \
     --workers 3 \
+    --worker-class gevent \
     --bind 127.0.0.1:8000 \
     --timeout 300 \
+    --keep-alive 5 \
     --worker-tmp-dir /dev/shm \
     --access-logfile /var/log/gunicorn/access.log \
     --error-logfile /var/log/gunicorn/error.log \
