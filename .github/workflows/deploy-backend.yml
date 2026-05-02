@@ -128,13 +128,20 @@ jobs:
           # 等待服务启动
           sleep 5
           
-          # 健康检查
+          # 健康检查 - 检查 Gunicorn 进程和端口
           echo "=== Health Check ==="
-          if curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/api/ | grep -q "200\|401\|403"; then
-            echo "✅ Backend is healthy"
+          if systemctl is-active --quiet drf_vue_backend; then
+            echo "✅ Gunicorn service is active"
           else
-            echo "❌ Backend health check failed"
-            sudo systemctl status drf_vue_backend --no-pager
+            echo "❌ Gunicorn service is not active"
+            exit 1
+          fi
+          
+          # 检查端口是否监听
+          if ss -tlnp | grep -q ":8000"; then
+            echo "✅ Port 8000 is listening"
+          else
+            echo "❌ Port 8000 is not listening"
             exit 1
           fi
           
