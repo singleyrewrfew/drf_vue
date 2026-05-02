@@ -52,10 +52,26 @@ def generate_video_thumbnails(self, media_id: str):
                 thumbnails_count=media.thumbnails_count
             )
             logger.info(f"[Celery] 视频缩略图生成成功: media_id={media_id}")
+            
+            from apps.media.signals import video_thumbnail_generated
+            video_thumbnail_generated.send(
+                sender=None,
+                media_id=str(media_id),
+                success=True
+            )
+            
             return {'status': 'success', 'media_id': str(media_id)}
         else:
             Media.objects.filter(id=media_id).update(thumbnail_status='failed')
             logger.error(f"[Celery] 视频缩略图生成失败: media_id={media_id}")
+            
+            from apps.media.signals import video_thumbnail_generated
+            video_thumbnail_generated.send(
+                sender=None,
+                media_id=str(media_id),
+                success=False
+            )
+            
             return {'status': 'failed', 'message': 'Thumbnail generation returned False'}
             
     except Exception as e:

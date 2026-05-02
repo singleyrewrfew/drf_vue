@@ -8,3 +8,4 @@ class MediaConfig(AppConfig):
 
     def ready(self):
         import apps.media.tasks
+        import apps.media.receivers

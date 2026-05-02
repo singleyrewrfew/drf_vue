@@ -136,13 +136,8 @@ class MediaUploadSerializer(serializers.ModelSerializer):
                             actual_hash = hashlib.md5(media.file.read()).hexdigest()
                             
                             if actual_hash != expected_hash:
-                                # 文件损坏，删除数据库记录（事务会自动回滚）
                                 logger.error(f"File integrity check failed: expected={expected_hash}, actual={actual_hash}")
                                 raise serializers.ValidationError('文件上传过程中损坏，请重新上传')
-                        
-                        # 如果是视频，异步生成缩略图
-                        if media.is_video:
-                            media.generate_thumbnails_async()
                         
                         logger.info(f"Media uploaded successfully: {media.id}, filename={media.filename}")
                         return media
