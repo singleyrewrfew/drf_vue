@@ -20,7 +20,7 @@ def api_client():
 @pytest.fixture
 def admin_user():
     """创建管理员用户"""
-    role, _ = Role.objects.get_or_create(code='admin', name='管理员')
+    role, _ = Role.objects.get_or_create(code='admin', defaults={'name': '管理员'})
     user, _ = User.objects.get_or_create(
         username='admin',
         defaults={
@@ -37,7 +37,7 @@ def admin_user():
 @pytest.fixture
 def editor_user():
     """创建编辑者用户"""
-    role, _ = Role.objects.get_or_create(code='editor', name='编辑者')
+    role, _ = Role.objects.get_or_create(code='editor', defaults={'name': '编辑者'})
     user, _ = User.objects.get_or_create(
         username='editor',
         defaults={
@@ -62,6 +62,7 @@ def normal_user():
 def authenticated_client(api_client, admin_user):
     """认证的 API 客户端"""
     api_client.force_authenticate(user=admin_user)
+    api_client.user = admin_user
     return api_client
 
 

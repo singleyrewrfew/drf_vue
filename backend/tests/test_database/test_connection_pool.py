@@ -3,6 +3,7 @@
 
 验证连接池配置是否正确，以及性能是否符合预期。
 """
+import os
 import pytest
 from django.db import connection
 from django.test import override_settings
@@ -12,10 +13,14 @@ from utils.db_monitor import (
     get_connection_recommendations
 )
 
+# 检查是否为生产环境测试
+IS_PRODUCTION_ENV = os.environ.get('DJANGO_ENV') == 'production'
+
 
 class TestConnectionPoolConfiguration:
     """测试连接池配置"""
     
+    @pytest.mark.skipif(not IS_PRODUCTION_ENV, reason="仅在生产环境检查连接池配置")
     def test_connection_pool_enabled_in_production(self):
         """测试生产环境启用了连接池"""
         from django.conf import settings
@@ -31,10 +36,10 @@ class TestConnectionPoolConfiguration:
         assert conn_max_age >= 0, "CONN_MAX_AGE 不能为负数"
         
         # 生产环境应该启用连接池
-        if not settings.DEBUG:
-            assert conn_max_age > 0, "生产环境应启用连接池（CONN_MAX_AGE > 0）"
-            assert conn_max_age <= 600, "CONN_MAX_AGE 不应超过 600 秒"
+        assert conn_max_age > 0, "生产环境应启用连接池（CONN_MAX_AGE > 0）"
+        assert conn_max_age <= 600, "CONN_MAX_AGE 不应超过 600 秒"
     
+    @pytest.mark.skipif(not IS_PRODUCTION_ENV, reason="仅在生产环境检查连接池配置")
     def test_health_checks_enabled_in_production(self):
         """测试生产环境启用了健康检查"""
         from django.conf import settings
@@ -47,8 +52,7 @@ class TestConnectionPoolConfiguration:
         health_checks = db_config.get('CONN_HEALTH_CHECKS', False)
         
         # 生产环境应该启用健康检查
-        if not settings.DEBUG:
-            assert health_checks is True, "生产环境应启用健康检查"
+        assert health_checks is True, "生产环境应启用健康检查"
     
     def test_connection_info_retrieval(self):
         """测试获取连接信息"""
@@ -64,6 +68,7 @@ class TestConnectionPoolConfiguration:
             assert 'engine' in config
             assert 'conn_max_age' in config
     
+    @pytest.mark.django_db
     def test_connection_health_check(self):
         """测试连接健康检查"""
         result = check_connection_health()

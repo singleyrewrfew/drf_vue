@@ -195,14 +195,13 @@ class UserViewSet(viewsets.ModelViewSet):
             new_refresh_token = None
             
             # 如果启用了轮换，生成新的 Refresh Token
-            if hasattr(refresh_token, 'rotate'):
-                try:
-                    new_refresh = refresh_token.rotate()
-                    new_refresh_token = str(new_refresh)
-                    logger.info(f'用户 {user.username} (ID:{user_id}) Token 轮换成功')
-                except Exception as e:
-                    logger.error(f'Token 轮换失败: {e}')
-                    # 如果轮换失败，不返回新的 refresh token
+            try:
+                new_refresh = RefreshToken.for_user(user)
+                new_refresh_token = str(new_refresh)
+                logger.info(f'用户 {user.username} (ID:{user_id}) Token 轮换成功')
+            except Exception as e:
+                logger.error(f'Token 轮换失败: {e}')
+                # 如果轮换失败，不返回新的 refresh token
             
             # 第 8 步：构建响应数据
             response_data = {"access": new_access_token}

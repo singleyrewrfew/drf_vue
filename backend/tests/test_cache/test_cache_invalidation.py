@@ -9,7 +9,7 @@ from django.contrib.auth import get_user_model
 
 from apps.contents.models import Content
 from apps.categories.models import Category
-from utils.cache_utils import cache_set, cache_get
+from utils.cache_utils import cache_set, cache_get, get_cache_key
 
 User = get_user_model()
 
@@ -46,9 +46,10 @@ class TestCacheInvalidationCore:
 
     def test_cache_cleared_on_content_create(self, admin_client, unique_category):
         """测试创建内容时清除缓存"""
-        # 设置缓存
-        cache_set('contents:list', {'test': 'data'}, timeout=300)
-        assert cache_get('contents:list') is not None
+        # 设置缓存（使用正确的缓存键前缀）
+        cache_key = get_cache_key('contents:list')
+        cache_set(cache_key, {'test': 'data'}, timeout=300)
+        assert cache_get(cache_key) is not None
         
         # 创建内容（需要content字段）
         response = admin_client.post('/api/contents/', {
@@ -61,14 +62,18 @@ class TestCacheInvalidationCore:
         assert response.status_code == 201
         
         # 缓存应该被清除
-        assert cache_get('contents:list') is None
+        assert cache_get(cache_key) is None
 
     def test_additional_patterns_cleared(self, admin_client, unique_category):
         """测试额外缓存模式也被清除"""
-        # 设置多个缓存
-        cache_set('contents:list', {'main': 'cache'}, timeout=300)
-        cache_set('stats:daily', {'stats': 'data'}, timeout=300)
-        cache_set('popular_authors:list', {'authors': 'list'}, timeout=300)
+        # 设置多个缓存（使用正确的缓存键前缀）
+        contents_key = get_cache_key('contents:list')
+        stats_key = get_cache_key('stats:daily')
+        authors_key = get_cache_key('popular_authors:list')
+        
+        cache_set(contents_key, {'main': 'cache'}, timeout=300)
+        cache_set(stats_key, {'stats': 'data'}, timeout=300)
+        cache_set(authors_key, {'authors': 'list'}, timeout=300)
         
         # 创建内容（需要content字段）
         response = admin_client.post('/api/contents/', {
@@ -81,9 +86,9 @@ class TestCacheInvalidationCore:
         assert response.status_code == 201
         
         # 所有缓存都应该被清除
-        assert cache_get('contents:list') is None
-        assert cache_get('stats:daily') is None
-        assert cache_get('popular_authors:list') is None
+        assert cache_get(contents_key) is None
+        assert cache_get(stats_key) is None
+        assert cache_get(authors_key) is None
 
     def test_cache_cleared_on_content_update(self, admin_client, unique_category):
         """测试更新内容时清除缓存"""
@@ -97,9 +102,10 @@ class TestCacheInvalidationCore:
             status='draft'
         )
         
-        # 设置缓存
-        cache_set('contents:list', {'test': 'data'}, timeout=300)
-        assert cache_get('contents:list') is not None
+        # 设置缓存（使用正确的缓存键前缀）
+        cache_key = get_cache_key('contents:list')
+        cache_set(cache_key, {'test': 'data'}, timeout=300)
+        assert cache_get(cache_key) is not None
         
         # 更新内容
         response = admin_client.patch(f'/api/contents/{content.id}/', {
@@ -109,7 +115,7 @@ class TestCacheInvalidationCore:
         assert response.status_code == 200
         
         # 缓存应该被清除
-        assert cache_get('contents:list') is None
+        assert cache_get(cache_key) is None
 
     def test_cache_cleared_on_content_delete(self, admin_client, unique_category):
         """测试删除内容时清除缓存"""
@@ -123,9 +129,10 @@ class TestCacheInvalidationCore:
             status='draft'
         )
         
-        # 设置缓存
-        cache_set('contents:list', {'test': 'data'}, timeout=300)
-        assert cache_get('contents:list') is not None
+        # 设置缓存（使用正确的缓存键前缀）
+        cache_key = get_cache_key('contents:list')
+        cache_set(cache_key, {'test': 'data'}, timeout=300)
+        assert cache_get(cache_key) is not None
         
         # 删除内容
         response = admin_client.delete(f'/api/contents/{content.id}/')
@@ -133,7 +140,7 @@ class TestCacheInvalidationCore:
         assert response.status_code == 204
         
         # 缓存应该被清除
-        assert cache_get('contents:list') is None
+        assert cache_get(cache_key) is None
 
     def test_mixin_configuration(self):
         """测试Mixin配置正确性"""

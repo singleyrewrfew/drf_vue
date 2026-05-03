@@ -24,3 +24,14 @@ pytest-django>=4.7
 pytest-cov>=4.1
 pytest-xdist>=3.3
 factory-boy>=3.3
+
+# 代码质量工具
+black>=23.0
+isort>=5.12
+flake8>=6.0
+flake8-django>=1.4
+flake8-bugbear>=23.0
+mypy>=1.8
+django-stubs>=4.2
+djangorestframework-stubs>=3.14
+pre-commit>=3.5

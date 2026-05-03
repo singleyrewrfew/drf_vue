@@ -115,6 +115,7 @@ ERROR_STATUS_MAP = {
     ErrorTypes.PAYLOAD_TOO_LARGE: 413,
     ErrorTypes.UNSUPPORTED_MEDIA_TYPE: 415,
     ErrorTypes.TOO_MANY_REQUESTS: 429,
+    ErrorTypes.RATE_LIMIT_EXCEEDED: 429,
     
     # 500 系列
     ErrorTypes.INTERNAL_ERROR: 500,

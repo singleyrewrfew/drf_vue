@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 
 from django.conf import settings
 from django.http import FileResponse, HttpResponse
@@ -37,6 +38,8 @@ class MediaViewSet(StandardListMixin, viewsets.ModelViewSet):
     
     # 有效的文件类型前缀白名单（防止 SQL 注入）
     VALID_FILE_TYPE_PREFIXES = ['image/', 'video/', 'application/']
+    # 文件类型参数允许的字符（防止注入）
+    FILE_TYPE_PATTERN = re.compile(r'^[a-zA-Z0-9/\-+\.]+$')
 
     def get_permissions(self):
         """动态分配权限"""
@@ -87,6 +90,11 @@ class MediaViewSet(StandardListMixin, viewsets.ModelViewSet):
             if not any(file_type.startswith(prefix) for prefix in self.VALID_FILE_TYPE_PREFIXES):
                 raise ValidationException(
                     f"无效的文件类型: {file_type}。允许的前缀: {', '.join(self.VALID_FILE_TYPE_PREFIXES)}"
+                )
+            # 验证文件类型格式（防止注入攻击）
+            if not self.FILE_TYPE_PATTERN.match(file_type):
+                raise ValidationException(
+                    f"无效的文件类型格式: {file_type}。只允许字母、数字、/、-、+、."
                 )
             queryset = queryset.filter(file_type__startswith=file_type)
 

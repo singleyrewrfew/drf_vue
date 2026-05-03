@@ -91,8 +91,8 @@ class TestTokenRefreshSecurity:
         # 应该返回 403 Forbidden
         assert response.status_code == 403
         response_data = response.json()
-        data = response_data.get('data', response_data)
-        assert data.get('error_type') == ErrorTypes.FORBIDDEN or response_data.get('error') == 'forbidden'
+        # 响应格式：{'message': '...', 'error': 'forbidden', 'data': null}
+        assert response_data.get('error') == 'forbidden'
     
     def test_refresh_rate_limiting(self, api_client, refresh_token, user):
         """测试刷新频率限制"""
