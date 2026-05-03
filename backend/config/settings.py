@@ -137,9 +137,36 @@ if DB_ENGINE == 'django.db.backends.sqlite3':
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': os.getenv('SQLITE_DB_NAME', BASE_DIR / 'db.sqlite3'),
+            # SQLite 不支持连接池，但设置超时避免锁定
+            'TIMEOUT': 20,  # 等待锁释放的超时时间（秒）
         }
     }
 else:
+    # MySQL/MariaDB 数据库配置
+    # 从环境变量读取连接池配置，提供合理的默认值
+    conn_max_age_default = '0' if DEBUG else '300'
+    health_checks_default = 'False' if DEBUG else 'True'
+    
+    CONN_MAX_AGE = int(os.getenv('DB_CONN_MAX_AGE', conn_max_age_default))
+    CONN_HEALTH_CHECKS = os.getenv('DB_CONN_HEALTH_CHECKS', health_checks_default) == 'True'
+    
+    # 验证配置合理性
+    if CONN_MAX_AGE < 0:
+        import warnings
+        warnings.warn(
+            f"⚠️  DB_CONN_MAX_AGE 设置为 {CONN_MAX_AGE}（负值），已重置为 0",
+            RuntimeWarning
+        )
+        CONN_MAX_AGE = 0
+    
+    if CONN_MAX_AGE > 600 and not DEBUG:
+        import warnings
+        warnings.warn(
+            f"⚠️  DB_CONN_MAX_AGE 设置为 {CONN_MAX_AGE} 秒（>600），"
+            f"可能导致连接泄漏。建议设置为 300-600 秒。",
+            RuntimeWarning
+        )
+    
     DATABASES = {
         'default': {
             'ENGINE': DB_ENGINE,
@@ -148,17 +175,30 @@ else:
             'PASSWORD': os.getenv('DB_PASSWORD', ''),
             'HOST': os.getenv('DB_HOST', 'localhost'),
             'PORT': os.getenv('DB_PORT', '3306'),
+            
+            # MySQL 特定选项
             'OPTIONS': {
-                'charset': 'utf8mb4',
-                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-                # MySQL 连接池配置
-                'connect_timeout': 10,
+                'charset': 'utf8mb4',                    # 支持 emoji 等 Unicode 字符
+                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",  # 严格模式
+                'connect_timeout': 10,                   # 连接超时（秒）
+                'autocommit': True,                      # 自动提交事务
             },
-            # 连接池配置（从环境变量读取，开发环境默认关闭，生产环境建议开启）
-            'CONN_MAX_AGE': int(os.getenv('DB_CONN_MAX_AGE', '0' if DEBUG else '300')),
-            'CONN_HEALTH_CHECKS': os.getenv('DB_CONN_HEALTH_CHECKS', 'False' if DEBUG else 'True') == 'True',
+            
+            # 连接池配置
+            'CONN_MAX_AGE': CONN_MAX_AGE,               # 连接持久化时间（秒）
+            'CONN_HEALTH_CHECKS': CONN_HEALTH_CHECKS,   # 健康检查开关
         }
     }
+    
+    # 打印连接池配置信息（仅在启动时）
+    if os.environ.get('RUN_MAIN') != 'true' or 'gunicorn' in sys.argv:
+        print(f"\n📊 数据库连接池配置:")
+        print(f"   - CONN_MAX_AGE: {CONN_MAX_AGE}秒 {'(禁用)' if CONN_MAX_AGE == 0 else ''}")
+        print(f"   - CONN_HEALTH_CHECKS: {'✅ 启用' if CONN_HEALTH_CHECKS else '❌ 禁用'}")
+        if CONN_MAX_AGE > 0:
+            print(f"   - 预计最大连接数: Gunicorn workers 数量")
+            print(f"   - 连接复用率: 高（减少连接创建开销）")
+        print()
 
 # ==================== 国际化配置 ====================
 LANGUAGE_CODE = 'zh-hans'
@@ -208,11 +248,33 @@ REST_FRAMEWORK = {
 
 # ==================== JWT 配置 ====================
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=2),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
-    'AUTH_HEADER_TYPES': ('Bearer',),
+    # Token 有效期
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=2),      # Access Token: 2小时
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),       # Refresh Token: 7天
+    
+    # Token 轮换与黑名单
+    'ROTATE_REFRESH_TOKENS': True,                     # 启用 Refresh Token 轮换
+    'BLACKLIST_AFTER_ROTATION': True,                  # 轮换后将旧 token 加入黑名单
+    
+    # 认证头配置
+    'AUTH_HEADER_TYPES': ('Bearer',),                  # 使用 Bearer 认证
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',          # 请求头名称
+    
+    # 安全增强
+    'USER_ID_FIELD': 'id',                             # 用户 ID 字段
+    'USER_ID_CLAIM': 'user_id',                        # JWT claim 中的用户 ID 键名
+    'TOKEN_TYPE_CLAIM': 'token_type',                  # Token 类型声明
+    
+    # 算法配置（使用 HS256，对称加密）
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': os.getenv('JWT_SECRET_KEY', SECRET_KEY),  # 签名密钥
+    'VERIFYING_KEY': None,                             # 验证密钥（对称加密时不需要）
+    
+    # 其他配置
+    'AUDIENCE': None,                                  # 受众（可选）
+    'ISSUER': None,                                    # 发行者（可选）
+    'JWK_URL': None,                                   # JWK URL（可选）
+    'LEEWAY': 0,                                       # 时间容差（秒）
 }
 
 # ==================== CORS 配置 ====================
@@ -328,8 +390,8 @@ LOGGING = {
             'propagate': False,
         },
         'django.db.backends': {
-            'handlers': ['console'] if DEBUG else [],
-            'level': 'DEBUG' if DEBUG else 'WARNING',  # 仅开发环境打印 SQL
+            'handlers': [],  # 关闭 SQL 日志输出，避免控制台混乱
+            'level': 'WARNING',  # 仅记录警告和错误
             'propagate': False,
         },
         'apps': {

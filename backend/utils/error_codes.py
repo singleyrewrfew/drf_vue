@@ -66,6 +66,7 @@ class ErrorTypes:
     
     # 429 - 请求过多
     TOO_MANY_REQUESTS = 'too_many_requests'        # 请求频率过高
+    RATE_LIMIT_EXCEEDED = 'rate_limit_exceeded'    # 速率限制超限
     
     # ========== 服务器错误 (5xx) ==========
     

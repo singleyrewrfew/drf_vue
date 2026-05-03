@@ -1,5 +1,6 @@
 import logging
 
+from django.contrib.auth import get_user_model
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
@@ -20,6 +21,8 @@ from .serializers import (
 
 logger = logging.getLogger(__name__)
 
+User = get_user_model()
+
 
 class UserViewSet(viewsets.ModelViewSet):
     """
@@ -38,9 +41,7 @@ class UserViewSet(viewsets.ModelViewSet):
     parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def get_permissions(self):
-        if self.action == 'login':
-            return [AllowAny()]
-        elif self.action == 'create':
+        if self.action in ['login', 'refresh', 'create']:
             return [AllowAny()]
         elif self.action in ['list', 'destroy']:
             return [IsAdminUser()]
@@ -108,6 +109,20 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def refresh(self, request):
+        """
+        刷新 Access Token
+        
+        安全特性：
+        1. 验证 Refresh Token 有效性
+        2. 检查用户账户状态（是否活跃）
+        3. 旧 Refresh Token 立即加入黑名单（防止重放攻击）
+        4. 生成新的 Access Token 和 Refresh Token（轮换机制）
+        5. 记录刷新日志用于审计
+        """
+        from django.core.cache import cache
+        import logging
+        
+        logger = logging.getLogger(__name__)
         refresh_token_str = request.data.get('refresh')
 
         if not refresh_token_str:
@@ -118,27 +133,111 @@ class UserViewSet(viewsets.ModelViewSet):
             )
 
         try:
+            # 第 1 步：验证 Refresh Token 格式和签名
             refresh_token = RefreshToken(refresh_token_str)
+            
+            # 第 2 步：提取用户 ID，检查用户状态
+            user_id = refresh_token.get('user_id')
+            if not user_id:
+                return api_error(
+                    message='刷新令牌格式错误',
+                    error_type=ErrorTypes.TOKEN_INVALID,
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+            
+            # 第 3 步：查询用户并验证状态
+            try:
+                user = User.objects.get(id=user_id)
+            except User.DoesNotExist:
+                return api_error(
+                    message='用户不存在',
+                    error_type=ErrorTypes.TOKEN_INVALID,
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+            
+            # 第 4 步：检查用户账户状态
+            if not user.is_active:
+                # 账户被禁用，立即将 token 加入黑名单
+                try:
+                    refresh_token.blacklist()
+                except Exception:
+                    pass
+                return api_error(
+                    message='账户已被禁用',
+                    error_type=ErrorTypes.FORBIDDEN,
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            # 第 5 步：检查刷新频率限制（防止滥用）
+            rate_limit_key = f'token_refresh_rate_{user_id}'
+            refresh_count = cache.get(rate_limit_key, 0)
+            
+            # 每分钟最多刷新 5 次
+            if refresh_count >= 5:
+                logger.warning(
+                    f'用户 {user.username} (ID:{user_id}) Token 刷新频率超限: '
+                    f'{refresh_count} 次/分钟'
+                )
+                return api_error(
+                    message='刷新过于频繁，请稍后再试',
+                    error_type=ErrorTypes.RATE_LIMIT_EXCEEDED,
+                    status=status.HTTP_429_TOO_MANY_REQUESTS
+                )
+            
+            # 更新刷新计数（60秒过期）
+            cache.set(rate_limit_key, refresh_count + 1, timeout=60)
+            
+            # 第 6 步：旧 Refresh Token 立即加入黑名单（防止重放攻击）
+            try:
+                refresh_token.blacklist()
+                logger.info(f'用户 {user.username} (ID:{user_id}) 旧 Refresh Token 已加入黑名单')
+            except Exception as e:
+                logger.error(f'Refresh Token 黑名单失败: {e}')
+                # 即使黑名单失败，也继续执行（避免影响用户体验）
+            
+            # 第 7 步：生成新的 Access Token 和 Refresh Token
             new_access_token = str(refresh_token.access_token)
-
             new_refresh_token = None
+            
+            # 如果启用了轮换，生成新的 Refresh Token
             if hasattr(refresh_token, 'rotate'):
-                new_refresh = refresh_token.rotate()
-                new_refresh_token = str(new_refresh)
-
+                try:
+                    new_refresh = refresh_token.rotate()
+                    new_refresh_token = str(new_refresh)
+                    logger.info(f'用户 {user.username} (ID:{user_id}) Token 轮换成功')
+                except Exception as e:
+                    logger.error(f'Token 轮换失败: {e}')
+                    # 如果轮换失败，不返回新的 refresh token
+            
+            # 第 8 步：构建响应数据
             response_data = {"access": new_access_token}
             if new_refresh_token:
                 response_data["refresh"] = new_refresh_token
-
+            
+            # 记录成功刷新日志
+            logger.info(
+                f'用户 {user.username} (ID:{user_id}) Token 刷新成功, '
+                f'IP: {request.META.get("REMOTE_ADDR", "unknown")}'
+            )
+            
             return StandardResponse(response_data)
 
         except (TokenError, InvalidToken) as e:
+            logger.warning(f'Token 刷新失败 - 无效令牌: {str(e)}')
             return api_error(
-                message=f'刷新令牌无效或已过期: {str(e)}',
+                message='刷新令牌无效或已过期',
+                error_type=ErrorTypes.TOKEN_INVALID,
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        except User.DoesNotExist:
+            logger.warning(f'Token 刷新失败 - 用户不存在')
+            return api_error(
+                message='用户不存在',
                 error_type=ErrorTypes.TOKEN_INVALID,
                 status=status.HTTP_401_UNAUTHORIZED
             )
         except Exception as e:
+            logger.error(f'Token 刷新异常: {type(e).__name__}: {str(e)}')
             return api_error(
                 message='服务器内部错误',
                 error_type=ErrorTypes.INTERNAL_ERROR,

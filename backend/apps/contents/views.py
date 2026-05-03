@@ -1,6 +1,7 @@
 from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
 from django.conf import settings
@@ -31,6 +32,9 @@ class ContentViewSet(
     cache_timeout = settings.CACHE_TTL['CONTENT_LIST']
 
     default_serializer_class = ContentSerializer
+    
+    # 有效的状态值白名单（防止 SQL 注入）
+    VALID_STATUSES = dict(Content.STATUS_CHOICES).keys()
 
     def _invalidate_cache(self):
         """内容变更时，同时清除列表、统计和热门作者缓存"""
@@ -123,10 +127,16 @@ class ContentViewSet(
             if self.request.user.is_authenticated:
                 if self.request.user.is_admin or self.request.user.is_superuser:
                     if status_filter:
+                        # 验证状态值是否在白名单中（防止 SQL 注入）
+                        if status_filter not in self.VALID_STATUSES:
+                            raise ValidationError(f"无效的状态值: {status_filter}。允许的值: {', '.join(self.VALID_STATUSES)}")
                         queryset = queryset.filter(status=status_filter)
                 elif self.request.user.is_editor:
                     queryset = queryset.filter(author=self.request.user)
                     if status_filter:
+                        # 验证状态值是否在白名单中（防止 SQL 注入）
+                        if status_filter not in self.VALID_STATUSES:
+                            raise ValidationError(f"无效的状态值: {status_filter}。允许的值: {', '.join(self.VALID_STATUSES)}")
                         queryset = queryset.filter(status=status_filter)
                 else:
                     queryset = queryset.filter(status='published')

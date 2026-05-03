@@ -6,6 +6,7 @@ import shutil
 from django.conf import settings
 from rest_framework import serializers
 
+from utils.file_validation import validate_file_mime_type, sanitize_svg
 from .models import Media
 
 logger = logging.getLogger(__name__)
@@ -40,23 +41,25 @@ class MediaUploadSerializer(serializers.ModelSerializer):
         fields = ['file']
 
     def validate_file(self, value):
-        # 验证文件大小（视频除外）
+        """
+        验证上传的文件
+        
+        包括：
+        1. 文件大小验证
+        2. 真实 MIME 类型验证（基于文件内容）
+        3. SVG 安全清洗
+        4. 文件扩展名验证
+        5. 磁盘空间检查
+        """
+        # 1. 验证文件大小（视频除外）
         max_size = getattr(settings, 'FILE_UPLOAD_MAX_MEMORY_SIZE', 10 * 1024 * 1024)  # 默认 10MB
-        is_video = value.content_type.startswith('video/')
+        is_video = value.content_type.startswith('video/') if value.content_type else False
         
         if not is_video and value.size > max_size:
             max_size_mb = max_size / (1024 * 1024)
             raise serializers.ValidationError(f'文件大小不能超过 {max_size_mb:.0f}MB（视频文件不限大小）')
 
-        # 验证文件类型
-        allowed_types = getattr(settings, 'ALLOWED_FILE_TYPES', [])
-        if allowed_types and value.content_type not in allowed_types:
-            raise serializers.ValidationError(
-                f'不支持的文件类型：{value.content_type}。'
-                f'支持的类型：图片（jpg, png, gif, webp, svg）、视频（mp4, webm, ogg）、文档（pdf, doc, docx）'
-            )
-
-        # 验证文件扩展名
+        # 2. 验证文件扩展名（先检查，避免处理恶意文件）
         ext = os.path.splitext(value.name)[1].lower()
         allowed_extensions = [
             '.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg',  # 图片
@@ -69,7 +72,36 @@ class MediaUploadSerializer(serializers.ModelSerializer):
                 f'支持的扩展名：{", ".join(allowed_extensions)}'
             )
         
-        # 检查磁盘空间
+        # 3. 验证真实 MIME 类型（基于文件内容，防止伪造）
+        allowed_types = getattr(settings, 'ALLOWED_FILE_TYPES', [])
+        if allowed_types:
+            try:
+                detected_mime = validate_file_mime_type(value, allowed_types)
+                # 更新为检测到的真实 MIME 类型
+                value.content_type = detected_mime
+            except serializers.ValidationError:
+                raise
+        
+        # 4. SVG 特殊处理：清洗潜在的危险内容
+        if ext == '.svg' or (value.content_type and 'svg' in value.content_type):
+            try:
+                value.seek(0)
+                svg_content = value.read().decode('utf-8', errors='ignore')
+                cleaned_svg = sanitize_svg(svg_content)
+                
+                # 重新创建文件对象
+                from django.core.files.uploadedfile import SimpleUploadedFile
+                value = SimpleUploadedFile(
+                    value.name,
+                    cleaned_svg.encode('utf-8'),
+                    content_type='image/svg+xml'
+                )
+                logger.info("SVG file sanitized successfully")
+            except Exception as e:
+                logger.error(f"Failed to sanitize SVG: {e}")
+                raise serializers.ValidationError('SVG 文件处理失败，可能包含不安全的内容')
+        
+        # 5. 检查磁盘空间
         try:
             media_root = settings.MEDIA_ROOT
             if os.path.exists(media_root):
