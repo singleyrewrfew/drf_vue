@@ -67,9 +67,28 @@ jobs:
       run: |
         mkdir -p deploy_temp
         
-        cp -r frontend/dist_backend deploy_temp/dist_backend
-        cp -r mobile/dist_mobile deploy_temp/dist_mobile
-        cp -r front/dist deploy_temp/dist
+        # 复制前端构建产物（检查目录是否存在）
+        if [ -d "frontend/dist_backend" ]; then
+          cp -r frontend/dist_backend deploy_temp/dist_backend
+          echo "✅ Copied backend admin frontend"
+        else
+          echo "⚠️ frontend/dist_backend not found, skipping"
+        fi
+        
+        if [ -d "mobile/dist_mobile" ]; then
+          cp -r mobile/dist_mobile deploy_temp/dist_mobile
+          echo "✅ Copied mobile frontend"
+        else
+          echo "⚠️ mobile/dist_mobile not found, skipping"
+        fi
+        
+        if [ -d "front/dist" ]; then
+          cp -r front/dist deploy_temp/dist
+          echo "✅ Copied PC frontend"
+        else
+          echo "❌ front/dist not found!"
+          exit 1
+        fi
         
         # 上传到服务器
         rsync -avz --delete \

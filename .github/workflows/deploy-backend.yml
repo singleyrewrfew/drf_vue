@@ -120,10 +120,19 @@ jobs:
           
           # 检查并启动 Redis 服务
           echo "Checking Redis service..."
-          if ! systemctl is-active --quiet redis-server; then
+          if ! systemctl is-active --quiet redis-server && ! systemctl is-active --quiet redis; then
             echo "Redis is not running, attempting to start..."
-            sudo systemctl start redis-server
-            sudo systemctl enable redis-server
+            # 尝试不同的服务名
+            if systemctl list-units --type=service | grep -q redis-server; then
+              sudo systemctl start redis-server
+              sudo systemctl enable redis-server
+            elif systemctl list-units --type=service | grep -q redis; then
+              sudo systemctl start redis
+              sudo systemctl enable redis
+            else
+              echo "❌ Redis service not found"
+              exit 1
+            fi
           fi
           
           # 验证 Redis 连接
@@ -136,9 +145,19 @@ jobs:
           
           # Restart all services
           echo "Restarting services..."
-          sudo systemctl restart drf_vue_backend || true
-          sudo systemctl restart drf_vue_celery_worker || true
-          sudo systemctl restart drf_vue_celery_beat || true
+          
+          # 重启 Gunicorn（关键服务，必须成功）
+          if ! sudo systemctl restart drf_vue_backend; then
+            echo "❌ Failed to restart Gunicorn"
+            sudo journalctl -u drf_vue_backend --no-pager -n 30
+            exit 1
+          fi
+          
+          # 重启 Celery Worker（非关键，失败不中断部署）
+          sudo systemctl restart drf_vue_celery_worker || echo "⚠️ Celery Worker restart failed (non-critical)"
+          
+          # 重启 Celery Beat（非关键，失败不中断部署）
+          sudo systemctl restart drf_vue_celery_beat || echo "⚠️ Celery Beat restart failed (non-critical)"
           
           # Enable services on boot
           sudo systemctl enable drf_vue_backend
