@@ -3,9 +3,9 @@ ViewSet Mixin 类
 
 提供常用的 ViewSet 功能扩展。
 """
-
 import uuid
 from django.db.models import Prefetch
+from drf_spectacular.utils import extend_schema
 from utils.cache_utils import cache_get, cache_set, get_cache_key, invalidate_pattern
 from utils.response import StandardResponse
 
@@ -136,6 +136,10 @@ class StandardListMixin:
     - 返回 StandardResponse 格式的响应
     """
 
+    @extend_schema(
+        summary='列出资源',
+        description='获取资源列表，支持分页和过滤'
+    )
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
@@ -298,6 +302,10 @@ class CachedListMixin(CacheInvalidationMixin):
 
         return get_cache_key(self.cache_key_prefix, *parts)
 
+    @extend_schema(
+        summary='列出资源（带缓存）',
+        description='获取资源列表，支持分页、过滤和缓存'
+    )
     def list(self, request, *args, **kwargs):
         if not self.cache_key_prefix:
             return super().list(request, *args, **kwargs)

@@ -82,26 +82,49 @@ def health_check(request):
     """
     就绪检查：验证所有依赖服务是否可用
 
-    GET /api/health/ → 200 全部健康 / 503 任一不健康
+    GET /api/health/ → 
+        - 200: 全部健康 (status: 'healthy')
+        - 503: 部分或全部不健康 (status: 'degraded' 或 'unhealthy')
+    
+    状态说明:
+        - healthy: 所有服务正常
+        - degraded: 非关键服务异常（Redis/Celery），但核心功能可用
+        - unhealthy: 关键服务异常（Database），系统不可用
     """
     start = time.time()
 
+    # 检查各服务状态
     services = {
         'database': _check_database(),
         'redis': _check_redis(),
         'celery': _check_celery(),
     }
 
-    all_healthy = all(s['status'] == 'healthy' for s in services.values())
-    overall = 'healthy' if all_healthy else 'unhealthy'
+    # 确定整体状态
+    db_healthy = services['database']['status'] == 'healthy'
+    redis_healthy = services['redis']['status'] == 'healthy'
+    celery_healthy = services['celery']['status'] == 'healthy'
+    
+    if db_healthy:
+        # 数据库正常，检查其他服务
+        if redis_healthy and celery_healthy:
+            overall = 'healthy'
+        else:
+            # 部分非关键服务异常
+            overall = 'degraded'
+    else:
+        # 数据库异常，系统不可用
+        overall = 'unhealthy'
 
     result = {
         'status': overall,
+        'timestamp': time.strftime('%Y-%m-%dT%H:%M:%S', time.gmtime()),
         'services': services,
         'response_time_ms': round((time.time() - start) * 1000, 2),
     }
 
-    status_code = 200 if all_healthy else 503
+    # 根据状态返回不同的 HTTP 状态码
+    status_code = 200 if overall == 'healthy' else 503
     return JsonResponse(result, status=status_code)
 
 

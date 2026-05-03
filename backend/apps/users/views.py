@@ -1,6 +1,7 @@
 import logging
 
 from django.contrib.auth import get_user_model
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
@@ -25,6 +26,20 @@ logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
+@extend_schema_view(
+    list=extend_schema(summary='列出用户', description='获取用户列表（需要管理员权限）'),
+    retrieve=extend_schema(summary='获取用户详情', description='获取单个用户的详细信息'),
+    create=extend_schema(summary='注册用户', description='创建新用户账户'),
+    update=extend_schema(summary='更新用户', description='更新用户信息'),
+    partial_update=extend_schema(summary='部分更新用户', description='部分更新用户信息'),
+    destroy=extend_schema(summary='删除用户', description='删除用户（需要管理员权限）'),
+    login=extend_schema(summary='用户登录', description='使用用户名和密码登录，返回 JWT Token'),
+    profile=extend_schema(summary='获取个人资料', description='获取当前登录用户的个人信息'),
+    update_profile=extend_schema(summary='更新个人资料', description='更新当前登录用户的个人信息'),
+    change_password=extend_schema(summary='修改密码', description='修改当前登录用户的密码'),
+    logout=extend_schema(summary='用户登出', description='登出并将 Refresh Token 加入黑名单'),
+    refresh=extend_schema(summary='刷新 Token', description='使用 Refresh Token 获取新的 Access Token'),
+)
 class UserViewSet(viewsets.ModelViewSet):
     """
     用户视图集

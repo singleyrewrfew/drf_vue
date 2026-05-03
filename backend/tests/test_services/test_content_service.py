@@ -4,7 +4,7 @@ Test Content Service
 内容服务单元测试
 """
 import pytest
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from utils.exceptions import PermissionException, ConflictException
 
 from services.content_service import ContentService
 from tests.utils import MockUser, MockContent
@@ -30,7 +30,7 @@ class TestContentService:
         content = MockContent(status='draft')
         user = MockUser(permissions=[])
         
-        with pytest.raises(PermissionDenied, match='无发布权限'):
+        with pytest.raises(PermissionException, match='无发布权限'):
             ContentService.publish_content(content, user)
     
     def test_publish_already_published_content(self):
@@ -38,7 +38,7 @@ class TestContentService:
         content = MockContent(status='published')
         user = MockUser(permissions=['content_publish'])
         
-        with pytest.raises(ValidationError, match='内容已发布'):
+        with pytest.raises(ConflictException, match='内容已发布'):
             ContentService.publish_content(content, user)
     
     def test_archive_content_success(self):
@@ -55,7 +55,7 @@ class TestContentService:
         content = MockContent(status='published')
         user = MockUser(permissions=[])
         
-        with pytest.raises(PermissionDenied, match='无归档权限'):
+        with pytest.raises(PermissionException, match='无归档权限'):
             ContentService.archive_content(content, user)
     
     # 注意：increment_view_count 已移至 Model 层
@@ -125,7 +125,17 @@ class TestContentService:
 class TestContentServiceQuery:
     """内容服务查询测试类"""
     
-    def test_get_published_contents(self, db):
+    @pytest.fixture(autouse=True)
+    def cleanup_content(self, db):
+        """每个测试前后清理内容数据，避免数据污染"""
+        from apps.contents.models import Content
+        # 测试前清理
+        Content.objects.all().delete()
+        yield
+        # 测试后清理
+        Content.objects.all().delete()
+    
+    def test_get_published_contents(self):
         """测试获取已发布内容列表"""
         from tests.utils import create_test_user, create_test_content
         

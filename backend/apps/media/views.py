@@ -3,7 +3,7 @@ import os
 
 from django.conf import settings
 from django.http import FileResponse, HttpResponse
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, MultiPartParser
@@ -21,6 +21,10 @@ from .serializers import MediaSerializer, MediaUploadSerializer
 logger = logging.getLogger(__name__)
 
 
+@extend_schema_view(
+    list=extend_schema(summary='列出媒体文件', description='获取媒体文件列表，支持分页和过滤'),
+    create=extend_schema(summary='上传媒体文件', description='上传新的媒体文件'),
+)
 class MediaViewSet(StandardListMixin, viewsets.ModelViewSet):
     """媒体文件视图集
 
@@ -55,6 +59,10 @@ class MediaViewSet(StandardListMixin, viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         """删除媒体对象及关联文件"""
         MediaService.delete_media(instance)
+
+    def list(self, request, *args, **kwargs):
+        """列出媒体文件"""
+        return super().list(request, *args, **kwargs)
 
     @extend_schema(request=MediaUploadSerializer, responses=MediaSerializer)
     def create(self, request, *args, **kwargs):

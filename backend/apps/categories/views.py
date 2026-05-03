@@ -1,5 +1,6 @@
 from django.db.models import Count, Prefetch, Q
 from django.conf import settings
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
@@ -34,6 +35,14 @@ class CategoryPermissionMixin:
         return super().get_permissions()
 
 
+@extend_schema_view(
+    list=extend_schema(summary='列出分类', description='获取分类列表，支持分页'),
+    retrieve=extend_schema(summary='获取分类详情', description='获取单个分类的详细信息'),
+    create=extend_schema(summary='创建分类', description='创建新的分类（需要编辑权限）'),
+    update=extend_schema(summary='更新分类', description='更新分类信息（需要编辑权限）'),
+    partial_update=extend_schema(summary='部分更新分类', description='部分更新分类信息（需要编辑权限）'),
+    destroy=extend_schema(summary='删除分类', description='删除分类（需要编辑权限）'),
+)
 class CategoryViewSet(
     CachedListMixin,
     OptimizedQuerySetMixin,

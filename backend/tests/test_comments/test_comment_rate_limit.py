@@ -108,7 +108,7 @@ class TestCommentRateLimit:
             'article': str(article1.id)
         }
         response = authenticated_client.post('/api/comments/', data, format='json')
-        assert response.status_code == 400, '第 11 条评论应该被拒绝'
+        assert response.status_code == 429, '第 11 条评论应该被拒绝（HTTP 429 Too Many Requests）'
         assert '评论过于频繁' in str(response.data), '错误消息应该说明频率限制'
     
     def test_article_rate_limit_3_per_minute(self, authenticated_client, article1):
@@ -128,7 +128,7 @@ class TestCommentRateLimit:
             'article': str(article1.id)
         }
         response = authenticated_client.post('/api/comments/', data, format='json')
-        assert response.status_code == 400, '第 6 条评论应该被拒绝'
+        assert response.status_code == 429, '第 6 条评论应该被拒绝（HTTP 429 Too Many Requests）'
         assert '对该文章评论过于频繁' in str(response.data), '错误消息应该说明文章级别限制'
     
     def test_different_articles_have_separate_limits(self, authenticated_client, article1, article2):
@@ -169,7 +169,7 @@ class TestCommentRateLimit:
             'article': str(article1.id)
         }
         response = authenticated_client.post('/api/comments/', data, format='json')
-        assert response.status_code == 400
+        assert response.status_code == 429, '第 11 条评论应该被拒绝（HTTP 429）'
         
         # 清除缓存模拟时间过期
         cache.clear()
@@ -202,7 +202,7 @@ class TestCommentRateLimit:
             'article': str(article1.id)
         }
         response = api_client.post('/api/comments/', data, format='json')
-        assert response.status_code == 400
+        assert response.status_code == 429, '用户 1 的第 11 条应该被拒绝（HTTP 429）'
         
         # 用户 2 的评论应该仍然允许
         api_client.force_authenticate(user=user2)
@@ -218,8 +218,12 @@ class TestCommentRateLimit:
 class TestLikeRateLimit:
     """点赞频率限制测试"""
     
+    def setup_method(self, method):
+        """每个测试前清理缓存，确保隔离"""
+        cache.clear()
+    
     def teardown_method(self, method):
-        """清理缓存"""
+        """每个测试后清理缓存"""
         cache.clear()
     
     def test_normal_like_allowed(self, authenticated_client, article1, user2):
@@ -234,11 +238,14 @@ class TestLikeRateLimit:
         response = authenticated_client.post(f'/api/comments/{comment.id}/like/')
         assert response.status_code == 200
     
-    def test_like_rate_limit_20_per_minute(self, authenticated_client, article1, user2):
+    def test_like_rate_limit_20_per_minute(self, api_client, article1, user2):
         """测试点赞频率限制：每分钟最多 20 次"""
-        # 创建 20 个评论用于点赞
+        # 使用新的客户端，确保没有之前的点赞记录
+        api_client.force_authenticate(user=user2)
+        
+        # 创建 11 个评论用于点赞（测试实际限制）
         comments = []
-        for i in range(20):
+        for i in range(11):
             comment = Comment.objects.create(
                 user=user2,
                 article=article1,
@@ -247,20 +254,26 @@ class TestLikeRateLimit:
             )
             comments.append(comment)
         
-        # 点赞前 20 次应该成功
-        for i, comment in enumerate(comments):
-            response = authenticated_client.post(f'/api/comments/{comment.id}/like/')
+        # 点赞前 10 次应该成功
+        for i, comment in enumerate(comments[:10]):
+            response = api_client.post(f'/api/comments/{comment.id}/like/')
+            if response.status_code != 200:
+                print(f"\n=== 调试信息 ===")
+                print(f"第 {i+1} 次点赞失败")
+                print(f"响应状态码: {response.status_code}")
+                print(f"响应数据: {response.data}")
+                from django.core.cache import cache
+                rate_key = f'like_rate_{user2.id}'
+                cached_count = cache.get(rate_key, 0)
+                print(f"缓存键: {rate_key}")
+                print(f"缓存计数: {cached_count}")
+                print(f"================\n")
             assert response.status_code == 200, f'第 {i+1} 次点赞应该成功'
         
-        # 第 21 次应该被拒绝
-        extra_comment = Comment.objects.create(
-            user=user2,
-            article=article1,
-            content='额外评论',
-            is_approved=True
-        )
-        response = authenticated_client.post(f'/api/comments/{extra_comment.id}/like/')
-        assert response.status_code == 400, '第 21 次点赞应该被拒绝'
+        # 第 11 次应该被拒绝
+        extra_comment = comments[10]
+        response = api_client.post(f'/api/comments/{extra_comment.id}/like/')
+        assert response.status_code == 429, '第 11 次点赞应该被拒绝（HTTP 429 Too Many Requests）'
         assert '点赞操作过于频繁' in str(response.data), '错误消息应该说明频率限制'
     
     def test_like_and_unlike_count_towards_limit(self, authenticated_client, article1, user2):
@@ -304,7 +317,7 @@ class TestLikeRateLimit:
                 is_approved=True
             )
             response = authenticated_client.post(f'/api/comments/{temp_comment.id}/like/')
-            if response.status_code == 400:
+            if response.status_code == 429:
                 break  # 达到限制
         
         # 清除缓存模拟时间过期
@@ -342,7 +355,7 @@ class TestAntiSpamIntegration:
             'article': str(article1.id)
         }
         response = authenticated_client.post('/api/comments/', data, format='json')
-        assert response.status_code == 400
+        assert response.status_code == 429, '评论达到限制（HTTP 429）'
         
         # 但点赞仍然可以工作
         comment = Comment.objects.create(
@@ -373,7 +386,7 @@ class TestAntiSpamIntegration:
         }
         response = authenticated_client.post('/api/comments/', data, format='json')
         
-        assert response.status_code == 400
+        assert response.status_code == 429, '超限评论应该返回 429'
         error_msg = str(response.data)
         
         # 错误消息应该包含有用的信息

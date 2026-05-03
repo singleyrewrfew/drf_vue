@@ -1,5 +1,5 @@
 from django.db.models import Count, Prefetch, Q
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
@@ -14,6 +14,14 @@ from .models import Comment, CommentLike
 from .serializers import CommentCreateSerializer, CommentListSerializer, CommentSerializer
 
 
+@extend_schema_view(
+    list=extend_schema(summary='列出评论', description='获取评论列表，支持分页和过滤'),
+    retrieve=extend_schema(summary='获取评论详情', description='获取单个评论的详细信息'),
+    create=extend_schema(summary='创建评论', description='创建新评论（需要登录）'),
+    update=extend_schema(summary='更新评论', description='更新评论（仅作者或管理员）'),
+    partial_update=extend_schema(summary='部分更新评论', description='部分更新评论（仅作者或管理员）'),
+    destroy=extend_schema(summary='删除评论', description='删除评论（仅作者或管理员）'),
+)
 class CommentViewSet(StandardListMixin, viewsets.ModelViewSet):
     queryset = Comment.objects.select_related('user', 'article', 'parent', 'reply_to')
     permission_classes = [IsAuthenticatedOrReadOnly]

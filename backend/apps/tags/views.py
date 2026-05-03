@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from django.conf import settings
@@ -28,6 +29,14 @@ class TagPermissionMixin:
         return super().get_permissions()
 
 
+@extend_schema_view(
+    list=extend_schema(summary='列出标签', description='获取标签列表，支持分页'),
+    retrieve=extend_schema(summary='获取标签详情', description='获取单个标签的详细信息'),
+    create=extend_schema(summary='创建标签', description='创建新标签（需要编辑权限）'),
+    update=extend_schema(summary='更新标签', description='更新标签信息（需要编辑权限）'),
+    partial_update=extend_schema(summary='部分更新标签', description='部分更新标签（需要编辑权限）'),
+    destroy=extend_schema(summary='删除标签', description='删除标签（需要编辑权限）'),
+)
 class TagViewSet(
     CachedListMixin,
     OptimizedQuerySetMixin,
