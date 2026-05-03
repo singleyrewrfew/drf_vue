@@ -58,13 +58,9 @@ class TestContentService:
         with pytest.raises(PermissionDenied, match='无归档权限'):
             ContentService.archive_content(content, user)
     
-    def test_increment_view_count(self):
-        """测试增加浏览量"""
-        content = MockContent(view_count=0)
-        
-        result = ContentService.increment_view_count(content)
-        
-        assert result.view_count == 1
+    # 注意：increment_view_count 已移至 Model 层
+    # 请使用 content.increment_view_count() 而非 ContentService.increment_view_count()
+    # 这样可以避免竞态条件问题，并使用 F() 表达式进行原子更新
     
     def test_can_user_edit_as_author(self):
         """测试作者可以编辑内容"""

@@ -9,7 +9,7 @@ from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from services.user_service import UserService
-from utils.response import StandardResponse, api_error
+from utils.response import StandardResponse, bad_request, unauthorized, forbidden, account_disabled, token_invalid, rate_limit_exceeded, internal_error
 from utils.error_codes import ErrorTypes
 from utils.log_utils import mask_token
 from .permissions import IsAdminUser
@@ -62,12 +62,11 @@ class UserViewSet(viewsets.ModelViewSet):
 
         user, error = UserService.authenticate(username, password)
         if error:
-            error_type = ErrorTypes.UNAUTHORIZED
             if error == '用户名和密码不能为空':
-                error_type = ErrorTypes.BAD_REQUEST
+                return bad_request(error)
             elif error == '账户已被禁用':
-                error_type = ErrorTypes.ACCOUNT_DISABLED
-            return api_error(message=error, error_type=error_type, status=status.HTTP_401_UNAUTHORIZED)
+                return account_disabled(error)
+            return unauthorized(error)
 
         refresh = RefreshToken.for_user(user)
         return StandardResponse({
@@ -127,11 +126,7 @@ class UserViewSet(viewsets.ModelViewSet):
         refresh_token_str = request.data.get('refresh')
 
         if not refresh_token_str:
-            return api_error(
-                message='刷新令牌不能为空',
-                error_type=ErrorTypes.BAD_REQUEST,
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return bad_request('刷新令牌不能为空')
 
         try:
             # 第 1 步：验证 Refresh Token 格式和签名
@@ -140,21 +135,13 @@ class UserViewSet(viewsets.ModelViewSet):
             # 第 2 步：提取用户 ID，检查用户状态
             user_id = refresh_token.get('user_id')
             if not user_id:
-                return api_error(
-                    message='刷新令牌格式错误',
-                    error_type=ErrorTypes.TOKEN_INVALID,
-                    status=status.HTTP_401_UNAUTHORIZED
-                )
+                return token_invalid('刷新令牌格式错误')
             
             # 第 3 步：查询用户并验证状态
             try:
                 user = User.objects.get(id=user_id)
             except User.DoesNotExist:
-                return api_error(
-                    message='用户不存在',
-                    error_type=ErrorTypes.TOKEN_INVALID,
-                    status=status.HTTP_401_UNAUTHORIZED
-                )
+                return token_invalid('用户不存在')
             
             # 第 4 步：检查用户账户状态
             if not user.is_active:
@@ -163,11 +150,7 @@ class UserViewSet(viewsets.ModelViewSet):
                     refresh_token.blacklist()
                 except Exception:
                     pass
-                return api_error(
-                    message='账户已被禁用',
-                    error_type=ErrorTypes.FORBIDDEN,
-                    status=status.HTTP_403_FORBIDDEN
-                )
+                return forbidden('账户已被禁用')
             
             # 第 5 步：检查刷新频率限制（防止滥用）
             rate_limit_key = f'token_refresh_rate_{user_id}'
@@ -179,11 +162,7 @@ class UserViewSet(viewsets.ModelViewSet):
                     f'用户 {user.username} (ID:{user_id}) Token 刷新频率超限: '
                     f'{refresh_count} 次/分钟'
                 )
-                return api_error(
-                    message='刷新过于频繁，请稍后再试',
-                    error_type=ErrorTypes.RATE_LIMIT_EXCEEDED,
-                    status=status.HTTP_429_TOO_MANY_REQUESTS
-                )
+                return rate_limit_exceeded('刷新过于频繁，请稍后再试')
             
             # 更新刷新计数（60秒过期）
             cache.set(rate_limit_key, refresh_count + 1, timeout=60)
@@ -226,25 +205,13 @@ class UserViewSet(viewsets.ModelViewSet):
 
         except (TokenError, InvalidToken) as e:
             logger.warning(f'Token 刷新失败 - 无效令牌: {str(e)}')
-            return api_error(
-                message='刷新令牌无效或已过期',
-                error_type=ErrorTypes.TOKEN_INVALID,
-                status=status.HTTP_401_UNAUTHORIZED
-            )
+            return token_invalid('刷新令牌无效或已过期')
         except User.DoesNotExist:
             logger.warning(f'Token 刷新失败 - 用户不存在')
-            return api_error(
-                message='用户不存在',
-                error_type=ErrorTypes.TOKEN_INVALID,
-                status=status.HTTP_401_UNAUTHORIZED
-            )
+            return token_invalid('用户不存在')
         except Exception as e:
             logger.error(f'Token 刷新异常: {type(e).__name__}: {str(e)}')
-            return api_error(
-                message='服务器内部错误',
-                error_type=ErrorTypes.INTERNAL_ERROR,
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            return internal_error('服务器内部错误')
 
     @action(detail=False, methods=['get'])
     def popular(self, request):

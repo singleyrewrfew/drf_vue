@@ -86,21 +86,6 @@ class ContentService:
         return content
     
     @staticmethod
-    def increment_view_count(content):
-        """
-        增加内容浏览量
-        
-        Args:
-            content: 内容对象
-            
-        Returns:
-            Content: 更新后的内容对象
-        """
-        content.view_count += 1
-        content.save(update_fields=['view_count'])
-        return content
-    
-    @staticmethod
     def can_user_edit(content, user):
         """
         检查用户是否可以编辑内容

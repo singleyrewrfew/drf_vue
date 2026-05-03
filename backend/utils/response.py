@@ -103,3 +103,86 @@ def api_error(message, error_type=ErrorTypes.BAD_REQUEST, status=None, data=None
         status=status,
         error_type=error_type
     )
+
+
+# ========== 快捷错误响应函数 ==========
+# 这些函数封装了常用的错误类型，简化调用代码
+
+def bad_request(message, data=None):
+    """400 - 请求错误"""
+    return api_error(message, ErrorTypes.BAD_REQUEST, data=data)
+
+
+def validation_error(message, data=None):
+    """400 - 参数验证失败"""
+    return api_error(message, ErrorTypes.VALIDATION_ERROR, data=data)
+
+
+def unauthorized(message='未授权访问', data=None):
+    """401 - 未授权"""
+    return api_error(message, ErrorTypes.UNAUTHORIZED, data=data)
+
+
+def token_expired(message='Token 已过期', data=None):
+    """401 - Token 过期"""
+    return api_error(message, ErrorTypes.TOKEN_EXPIRED, data=data)
+
+
+def token_invalid(message='Token 无效', data=None):
+    """401 - Token 无效"""
+    return api_error(message, ErrorTypes.TOKEN_INVALID, data=data)
+
+
+def forbidden(message='禁止访问', data=None):
+    """403 - 禁止访问"""
+    return api_error(message, ErrorTypes.FORBIDDEN, data=data)
+
+
+def insufficient_permissions(message='权限不足', data=None):
+    """403 - 权限不足"""
+    return api_error(message, ErrorTypes.INSUFFICIENT_PERMISSIONS, data=data)
+
+
+def account_disabled(message='账户已被禁用', data=None):
+    """403 - 账户被禁用"""
+    return api_error(message, ErrorTypes.ACCOUNT_DISABLED, data=data)
+
+
+def not_found(message='资源不存在', data=None):
+    """404 - 资源不存在"""
+    return api_error(message, ErrorTypes.NOT_FOUND, data=data)
+
+
+def conflict(message='资源冲突', data=None):
+    """409 - 冲突"""
+    return api_error(message, ErrorTypes.CONFLICT, data=data)
+
+
+def duplicate_entry(message='重复记录', data=None):
+    """409 - 重复记录"""
+    return api_error(message, ErrorTypes.DUPLICATE_ENTRY, data=data)
+
+
+def payload_too_large(message='文件过大', data=None):
+    """413 - 文件过大"""
+    return api_error(message, ErrorTypes.PAYLOAD_TOO_LARGE, data=data)
+
+
+def unsupported_media_type(message='不支持的文件格式', data=None):
+    """415 - 不支持的媒体类型"""
+    return api_error(message, ErrorTypes.UNSUPPORTED_MEDIA_TYPE, data=data)
+
+
+def rate_limit_exceeded(message='请求过于频繁', data=None):
+    """429 - 速率限制超限"""
+    return api_error(message, ErrorTypes.RATE_LIMIT_EXCEEDED, data=data)
+
+
+def internal_error(message='服务器内部错误', data=None):
+    """500 - 内部错误"""
+    return api_error(message, ErrorTypes.INTERNAL_ERROR, data=data)
+
+
+def file_processing_error(message='文件处理失败', data=None):
+    """500 - 文件处理错误"""
+    return api_error(message, ErrorTypes.FILE_PROCESSING_ERROR, data=data)

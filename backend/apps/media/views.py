@@ -13,7 +13,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from apps.users.permissions import IsOwnerOrAdmin
 from services.media_service import MediaService
-from utils.response import StandardResponse, api_error
+from utils.response import StandardResponse, unsupported_media_type, not_found, forbidden, conflict, file_processing_error
 from utils.error_codes import ErrorTypes
 from utils.viewset_mixins import StandardListMixin
 from .models import Media
@@ -101,11 +101,7 @@ class MediaViewSet(StandardListMixin, viewsets.ModelViewSet):
             result = MediaService.regenerate_thumbnails(media)
             return StandardResponse(result)
         except ValueError as e:
-            return api_error(
-                message=str(e),
-                error_type=ErrorTypes.UNSUPPORTED_MEDIA_TYPE,
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return unsupported_media_type(str(e))
 
 
 def stream_media_file(request, file_path, content_type, filename):
@@ -113,19 +109,11 @@ def stream_media_file(request, file_path, content_type, filename):
     try:
         if not os.path.exists(file_path):
             logger.warning(f"文件不存在: {file_path}")
-            return api_error(
-                message='文件不存在',
-                error_type=ErrorTypes.NOT_FOUND,
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return not_found('文件不存在')
 
         if not os.access(file_path, os.R_OK):
             logger.error(f"文件无法访问: {file_path}")
-            return api_error(
-                message='文件无法访问',
-                error_type=ErrorTypes.FORBIDDEN,
-                status=status.HTTP_403_FORBIDDEN
-            )
+            return forbidden('文件无法访问')
 
         file_size = os.path.getsize(file_path)
         range_header = request.headers.get('Range', '')
@@ -183,22 +171,10 @@ def stream_media_file(request, file_path, content_type, filename):
 
     except PermissionError:
         logger.warning(f"文件被占用: {file_path}")
-        return api_error(
-            message='视频正在处理中，文件被占用，请稍后再试',
-            error_type=ErrorTypes.CONFLICT,
-            status=status.HTTP_423_LOCKED
-        )
+        return conflict('视频正在处理中，文件被占用，请稍后再试')
     except FileNotFoundError as e:
         logger.error(f"文件不存在: {file_path}, {e}")
-        return api_error(
-            message='文件不存在',
-            error_type=ErrorTypes.NOT_FOUND,
-            status=status.HTTP_404_NOT_FOUND
-        )
+        return not_found('文件不存在')
     except Exception as e:
         logger.error(f"流式传输失败: {file_path}, {type(e).__name__}: {e}", exc_info=True)
-        return api_error(
-            message='文件处理失败',
-            error_type=ErrorTypes.FILE_PROCESSING_ERROR,
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+        return file_processing_error('文件处理失败')
