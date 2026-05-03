@@ -25,20 +25,20 @@ env = environ.Env(
     DB_NAME=(str, ''),
     DB_USER=(str, ''),
     DB_PASSWORD=(str, ''),
-    DB_HOST=(str, 'localhost'),
+    DB_HOST=(str, '127.0.0.1'),
     DB_PORT=(str, '3306'),
     SQLITE_DB_NAME=(str, ''),
     DB_CONN_MAX_AGE=(int, 0),
     DB_CONN_HEALTH_CHECKS=(bool, False),
     
     # Redis 配置
-    REDIS_URL=(str, 'redis://localhost:6379/0'),
-    REDIS_CACHE_URL=(str, 'redis://localhost:6379/1'),
+    REDIS_URL=(str, 'redis://127.0.0.1:6379/0'),
+    REDIS_CACHE_URL=(str, 'redis://127.0.0.1:6379/1'),
     CACHE_KEY_PREFIX=(str, 'cms'),
     
     # Celery 配置
-    CELERY_BROKER_URL=(str, 'redis://localhost:6379/2'),
-    CELERY_RESULT_BACKEND=(str, 'redis://localhost:6379/3'),
+    CELERY_BROKER_URL=(str, 'redis://127.0.0.1:6379/2'),
+    CELERY_RESULT_BACKEND=(str, 'redis://127.0.0.1:6379/3'),
     
     # JWT 配置
     JWT_ACCESS_TOKEN_LIFETIME=(int, 60),
@@ -210,8 +210,8 @@ class BaseConfig:
     }
     
     # Celery 配置
-    CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://localhost:6379/2')
-    CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default='redis://localhost:6379/3')
+    CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://127.0.0.1:6379/2')
+    CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default='redis://127.0.0.1:6379/3')
     CELERY_ACCEPT_CONTENT = ['json']
     CELERY_TASK_SERIALIZER = 'json'
     CELERY_RESULT_SERIALIZER = 'json'
@@ -239,6 +239,18 @@ class BaseConfig:
     # Session 使用 Redis 存储（性能优于数据库）
     SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
     SESSION_CACHE_ALIAS = 'default'
+    
+    # 缓存 TTL 配置
+    CACHE_TTL = {
+        'DEFAULT': 300,
+        'STATS': 120,
+        'POPULAR': 300,
+        'CONTENT_LIST': 120,
+        'CATEGORY_LIST': 300,
+        'TAG_LIST': 300,
+        'ROLE_LIST': 600,
+        'PERMISSION_LIST': 600,
+    }
     
     # 缓存 TTL 配置
     CACHE_TTL = {
@@ -374,7 +386,7 @@ class DevelopmentConfig(BaseConfig):
                 'NAME': env('DB_NAME', default='cms_db'),
                 'USER': env('DB_USER', default='root'),
                 'PASSWORD': env('DB_PASSWORD', default=''),
-                'HOST': env('DB_HOST', default='localhost'),
+                'HOST': env('DB_HOST', default='127.0.0.1'),
                 'PORT': env('DB_PORT', default='3306'),
                 'OPTIONS': {
                     'charset': 'utf8mb4',
