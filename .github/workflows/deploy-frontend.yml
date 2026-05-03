@@ -8,7 +8,6 @@ on:
       - 'mobile/**'
       - 'front/**'
       - '.github/workflows/deploy-frontend.yml'
-      - '.github/nginx.conf'
   workflow_dispatch:
 
 env:
@@ -76,9 +75,6 @@ jobs:
         rsync -avz --delete \
           deploy_temp/ ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:${{ env.FRONTEND_PATH }}/
         
-        # 上传 nginx 配置
-        scp -P ${{ env.SERVER_PORT }} .github/nginx.conf ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:/tmp/nginx.conf
-        
         # 清理临时目录
         rm -rf deploy_temp
         
@@ -89,27 +85,6 @@ jobs:
           # 设置正确的权限
           sudo chown -R www-data:www-data dist dist_mobile dist_backend
           sudo chmod -R 755 dist dist_mobile dist_backend
-          
-          # 检查并更新 Nginx 配置（仅在变化时）
-          if ! cmp -s /tmp/nginx.conf /etc/nginx/nginx.conf 2>/dev/null; then
-            echo "Nginx config changed, updating..."
-            # 备份旧配置
-            sudo cp /etc/nginx/nginx.conf /etc/nginx/nginx.conf.bak
-            # 应用新配置
-            sudo cp /tmp/nginx.conf /etc/nginx/nginx.conf
-            if sudo nginx -t; then
-              sudo systemctl reload nginx
-              echo "✅ Nginx config updated and reloaded"
-            else
-              echo "❌ Nginx config test failed, restoring old config"
-              sudo cp /etc/nginx/nginx.conf.bak /etc/nginx/nginx.conf
-              rm -f /tmp/nginx.conf
-              exit 1
-            fi
-          else
-            echo "Nginx config unchanged, skipping update"
-          fi
-          rm -f /tmp/nginx.conf
           
           # 检查 Nginx 状态
           sudo systemctl status nginx --no-pager

@@ -458,3 +458,15 @@ CELERY_BEAT_SCHEDULE = {
         'args': (30,),
     },
 }
+
+# ==================== 媒体文件传输配置 ====================
+
+# 是否使用 Nginx X-Accel-Redirect 传输媒体文件
+# - 开发环境：False（使用 Django FileResponse，已足够高效）
+# - 生产环境：True（使用 Nginx 直接传输，零 Python 资源占用）
+USE_NGINX_ACCEL_REDIRECT = os.getenv('USE_NGINX_ACCEL_REDIRECT', 'False') == 'True'
+
+if USE_NGINX_ACCEL_REDIRECT and not DEBUG:
+    print(f"\n✅ 已启用 Nginx X-Accel-Redirect 用于媒体文件传输")
+elif DEBUG:
+    print(f"\nℹ️  开发环境：使用 Django FileResponse 传输媒体文件")

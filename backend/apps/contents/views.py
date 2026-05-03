@@ -5,9 +5,9 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
 from django.conf import settings
+from django.db import models
 from services.content_service import ContentService
-from utils.cache_utils import get_cache_key, invalidate_pattern
-from utils.query_utils import get_object_by_slug_or_id
+from utils.cache_utils import get_cache_key, invalidate_pattern, generate_smart_cache_key
 from utils.response import StandardResponse, api_error
 from utils.viewset_mixins import CachedListMixin, SlugOrUUIDMixin
 from .mixins import ContentPermissionMixin, ContentSerializerMixin, ContentQuerySetMixin
@@ -59,12 +59,18 @@ class ContentViewSet(
         """
         内容列表额外受查询参数影响（category/tag/search/status 等），
         需要将查询参数拼入缓存 key，否则不同筛选条件会命中同一份缓存
+        
+        使用智能缓存键生成：
+        - 对长参数进行哈希，避免缓存键过长
+        - 排序参数确保一致性
         """
         scope = self.get_cache_scope(request)
-        query_params = '&'.join(
-            f'{k}={v}' for k, v in sorted(request.query_params.items())
+        # 使用智能缓存键生成
+        cache_key = generate_smart_cache_key(
+            self.cache_key_prefix,
+            {'scope': scope, **dict(request.query_params)}
         )
-        return get_cache_key(self.cache_key_prefix, scope, query_params)
+        return cache_key
 
     def _get_serializer_mapping(self):
         """获取序列化器映射配置"""
@@ -145,15 +151,21 @@ class ContentViewSet(
 
         category_id = self.request.query_params.get('category')
         if category_id:
-            from apps.categories.models import Category
-            category = get_object_by_slug_or_id(Category, category_id)
-            queryset = queryset.filter(category=category) if category else queryset.none()
+            # 直接使用 ORM 双下划线语法，避免额外查询
+            # 支持通过 slug 或 UUID/ID 过滤
+            queryset = queryset.filter(
+                models.Q(category__slug=category_id) | 
+                models.Q(category__id=category_id)
+            )
 
         tag_id = self.request.query_params.get('tag')
         if tag_id:
-            from apps.tags.models import Tag
-            tag = get_object_by_slug_or_id(Tag, tag_id)
-            queryset = queryset.filter(tags=tag) if tag else queryset.none()
+            # 直接使用 ORM 双下划线语法，避免额外查询
+            # 支持通过 slug 或 UUID/ID 过滤
+            queryset = queryset.filter(
+                models.Q(tags__slug=tag_id) | 
+                models.Q(tags__id=tag_id)
+            )
 
         author_id = self.request.query_params.get('author')
         if author_id:

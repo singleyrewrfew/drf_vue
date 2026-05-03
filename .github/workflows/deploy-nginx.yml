@@ -1,0 +1,172 @@
+name: Deploy Nginx Configuration
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - '.github/nginx.conf'
+      - '.github/workflows/deploy-nginx.yml'
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: '部署原因'
+        required: false
+        default: '手动触发 Nginx 配置部署'
+
+env:
+  SERVER_HOST: ${{ secrets.SERVER_HOST }}
+  SERVER_USER: ${{ secrets.SERVER_USER }}
+  SERVER_PORT: ${{ secrets.SERVER_PORT }}
+
+jobs:
+  deploy-nginx:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up SSH
+      uses: webfactory/ssh-agent@v0.9.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+    
+    - name: Add server to known hosts
+      run: |
+        mkdir -p ~/.ssh
+        ssh-keyscan -H -p ${{ env.SERVER_PORT }} ${{ env.SERVER_HOST }} >> ~/.ssh/known_hosts
+    
+    - name: Deploy Nginx configuration
+      run: |
+        # 上传 nginx 配置到服务器
+        scp -P ${{ env.SERVER_PORT }} .github/nginx.conf ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:/tmp/nginx.conf
+        
+        # 在服务器上执行部署命令
+        ssh -p ${{ env.SERVER_PORT }} ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << 'EOF'
+          cd /home/front
+          
+          # 检查并更新 Nginx 配置（仅在变化时）
+          if ! cmp -s /tmp/nginx.conf /etc/nginx/nginx.conf 2>/dev/null; then
+            echo "Nginx config changed, updating..."
+            
+            # 备份旧配置
+            sudo mkdir -p /etc/nginx/backups
+            BACKUP_FILE="/etc/nginx/backups/nginx.conf.backup.$(date +%Y%m%d_%H%M%S)"
+            sudo cp /etc/nginx/nginx.conf $BACKUP_FILE
+            echo "✅ Backup created: $BACKUP_FILE"
+            
+            # 保留最近 10 个备份
+            cd /etc/nginx/backups
+            ls -t nginx.conf.backup.* 2>/dev/null | tail -n +11 | xargs -r rm -f
+            echo "✅ Old backups cleaned (keeping last 10)"
+            
+            # 应用新配置
+            sudo cp /tmp/nginx.conf /etc/nginx/nginx.conf
+            
+            # 测试配置
+            if sudo nginx -t; then
+              echo "✅ Nginx config test passed"
+              
+              # 重载 Nginx（平滑重启，不中断服务）
+              sudo systemctl reload nginx
+              echo "✅ Nginx reloaded successfully"
+              
+              # 等待重载完成
+              sleep 2
+              
+              # 检查 Nginx 状态
+              if systemctl is-active --quiet nginx; then
+                echo "✅ Nginx is running"
+              else
+                echo "❌ Nginx failed to start!"
+                sudo journalctl -u nginx --no-pager -n 30
+                exit 1
+              fi
+              
+              # 显示 Nginx 状态
+              echo "=== Nginx Status ==="
+              sudo systemctl status nginx --no-pager -l
+              
+              # 验证关键配置是否生效
+              echo "=== Configuration Verification ==="
+              if grep -q "media_internal" /etc/nginx/nginx.conf; then
+                echo "✅ X-Accel-Redirect configuration present"
+              else
+                echo "⚠️ X-Accel-Redirect configuration not found"
+              fi
+              
+              if grep -q "sendfile on" /etc/nginx/nginx.conf; then
+                echo "✅ Sendfile enabled"
+              else
+                echo "⚠️ Sendfile not enabled"
+              fi
+            else
+              echo "❌ Nginx config test failed, restoring old config"
+              sudo cp $BACKUP_FILE /etc/nginx/nginx.conf
+              
+              # 重新测试备份配置
+              if sudo nginx -t; then
+                echo "✅ Restored backup configuration is valid"
+                sudo systemctl reload nginx
+                echo "✅ Nginx reloaded with backup config"
+              else
+                echo "❌ Backup configuration also invalid! Manual intervention required."
+                exit 1
+              fi
+            fi
+          else
+            echo "Nginx config unchanged, skipping update"
+          fi
+          
+          # 清理临时文件
+          rm -f /tmp/nginx.conf
+        EOF
+    
+    - name: Verify deployment
+      run: |
+        # 等待服务完全启动
+        sleep 3
+        
+        # 健康检查
+        echo "Running health checks..."
+        
+        # 测试 HTTP 响应
+        HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://${{ env.SERVER_HOST }}/ || echo "000")
+        echo "HTTP Status: $HTTP_STATUS"
+        
+        if [ "$HTTP_STATUS" = "200" ] || [ "$HTTP_STATUS" = "301" ] || [ "$HTTP_STATUS" = "302" ]; then
+          echo "✅ Server is responding"
+        else
+          echo "⚠️ Server returned status: $HTTP_STATUS (may be expected)"
+        fi
+    
+    - name: Deployment summary
+      if: success()
+      run: |
+        echo "## ✅ Nginx Configuration Deployment Successful" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- **Server**: ${{ env.SERVER_HOST }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Trigger**: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+        if [ -n "${{ github.event.inputs.reason }}" ]; then
+          echo "- **Reason**: ${{ github.event.inputs.reason }}" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Changes" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`diff" >> $GITHUB_STEP_SUMMARY
+        git diff HEAD~1 HEAD -- .github/nginx.conf || echo "No previous version to compare" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+    
+    - name: Deployment failure notification
+      if: failure()
+      run: |
+        echo "## ❌ Nginx Configuration Deployment Failed" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Server**: ${{ env.SERVER_HOST }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Error**: Check the logs above for details" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Recovery Steps" >> $GITHUB_STEP_SUMMARY
+        echo "1. SSH to server: \`ssh -p ${{ env.SERVER_PORT }} ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "2. Check latest backup: \`ls -lt /etc/nginx/backups/\`" >> $GITHUB_STEP_SUMMARY
+        echo "3. Restore backup: \`sudo cp <backup_file> /etc/nginx/nginx.conf\`" >> $GITHUB_STEP_SUMMARY
+        echo "4. Test config: \`sudo nginx -t\`" >> $GITHUB_STEP_SUMMARY
+        echo "5. Reload Nginx: \`sudo systemctl reload nginx\`" >> $GITHUB_STEP_SUMMARY

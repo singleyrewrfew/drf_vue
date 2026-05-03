@@ -7,8 +7,10 @@
 避免 Django Cache API 的自动前缀和版本号导致的键名不一致问题。
 """
 
+import hashlib
 import json
 import logging
+import time
 
 import redis
 from django.conf import settings
@@ -169,3 +171,144 @@ def cache_result(key_prefix: str, timeout: int = None):
             return result
         return wrapper
     return decorator
+
+
+# ========== 智能缓存功能 ==========
+
+def generate_smart_cache_key(prefix: str, params: dict, max_length: int = 100) -> str:
+    """
+    智能缓存键生成
+    
+    - 对长参数进行哈希，避免缓存键过长
+    - 排序参数确保一致性
+    - 支持自定义最大长度
+    
+    Args:
+        prefix: 缓存键前缀
+        params: 查询参数字典
+        max_length: 参数字符串最大长度，超过则使用哈希
+        
+    Returns:
+        str: 优化后的缓存键
+        
+    Example:
+        >>> generate_smart_cache_key('contents:list', {'page': 1, 'category': 'python'})
+        'cms:contents:list:category=python&page=1'
+        
+        >>> # 长参数会自动哈希
+        >>> generate_smart_cache_key('search', {'q': 'very long search query...' * 10})
+        'cms:search:a3f5b8c2'
+    """
+    # 排序参数确保一致性
+    sorted_params = sorted(params.items())
+    param_str = '&'.join(f'{k}={v}' for k, v in sorted_params if v)
+    
+    # 如果参数过长，使用哈希
+    if len(param_str) > max_length:
+        param_hash = hashlib.md5(param_str.encode()).hexdigest()[:8]
+        return get_cache_key(prefix, param_hash)
+    
+    return get_cache_key(prefix, param_str) if param_str else get_cache_key(prefix)
+
+
+def get_or_set_cache(key: str, func, timeout: int = None, lock_timeout: int = 10):
+    """
+    缓存 getter/setter，使用分布式锁避免竞态条件
+    
+    当多个请求同时请求同一个不存在的缓存时，只有一个请求会执行 func，
+    其他请求等待结果，避免“缓存击穿”问题。
+    
+    Args:
+        key: 缓存键
+        func: 获取数据的可调用对象（无参数）
+        timeout: 缓存过期时间（秒）
+        lock_timeout: 锁超时时间（秒），防止死锁
+        
+    Returns:
+        缓存的数据
+        
+    Example:
+        >>> data = get_or_set_cache(
+        ...     'my_key',
+        ...     lambda: expensive_database_query(),
+        ...     timeout=300
+        ... )
+    """
+    client = get_redis_client()
+    
+    # 尝试获取缓存
+    result = cache_get(key)
+    if result is not None:
+        return result
+    
+    # 使用 Redis 锁防止竞态条件
+    lock_key = f"{key}:lock"
+    acquired = client.set(lock_key, time.time(), nx=True, ex=lock_timeout)
+    
+    if acquired:
+        try:
+            # 再次检查缓存（双重检查锁定）
+            result = cache_get(key)
+            if result is not None:
+                return result
+            
+            # 执行函数获取数据
+            result = func()
+            cache_set(key, result, timeout)
+            return result
+        finally:
+            # 释放锁
+            client.delete(lock_key)
+    else:
+        # 等待其他请求完成
+        for _ in range(lock_timeout * 10):  # 最多等待 lock_timeout 秒
+            time.sleep(0.1)
+            result = cache_get(key)
+            if result is not None:
+                return result
+        
+        # 超时后直接执行（降级策略）
+        logger.warning(f"Cache lock timeout for key: {key}, executing function directly")
+        result = func()
+        cache_set(key, result, timeout)
+        return result
+
+
+def calculate_dynamic_ttl(base_ttl: int, hit_count: int = None, last_access: float = None) -> int:
+    """
+    根据热度动态计算缓存 TTL
+    
+    - 高频访问的内容使用更长的 TTL
+    - 低频访问的内容使用较短的 TTL
+    
+    Args:
+        base_ttl: 基础 TTL（秒）
+        hit_count: 访问次数（可选）
+        last_access: 最后访问时间戳（可选）
+        
+    Returns:
+        int: 动态计算的 TTL（秒）
+        
+    Example:
+        >>> # 热门内容：TTL 延长 2 倍
+        >>> calculate_dynamic_ttl(300, hit_count=1000)
+        600
+        
+        >>> # 冷门内容：TTL 缩短为 0.5 倍
+        >>> calculate_dynamic_ttl(300, hit_count=5)
+        150
+    """
+    if hit_count is None:
+        return base_ttl
+    
+    # 根据访问次数调整 TTL
+    if hit_count > 1000:
+        multiplier = 2.0  # 非常热门
+    elif hit_count > 100:
+        multiplier = 1.5  # 热门
+    elif hit_count > 10:
+        multiplier = 1.0  # 正常
+    else:
+        multiplier = 0.5  # 冷门
+    
+    return int(base_ttl * multiplier)
