@@ -25,14 +25,33 @@ def extract_media_path(url):
     return url
 
 
-class ContentSerializer(serializers.ModelSerializer):
+class ContentAuthorFieldsMixin(serializers.Serializer):
+    """
+    内容作者字段Mixin
+    
+    提取公共的作者相关字段，避免在多个序列化器中重复定义。
+    用于需要展示作者信息的序列化器。
+    """
     author_name = serializers.CharField(source='author.username', read_only=True)
     author_avatar = serializers.ImageField(source='author.avatar', read_only=True)
+
+
+class ContentCategoryFieldsMixin(serializers.Serializer):
+    """
+    内容分类字段Mixin
+    
+    提取公共的分类相关字段，避免在多个序列化器中重复定义。
+    用于需要展示分类信息的序列化器。
+    """
     category_name = serializers.CharField(source='category.name', read_only=True)
+
+
+class ContentSerializer(ContentAuthorFieldsMixin, ContentCategoryFieldsMixin, serializers.ModelSerializer):
+    """内容详情序列化器（包含完整字段）"""
     category_slug = serializers.CharField(source='category.slug', read_only=True)
     tags = TagSerializer(many=True, read_only=True)
     content_preview = serializers.SerializerMethodField(help_text='文章预览内容（前 5000 字符）')
-
+    
     class Meta:
         model = Content
         fields = [
@@ -55,12 +74,10 @@ class ContentSerializer(serializers.ModelSerializer):
         return obj.content[:5000] if len(obj.content) > 5000 else obj.content
 
 
-class ContentListSerializer(serializers.ModelSerializer):
-    author_name = serializers.CharField(source='author.username', read_only=True)
-    author_avatar = serializers.ImageField(source='author.avatar', read_only=True)
-    category_name = serializers.CharField(source='category.name', read_only=True)
+class ContentListSerializer(ContentAuthorFieldsMixin, ContentCategoryFieldsMixin, serializers.ModelSerializer):
+    """内容列表序列化器（精简字段，用于列表展示）"""
     tags = TagSerializer(many=True, read_only=True)
-
+    
     class Meta:
         model = Content
         fields = [

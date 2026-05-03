@@ -5,8 +5,126 @@ ViewSet Mixin 类
 """
 
 import uuid
+from django.db.models import Prefetch
 from utils.cache_utils import cache_get, cache_set, get_cache_key, invalidate_pattern
 from utils.response import StandardResponse
+
+
+class OptimizedQuerySetMixin:
+    """
+    提供声明式 QuerySet 优化机制
+
+    功能：
+    - 支持配置 select_related（外键预加载）
+    - 支持配置 prefetch_related（反向关系/多对多预加载）
+    - 支持按 action 配置不同的优化策略
+    - 自动应用优化，无需手动重写 get_queryset()
+
+    使用方法：
+    1. 在 ViewSet 中继承此 Mixin
+    2. 设置 select_related_fields 和 prefetch_related_fields 属性
+    3. 可选：使用 action_specific_optimizations 为不同 action 配置不同优化
+
+    Example:
+        # 基础用法 - 所有 action 使用相同优化
+        class CategoryViewSet(OptimizedQuerySetMixin, viewsets.ModelViewSet):
+            select_related_fields = ['parent']
+            prefetch_related_fields = []
+
+        # 高级用法 - 不同 action 使用不同优化
+        class ContentViewSet(OptimizedQuerySetMixin, viewsets.ModelViewSet):
+            # 默认优化
+            select_related_fields = ['author', 'category']
+            prefetch_related_fields = ['tags']
+
+            # 针对特定 action 的优化
+            action_specific_optimizations = {
+                'list': {
+                    'select_related': ['author'],
+                    'prefetch_related': ['tags'],
+                },
+                'retrieve': {
+                    'select_related': ['author', 'category'],
+                    'prefetch_related': ['tags', 'comments'],
+                }
+            }
+
+        # 使用 Prefetch 对象进行复杂优化
+        from django.db.models import Count, Q, Prefetch
+
+        class AdvancedViewSet(OptimizedQuerySetMixin, viewsets.ModelViewSet):
+            def get_prefetch_related(self):
+                return [
+                    Prefetch(
+                        'children',
+                        queryset=Model.objects.annotate(count=Count('items')),
+                        to_attr='prefetched_children'
+                    )
+                ]
+    """
+
+    # 默认的 select_related 字段列表
+    select_related_fields = []
+
+    # 默认的 prefetch_related 字段列表
+    prefetch_related_fields = []
+
+    # 针对特定 action 的优化配置
+    # 格式: {'action_name': {'select_related': [...], 'prefetch_related': [...]}}
+    action_specific_optimizations = {}
+
+    def get_select_related(self):
+        """
+        获取当前 action 的 select_related 配置
+
+        优先级：
+        1. action_specific_optimizations 中的配置
+        2. 默认的 select_related_fields
+
+        Returns:
+            list: select_related 字段列表
+        """
+        action_opts = self.action_specific_optimizations.get(self.action, {})
+        if 'select_related' in action_opts:
+            return action_opts['select_related']
+        return self.select_related_fields
+
+    def get_prefetch_related(self):
+        """
+        获取当前 action 的 prefetch_related 配置
+
+        优先级：
+        1. action_specific_optimizations 中的配置
+        2. 默认的 prefetch_related_fields
+
+        Returns:
+            list: prefetch_related 字段列表或 Prefetch 对象列表
+        """
+        action_opts = self.action_specific_optimizations.get(self.action, {})
+        if 'prefetch_related' in action_opts:
+            return action_opts['prefetch_related']
+        return self.prefetch_related_fields
+
+    def get_queryset(self):
+        """
+        获取优化后的查询集
+
+        自动应用 select_related 和 prefetch_related 优化。
+        子类可以在 super().get_queryset() 后继续添加其他过滤逻辑。
+        """
+        queryset = super().get_queryset()
+
+        # 应用 select_related
+        select_related = self.get_select_related()
+        if select_related:
+            queryset = queryset.select_related(*select_related)
+
+        # 应用 prefetch_related
+        prefetch_related = self.get_prefetch_related()
+        if prefetch_related:
+            queryset = queryset.prefetch_related(*prefetch_related)
+
+        return queryset
 
 
 class StandardListMixin:
@@ -31,7 +149,85 @@ class StandardListMixin:
         return StandardResponse(serializer.data)
 
 
-class CachedListMixin:
+class CacheInvalidationMixin:
+    """
+    提供灵活的缓存失效机制
+
+    功能：
+    - 支持主缓存失效（当前 ViewSet 的列表缓存）
+    - 支持额外缓存模式失效（通过 additional_cache_patterns 配置）
+    - 支持自定义失效逻辑（通过重写 post_invalidate_cache hook）
+
+    使用方法：
+    1. 在 ViewSet 中继承此 Mixin
+    2. 设置 cache_key_prefix 属性（如 'categories:list'）
+    3. 可选：设置 additional_cache_patterns 列表，指定需要额外清除的缓存模式
+    4. 可选：重写 post_invalidate_cache() 方法添加自定义失效逻辑
+
+    Example:
+        # 基础用法 - 只清除自身缓存
+        class CategoryViewSet(CacheInvalidationMixin, viewsets.ModelViewSet):
+            cache_key_prefix = 'categories:list'
+
+        # 高级用法 - 清除多个相关缓存
+        class ContentViewSet(CacheInvalidationMixin, viewsets.ModelViewSet):
+            cache_key_prefix = 'contents:list'
+            additional_cache_patterns = ['stats', 'popular_authors']
+
+            def post_invalidate_cache(self):
+                # 自定义失效逻辑
+                logger.info('Content cache invalidated')
+    """
+
+    cache_key_prefix = None
+    additional_cache_patterns = []
+
+    def _invalidate_main_cache(self):
+        """清除主缓存（当前 ViewSet 的列表缓存）"""
+        if self.cache_key_prefix:
+            invalidate_pattern(self.cache_key_prefix)
+
+    def _invalidate_additional_caches(self):
+        """清除额外的缓存模式"""
+        for pattern in self.additional_cache_patterns:
+            invalidate_pattern(pattern)
+
+    def post_invalidate_cache(self):
+        """
+        缓存失效后的钩子方法
+
+        子类可以重写此方法添加自定义的缓存失效逻辑。
+        在主要缓存和额外缓存都清除后调用。
+        """
+        pass
+
+    def _invalidate_cache(self):
+        """
+        执行完整的缓存失效流程
+
+        流程：
+        1. 清除主缓存
+        2. 清除额外缓存
+        3. 调用钩子方法
+        """
+        self._invalidate_main_cache()
+        self._invalidate_additional_caches()
+        self.post_invalidate_cache()
+
+    def perform_create(self, serializer):
+        super().perform_create(serializer)
+        self._invalidate_cache()
+
+    def perform_update(self, serializer):
+        super().perform_update(serializer)
+        self._invalidate_cache()
+
+    def perform_destroy(self, instance):
+        super().perform_destroy(instance)
+        self._invalidate_cache()
+
+
+class CachedListMixin(CacheInvalidationMixin):
     """
     提供带缓存功能的 list 方法
 
@@ -40,30 +236,35 @@ class CachedListMixin:
     - 支持分页（每页独立缓存）
     - 通过 get_cache_scope() 按数据范围隔离缓存，避免不同权限用户数据串读
     - 返回 StandardResponse 格式的响应
+    - 自动在增删改操作时清除缓存（继承自 CacheInvalidationMixin）
 
     使用方法：
     1. 在 ViewSet 中继承此 Mixin
     2. 设置 cache_key_prefix 属性（如 'categories:list'）
     3. 如果不同角色看到的数据不同，覆盖 get_cache_scope() 返回数据范围标识
+    4. 可选：设置 additional_cache_patterns 清除额外的相关缓存
 
     Example:
+        # 基础用法
         class CategoryViewSet(CachedListMixin, viewsets.ModelViewSet):
             cache_key_prefix = 'categories:list'
             # 数据不随角色变化，无需覆盖 get_cache_scope
 
+        # 高级用法 - 多缓存清除
         class ContentViewSet(CachedListMixin, viewsets.ModelViewSet):
             cache_key_prefix = 'contents:list'
+            additional_cache_patterns = ['stats', 'popular_authors']
 
             def get_cache_scope(self, request):
                 # 不同角色看到的数据范围不同，需按范围隔离
-                if request.user.is_admin or request.user.is_superuser:
+                # is_admin 已包含 is_superuser 检查
+                if request.user.is_admin:
                     return 'all'                        # 管理员看全部
                 elif request.user.is_editor:
                     return f'own:{request.user.id}'     # 编辑只看自己的，按 user_id 隔离
                 return 'published'                      # 其他用户和匿名看已发布
     """
 
-    cache_key_prefix = None
     cache_timeout = 300
 
     def get_cache_scope(self, request):
@@ -119,21 +320,7 @@ class CachedListMixin:
         cache_set(cache_key, serializer.data, self.cache_timeout)
         return StandardResponse(serializer.data)
 
-    def _invalidate_cache(self):
-        if self.cache_key_prefix:
-            invalidate_pattern(self.cache_key_prefix)
 
-    def perform_create(self, serializer):
-        super().perform_create(serializer)
-        self._invalidate_cache()
-
-    def perform_update(self, serializer):
-        super().perform_update(serializer)
-        self._invalidate_cache()
-
-    def perform_destroy(self, instance):
-        super().perform_destroy(instance)
-        self._invalidate_cache()
 
 
 class SlugOrUUIDMixin:

@@ -225,6 +225,7 @@ class UserService(ModelService):
         Returns:
             bool: 是否可以修改
         """
-        if current_user.is_admin or current_user.is_superuser:
+        # is_admin 已包含 is_superuser 检查
+        if current_user.is_admin:
             return True
         return target_user.id == current_user.id

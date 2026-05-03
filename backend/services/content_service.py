@@ -45,7 +45,8 @@ class ContentService:
         """
         # 权限检查（如果提供了用户）
         if user is not None:
-            if not (user.is_admin or user.is_superuser or hasattr(user, 'has_permission') and user.has_permission('content_publish')):
+            # is_admin 已包含 is_superuser 检查
+            if not (user.is_admin or (hasattr(user, 'has_permission') and user.has_permission('content_publish'))):
                 raise PermissionDenied('无发布权限')
         
         if content.status == 'published':
@@ -76,7 +77,8 @@ class ContentService:
         """
         # 权限检查（如果提供了用户）
         if user is not None:
-            if not (user.is_admin or user.is_superuser or hasattr(user, 'has_permission') and user.has_permission('content_archive')):
+            # is_admin 已包含 is_superuser 检查
+            if not (user.is_admin or (hasattr(user, 'has_permission') and user.has_permission('content_archive'))):
                 raise PermissionDenied('无归档权限')
         
         content.status = 'archived'
@@ -110,7 +112,8 @@ class ContentService:
         Returns:
             bool: 是否可以编辑
         """
-        if user.is_admin or user.is_superuser:
+        # is_admin 已包含 is_superuser 检查
+        if user.is_admin:
             return True
         return content.author == user
     
@@ -126,7 +129,8 @@ class ContentService:
         Returns:
             bool: 是否可以删除
         """
-        if user.is_admin or user.is_superuser:
+        # is_admin 已包含 is_superuser 检查
+        if user.is_admin:
             return True
         return content.author == user
     

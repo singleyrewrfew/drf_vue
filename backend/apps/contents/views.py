@@ -35,12 +35,9 @@ class ContentViewSet(
     
     # 有效的状态值白名单（防止 SQL 注入）
     VALID_STATUSES = dict(Content.STATUS_CHOICES).keys()
-
-    def _invalidate_cache(self):
-        """内容变更时，同时清除列表、统计和热门作者缓存"""
-        super()._invalidate_cache()
-        invalidate_pattern('stats')
-        invalidate_pattern('popular_authors')
+    
+    # 额外需要清除的缓存模式
+    additional_cache_patterns = ['stats', 'popular_authors']
 
     def get_cache_scope(self, request):
         """
@@ -51,7 +48,8 @@ class ContentViewSet(
         - 普通用户/匿名: 只看已发布 → scope='published'
         """
         if request.user.is_authenticated:
-            if request.user.is_admin or request.user.is_superuser:
+            # is_admin 已包含 is_superuser 检查
+            if request.user.is_admin:
                 return 'all'
             elif request.user.is_editor:
                 return f'own:{request.user.id}'
@@ -80,7 +78,8 @@ class ContentViewSet(
     def perform_create(self, serializer):
         """创建内容时自动设置作者（管理员可指定其他作者）"""
         author_id = self.request.data.get('author')
-        if author_id and (self.request.user.is_admin or self.request.user.is_superuser):
+        # is_admin 已包含 is_superuser 检查
+        if author_id and self.request.user.is_admin:
             from apps.core.models import User
             try:
                 author = User.objects.get(id=author_id)
@@ -125,7 +124,8 @@ class ContentViewSet(
 
         if self.action == 'list':
             if self.request.user.is_authenticated:
-                if self.request.user.is_admin or self.request.user.is_superuser:
+                # is_admin 已包含 is_superuser 检查
+                if self.request.user.is_admin:
                     if status_filter:
                         # 验证状态值是否在白名单中（防止 SQL 注入）
                         if status_filter not in self.VALID_STATUSES:

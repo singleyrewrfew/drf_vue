@@ -164,7 +164,8 @@ class CommentService(ModelService):
         Returns:
             bool: 是否可以修改
         """
-        if user.is_admin or user.is_superuser:
+        # is_admin 已包含 is_superuser 检查
+        if user.is_admin:
             return True
         return comment.user_id == user.id
 

@@ -4,7 +4,7 @@ from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
 from apps.users.permissions import IsEditorUser
-from utils.viewset_mixins import CachedListMixin, SlugOrUUIDMixin
+from utils.viewset_mixins import CachedListMixin, OptimizedQuerySetMixin, SlugOrUUIDMixin
 
 from .models import Category
 from .serializers import (
@@ -36,33 +36,73 @@ class CategoryPermissionMixin:
 
 class CategoryViewSet(
     CachedListMixin,
+    OptimizedQuerySetMixin,
     CategoryPermissionMixin,
     CategorySerializerMixin,
     SlugOrUUIDMixin,
     viewsets.ModelViewSet
 ):
+    """
+    分类视图集
+    
+    缓存配置：
+    - cache_key_prefix: 'categories:list' - 列表缓存前缀
+    - cache_timeout: 使用 settings.CACHE_TTL['CATEGORY_LIST']
+    
+    QuerySet 优化配置：
+    - select_related_fields: ['parent'] - 预加载父分类
+    - action_specific_optimizations: 针对 retrieve 动作的复杂优化
+    
+    扩展示例（如需清除额外缓存）：
+        additional_cache_patterns = ['content_categories', 'related_stats']
+        
+        def post_invalidate_cache(self):
+            # 自定义缓存失效逻辑
+            from utils.cache_utils import invalidate_pattern
+            invalidate_pattern('custom_pattern')
+    """
     cache_key_prefix = 'categories:list'
     cache_timeout = settings.CACHE_TTL['CATEGORY_LIST']
     queryset = Category.objects.all()
     permission_classes = [IsAuthenticatedOrReadOnly]
     lookup_field = 'pk'
     lookup_url_kwarg = 'pk'
+    
+    # QuerySet 优化配置
+    select_related_fields = ['parent']
+    prefetch_related_fields = []
+    
+    # 针对不同 action 的优化配置
+    action_specific_optimizations = {
+        'list': {
+            'select_related': ['parent'],
+            'prefetch_related': [],
+        },
+        'retrieve': {
+            'select_related': ['parent'],
+            'prefetch_related': [
+                Prefetch(
+                    'children',
+                    queryset=Category.objects.annotate(
+                        content_count=Count('contents', filter=Q(contents__status='published'))
+                    ),
+                    to_attr='prefetched_children'
+                )
+            ],
+        }
+    }
 
     def get_queryset(self):
+        """
+        获取优化后的查询集
+        
+        在 OptimizedQuerySetMixin 的基础上，添加 annotate 统计信息。
+        """
         queryset = super().get_queryset()
-
-        if self.action == 'list':
-            queryset = queryset.select_related('parent').annotate(
-                content_count=Count('contents', filter=Q(contents__status='published'))
-            )
-        elif self.action == 'retrieve':
-            children_qs = Category.objects.annotate(
-                content_count=Count('contents', filter=Q(contents__status='published'))
-            )
-            queryset = queryset.prefetch_related(
-                Prefetch('children', queryset=children_qs, to_attr='prefetched_children')
-            ).annotate(
-                content_count=Count('contents', filter=Q(contents__status='published'))
-            )
-
+        
+        # 为所有 action 添加内容数量统计
+        queryset = queryset.annotate(
+            content_count=Count('contents', filter=Q(contents__status='published'))
+        )
+        
         return queryset
