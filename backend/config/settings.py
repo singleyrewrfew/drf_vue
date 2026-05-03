@@ -5,7 +5,7 @@ Django Settings - 简化版
 此文件仅用于加载和验证配置。
 """
 
-from config.environments import ConfigClass, ENVIRONMENT
+from .environments import ConfigClass, ENVIRONMENT
 
 # ==================== 应用配置 ====================
 
@@ -19,11 +19,11 @@ for attr in dir(ConfigClass):
 def validate_config():
     """验证关键配置是否正确设置"""
     import warnings
-    
+
     # SECRET_KEY 验证
     if not ConfigClass.SECRET_KEY:
         raise ValueError("SECRET_KEY 未设置")
-    
+
     # DEBUG 模式警告
     if ConfigClass.DEBUG and __name__ == '__main__':
         warnings.warn(
@@ -31,12 +31,12 @@ def validate_config():
             RuntimeWarning,
             stacklevel=2
         )
-    
+
     # 数据库配置验证
     if hasattr(ConfigClass, 'DATABASES'):
         db_config = ConfigClass.DATABASES.get('default', {})
         engine = db_config.get('ENGINE', '')
-        
+
         if 'mysql' in engine.lower() or 'postgresql' in engine.lower():
             # 生产环境数据库必须有密码
             if not ConfigClass.DEBUG and not db_config.get('PASSWORD'):
