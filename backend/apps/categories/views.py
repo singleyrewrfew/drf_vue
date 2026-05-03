@@ -8,7 +8,6 @@ from utils.viewset_mixins import CachedListMixin, SlugOrUUIDMixin
 
 from .models import Category
 from .serializers import (
-    CategoryChildSerializer,
     CategoryCreateUpdateSerializer,
     CategoryListSerializer,
     CategorySerializer,
