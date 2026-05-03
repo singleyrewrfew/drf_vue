@@ -32,6 +32,8 @@ local_settings.py
 db.sqlite3
 /backend/media/
 /backend/media_test/
+/backend/logs/
+celerybeat-schedule.*
 
 # Environment variables
 .env
@@ -77,5 +79,16 @@ coverage.xml
 .mypy_cache/
 
 htmlcov
-/python_prodrfVuedrf_vue.claudeskillsexcalidraw-diagram/
-backend/apps/comments/serializers.py
+
+# AI Assistant Skills & Configurations (keep locally, don't push)
+.claude/
+.lingma/
+.trae/
+
+# Documentation (keep locally, don't push)
+docs/
+backend/docs/
+documents/
+
+# Sub-projects (keep locally, don't push)
+picBed/
