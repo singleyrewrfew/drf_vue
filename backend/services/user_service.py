@@ -1,12 +1,14 @@
 from django.conf import settings
 from django.db.models import Count, Sum, Q
+from django.contrib.auth import get_user_model
 
 from apps.comments.models import Comment
 from apps.contents.models import Content
-from apps.core.models import User
 from apps.media.models import Media
 from services.base import ModelService
 from utils.cache_utils import cache_get, cache_set, get_cache_key
+
+User = get_user_model()
 
 
 class UserService(ModelService):

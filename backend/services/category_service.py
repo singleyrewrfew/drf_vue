@@ -2,42 +2,53 @@ from django.db.models import Count, Prefetch, Q
 
 from apps.categories.models import Category
 from services.base import ModelService
+from services.repositories import CategoryRepository
 
 
 class CategoryService(ModelService):
     """
     分类业务逻辑服务层
     
-    封装所有与分类相关的业务逻辑
+    职责：
+    - 封装业务逻辑（权限检查、树结构构建）
+    - 协调多个 Repository 操作
+    - 不包含直接的数据库查询
     """
     model_class = Category
+    
+    # Repository 实例
+    repo = CategoryRepository
 
     @classmethod
     def get_root_categories(cls):
         """
         获取根分类列表
         
+        ⚠️  建议使用: CategoryRepository.get_root_categories()
+        
         Returns:
             QuerySet: 根分类查询集
         """
-        return Category.objects.filter(parent__isnull=True)
+        return CategoryRepository.get_root_categories()
 
     @classmethod
     def get_categories_with_content_count(cls):
         """
         获取分类列表（包含已发布内容数量）
         
+        ⚠️  建议使用: CategoryRepository.get_with_content_count()
+        
         Returns:
             QuerySet: 带内容计数的分类查询集
         """
-        return Category.objects.select_related('parent').annotate(
-            content_count=Count('contents', filter=Q(contents__status='published'))
-        )
+        return CategoryRepository.get_with_content_count()
 
     @classmethod
     def get_category_with_children(cls, category_id):
         """
         获取分类及其子分类
+        
+        ⚠️  建议使用: CategoryRepository.get_by_id_with_children(category_id)
         
         Args:
             category_id: 分类 ID
@@ -45,15 +56,7 @@ class CategoryService(ModelService):
         Returns:
             Category: 包含预加载子分类的分类对象
         """
-        children_qs = Category.objects.annotate(
-            content_count=Count('contents', filter=Q(contents__status='published'))
-        )
-        
-        return Category.objects.prefetch_related(
-            Prefetch('children', queryset=children_qs, to_attr='prefetched_children')
-        ).annotate(
-            content_count=Count('contents', filter=Q(contents__status='published'))
-        ).get(id=category_id)
+        return CategoryRepository.get_by_id_with_children(category_id)
 
     @classmethod
     def get_category_tree(cls):
@@ -82,6 +85,8 @@ class CategoryService(ModelService):
         """
         创建分类
         
+        ⚠️  建议使用: CategoryRepository.create(name, parent, description, sort_order)
+        
         Args:
             name: 分类名称
             parent: 父分类（可选）
@@ -91,7 +96,7 @@ class CategoryService(ModelService):
         Returns:
             Category: 创建的分类对象
         """
-        return Category.objects.create(
+        return CategoryRepository.create(
             name=name,
             parent=parent,
             description=description,

@@ -1,9 +1,9 @@
 from django.db import models
 from django.db.models import F
+from django.conf import settings
 
 from apps.base.models import BaseModel
 from apps.categories.models import Category
-from apps.core.models import User
 from apps.tags.models import Tag
 
 
@@ -27,7 +27,12 @@ class Content(BaseModel):
     summary = models.TextField(blank=True, verbose_name='摘要')
     content = models.TextField(verbose_name='正文内容')
     cover_image = models.ImageField(upload_to='covers/', blank=True, null=True, verbose_name='封面图')
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='contents', verbose_name='作者')
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='contents',
+        verbose_name='作者'
+    )
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='contents', verbose_name='分类')
     tags = models.ManyToManyField(Tag, blank=True, related_name='contents', verbose_name='标签')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft', verbose_name='状态')

@@ -4,6 +4,7 @@ import logging
 
 from apps.comments.models import Comment, CommentLike
 from services.base import ModelService
+from services.repositories import CommentRepository
 from utils.error_codes import ErrorTypes
 from rest_framework.exceptions import ValidationError
 
@@ -14,34 +15,46 @@ class CommentService(ModelService):
     """
     评论业务逻辑服务层
     
-    封装所有与评论相关的业务逻辑
+    职责：
+    - 封装业务逻辑（权限检查、频率限制、状态转换）
+    - 协调多个 Repository 操作
+    - 不包含直接的数据库查询
     """
     model_class = Comment
+    
+    # Repository 实例
+    repo = CommentRepository
 
     @classmethod
     def get_approved_comments(cls):
         """
         获取已审核的评论列表
         
+        ⚠️  建议使用: CommentRepository.get_approved()
+        
         Returns:
             QuerySet: 已审核评论的查询集
         """
-        return Comment.objects.filter(is_approved=True)
+        return CommentRepository.get_approved()
 
     @classmethod
     def get_root_comments(cls):
         """
         获取根评论（非回复）
         
+        ⚠️  建议使用: CommentRepository.get_root_comments()
+        
         Returns:
             QuerySet: 根评论的查询集
         """
-        return Comment.objects.filter(is_approved=True, parent__isnull=True)
+        return CommentRepository.get_root_comments()
 
     @classmethod
     def get_comments_by_article(cls, article):
         """
         获取文章的评论列表
+        
+        ⚠️  建议使用: CommentRepository.get_by_article(article)
         
         Args:
             article: 文章对象
@@ -49,20 +62,14 @@ class CommentService(ModelService):
         Returns:
             QuerySet: 该文章的评论查询集
         """
-        return Comment.objects.filter(
-            article=article,
-            is_approved=True,
-            parent__isnull=True
-        ).annotate(
-            reply_count=Count('replies', filter=Q(replies__is_approved=True))
-        ).prefetch_related(
-            Prefetch('replies', queryset=Comment.objects.filter(is_approved=True))
-        )
+        return CommentRepository.get_by_article(article)
 
     @classmethod
     def get_comments_by_user(cls, user):
         """
         获取用户的评论列表
+        
+        ⚠️  建议使用: CommentRepository.get_by_user(user)
         
         Args:
             user: 用户对象
@@ -70,12 +77,16 @@ class CommentService(ModelService):
         Returns:
             QuerySet: 该用户的评论查询集
         """
-        return Comment.objects.filter(user=user)
+        return CommentRepository.get_by_user(user)
 
     @classmethod
     def create_comment(cls, user, article, content, parent=None, reply_to=None):
         """
         创建评论
+        
+        职责：
+        1. 频率限制检查
+        2. 委托给 Repository 创建
         
         Args:
             user: 用户对象
@@ -87,7 +98,11 @@ class CommentService(ModelService):
         Returns:
             Comment: 创建的评论对象
         """
-        return Comment.objects.create(
+        # 1. 频率限制检查（如果需要）
+        # cls.check_comment_rate_limit(user, article.id)
+        
+        # 2. 委托给 Repository 创建
+        return CommentRepository.create(
             user=user,
             article=article,
             content=content,
@@ -98,7 +113,11 @@ class CommentService(ModelService):
     @classmethod
     def approve_comment(cls, comment):
         """
-        审核通过评论
+        审核通过评论（业务逻辑层）
+        
+        职责：
+        1. 权限检查（如果需要）
+        2. 委托给 Repository 更新
         
         Args:
             comment: 评论对象
@@ -106,14 +125,17 @@ class CommentService(ModelService):
         Returns:
             Comment: 更新后的评论对象
         """
-        comment.is_approved = True
-        comment.save(update_fields=['is_approved'])
-        return comment
+        # 委托给 Repository
+        return CommentRepository.approve(comment)
 
     @classmethod
     def toggle_like(cls, comment, user):
         """
-        切换评论点赞状态
+        切换评论点赞状态（业务逻辑层）
+        
+        职责：
+        1. 频率限制检查
+        2. 委托给 Repository 处理点赞逻辑
         
         Args:
             comment: 评论对象
@@ -122,25 +144,18 @@ class CommentService(ModelService):
         Returns:
             tuple: (评论对象, 是否点赞)
         """
-        like, created = CommentLike.objects.get_or_create(
-            comment=comment,
-            user=user
-        )
+        # 1. 频率限制检查
+        cls.check_like_rate_limit(user)
         
-        if created:
-            comment.like_count += 1
-            comment.save(update_fields=['like_count'])
-            return comment, True
-        else:
-            like.delete()
-            comment.like_count -= 1
-            comment.save(update_fields=['like_count'])
-            return comment, False
+        # 2. 委托给 Repository
+        return CommentRepository.toggle_like(comment, user)
 
     @classmethod
     def get_user_liked_comment_ids(cls, user):
         """
         获取用户点赞的评论 ID 列表
+        
+        ⚠️  建议使用: CommentRepository.get_user_liked_comment_ids(user)
         
         Args:
             user: 用户对象
@@ -148,9 +163,7 @@ class CommentService(ModelService):
         Returns:
             set: 点赞的评论 ID 集合
         """
-        return set(
-            CommentLike.objects.filter(user=user).values_list('comment_id', flat=True)
-        )
+        return CommentRepository.get_user_liked_comment_ids(user)
 
     @classmethod
     def can_user_modify(cls, comment, user):

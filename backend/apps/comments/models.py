@@ -1,8 +1,8 @@
 from django.db import models
+from django.conf import settings
 
 from apps.base.models import BaseModel
 from apps.contents.models import Content
-from apps.core.models import User
 
 
 class Comment(BaseModel):
@@ -16,9 +16,21 @@ class Comment(BaseModel):
     # 注意：id, created_at 由 BaseModel 提供
     content = models.TextField(verbose_name='评论内容')
     article = models.ForeignKey(Content, on_delete=models.CASCADE, related_name='comments', verbose_name='关联文章')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments', verbose_name='评论用户')
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='comments',
+        verbose_name='评论用户'
+    )
     parent = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True, related_name='replies', verbose_name='父评论')
-    reply_to = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True, related_name='replied_comments', verbose_name='回复对象')
+    reply_to = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        related_name='replied_comments',
+        verbose_name='回复对象'
+    )
     is_approved = models.BooleanField(default=True, verbose_name='是否审核通过')
     like_count = models.PositiveIntegerField(default=0, verbose_name='点赞数')
     # 注意：created_at 由 BaseModel 提供
@@ -61,7 +73,12 @@ class CommentLike(BaseModel):
     """
     # 注意：id, created_at 由 BaseModel 提供
     comment = models.ForeignKey(Comment, on_delete=models.CASCADE, related_name='likes', verbose_name='评论')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comment_likes', verbose_name='用户')
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='comment_likes',
+        verbose_name='用户'
+    )
     # 注意：created_at 由 BaseModel 提供
 
     class Meta:

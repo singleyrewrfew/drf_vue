@@ -86,7 +86,8 @@ class ContentViewSet(
         author_id = self.request.data.get('author')
         # is_admin 已包含 is_superuser 检查
         if author_id and self.request.user.is_admin:
-            from apps.core.models import User
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
             try:
                 author = User.objects.get(id=author_id)
                 serializer.save(author=author)

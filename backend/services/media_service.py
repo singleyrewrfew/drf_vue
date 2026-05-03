@@ -6,6 +6,7 @@ from django.conf import settings
 
 from apps.media.models import Media
 from services.base import ModelService
+from services.repositories import MediaRepository
 
 logger = logging.getLogger(__name__)
 
@@ -14,14 +15,22 @@ class MediaService(ModelService):
     """
     媒体文件业务逻辑服务层
     
-    封装所有与媒体文件相关的业务逻辑
+    职责：
+    - 封装业务逻辑（权限检查、引用计数、物理文件删除）
+    - 协调多个 Repository 操作
+    - 不包含直接的数据库查询
     """
     model_class = Media
+    
+    # Repository 实例
+    repo = MediaRepository
 
     @classmethod
     def get_user_media(cls, user, file_type=None):
         """
         获取用户的媒体文件列表
+        
+        ⚠️  建议使用: MediaRepository.get_by_user(user, file_type)
         
         Args:
             user: 用户对象
@@ -30,15 +39,14 @@ class MediaService(ModelService):
         Returns:
             QuerySet: 媒体文件查询集
         """
-        queryset = Media.objects.select_related('uploader').filter(uploader=user)
-        if file_type:
-            queryset = queryset.filter(file_type__startswith=file_type)
-        return queryset
+        return MediaRepository.get_by_user(user, file_type)
 
     @classmethod
     def get_all_media(cls, file_type=None):
         """
         获取所有媒体文件列表
+        
+        ⚠️  建议使用: MediaRepository.get_all(file_type)
         
         Args:
             file_type: 文件类型过滤（可选）
@@ -46,10 +54,7 @@ class MediaService(ModelService):
         Returns:
             QuerySet: 媒体文件查询集
         """
-        queryset = Media.objects.select_related('uploader')
-        if file_type:
-            queryset = queryset.filter(file_type__startswith=file_type)
-        return queryset
+        return MediaRepository.get_all(file_type)
 
     @classmethod
     def can_user_access(cls, media, user):
@@ -180,23 +185,12 @@ class MediaService(ModelService):
         """
         获取媒体文件统计信息
         
+        ⚠️  建议使用: MediaRepository.get_statistics(user)
+        
         Args:
             user: 用户对象（可选，用于筛选用户的媒体）
             
         Returns:
             dict: 统计信息
         """
-        queryset = Media.objects.all()
-        if user:
-            queryset = queryset.filter(uploader=user)
-
-        return {
-            'total_count': queryset.count(),
-            'image_count': queryset.filter(file_type__startswith='image/').count(),
-            'video_count': queryset.filter(file_type__startswith='video/').count(),
-            'other_count': queryset.exclude(
-                file_type__startswith='image/'
-            ).exclude(
-                file_type__startswith='video/'
-            ).count(),
-        }
+        return MediaRepository.get_statistics(user)

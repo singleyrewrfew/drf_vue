@@ -1,6 +1,8 @@
 from rest_framework import serializers, status
-from apps.core.models import User
+from django.contrib.auth import get_user_model
 from utils.response import StandardResponse, api_error
+
+User = get_user_model()
 
 
 class UserSerializer(serializers.ModelSerializer):

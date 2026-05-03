@@ -49,10 +49,18 @@ echo Starting in BACKGROUND mode
 echo ========================================
 echo.
 
-REM Run in true background mode - all output redirected to log file
-start /B "" cmd /c "celery -A config.celery worker --concurrency=2 --prefetch-multiplier=2 --max-tasks-per-child=100 --loglevel=INFO --logfile=logs/celery.log -P solo >nul 2>&1"
+REM Create a VBScript to run Celery completely hidden
+set TEMP_VBS=%TEMP%\celery_start.vbs
 
-echo Celery worker started in true background mode
+echo Set WshShell = CreateObject("WScript.Shell") > "%TEMP_VBS%"
+echo WshShell.Run "cmd /c celery -A config.celery worker --concurrency=2 --prefetch-multiplier=2 --max-tasks-per-child=100 --loglevel=INFO --logfile=logs/celery.log -P solo", 0, False >> "%TEMP_VBS%"
+
+cscript //nologo "%TEMP_VBS%"
+del "%TEMP_VBS%"
+
+timeout /t 2 /nobreak >nul
+
+echo Celery worker started in background (completely hidden)
 echo Log file: logs\celery.log
 echo.
 echo To view log in real-time:
@@ -68,7 +76,12 @@ exit /b 0
 echo Stopping Celery worker...
 echo.
 
-taskkill /FI "WINDOWTITLE eq Celery Worker*" /T /F 2>nul
+REM Kill all python processes running celery
+for /f "tokens=2" %%i in ('tasklist ^| findstr /i "celery"') do (
+    taskkill /F /PID %%i >nul 2>&1
+)
+
+timeout /t 2 /nobreak >nul
 
 echo Celery worker stopped
 pause

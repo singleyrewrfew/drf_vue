@@ -9,7 +9,6 @@ from django.db import models, transaction
 from django.db.models import F
 
 from apps.base.models import BaseModel
-from apps.core.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -102,7 +101,12 @@ class Media(BaseModel):
     file_type = models.CharField(max_length=50, verbose_name='文件类型')
     file_size = models.PositiveIntegerField(verbose_name='文件大小 (字节)')
     file_hash = models.CharField(max_length=32, blank=True, verbose_name='文件 MD5')
-    uploader = models.ForeignKey(User, on_delete=models.CASCADE, related_name='media_files', verbose_name='上传者')
+    uploader = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='media_files',
+        verbose_name='上传者'
+    )
     reference = models.ForeignKey('self', on_delete=models.CASCADE, related_name='references', null=True, blank=True, verbose_name='引用文件')
     reference_count = models.PositiveIntegerField(default=0, verbose_name='引用计数', editable=False)
     thumbnails = models.ImageField(upload_to=thumbnails_upload_to, blank=True, null=True, verbose_name='缩略图')
