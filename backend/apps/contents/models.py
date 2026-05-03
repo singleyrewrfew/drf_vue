@@ -42,11 +42,22 @@ class Content(BaseModel):
         verbose_name_plural = verbose_name
         ordering = ['-is_top', '-created_at']
         indexes = [
+            # 常用查询：按状态和创建时间筛选（列表页）
             models.Index(fields=['status', '-created_at'], name='content_status_created_idx'),
+            # 常用查询：按状态和发布时间筛选
             models.Index(fields=['status', '-published_at'], name='content_status_published_idx'),
+            # 常用查询：置顶文章排序
             models.Index(fields=['-is_top', '-created_at'], name='content_top_created_idx'),
+            # slug 唯一查询
             models.Index(fields=['slug'], name='content_slug_idx'),
+            # 常用查询：作者的文章列表（带状态过滤）
             models.Index(fields=['author', 'status'], name='content_author_status_idx'),
+            # 新增：分类下的文章列表（带状态过滤）
+            models.Index(fields=['category', 'status', '-created_at'], name='content_cat_stat_created_idx'),
+            # 新增：浏览量排序（热门文章）
+            models.Index(fields=['status', '-view_count'], name='content_status_viewcount_idx'),
+            # 新增：标题搜索优化
+            models.Index(fields=['title'], name='content_title_idx'),
         ]
 
     def __str__(self):

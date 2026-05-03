@@ -25,6 +25,13 @@ class Category(BaseModel):
         verbose_name = '分类'
         verbose_name_plural = verbose_name
         ordering = ['sort_order', '-created_at']
+        indexes = [
+            # slug 已经有 unique=True，会自动创建索引，这里不需要重复
+            # 优化按排序和创建时间查询
+            models.Index(fields=['sort_order', '-created_at'], name='category_sort_created_idx'),
+            # 优化父分类查询（用于获取子分类列表）
+            models.Index(fields=['parent'], name='category_parent_idx'),
+        ]
 
     def __str__(self):
         return self.name

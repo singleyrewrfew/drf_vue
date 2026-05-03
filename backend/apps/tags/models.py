@@ -32,6 +32,11 @@ class Tag(BaseModel):
         verbose_name_plural = verbose_name
         # 默认排序：按创建时间倒序
         ordering = ['-created_at']
+        indexes = [
+            # name 和 slug 都有 unique=True，会自动创建索引
+            # 优化热门标签查询（按使用频率）
+            models.Index(fields=['-created_at'], name='tag_created_idx'),
+        ]
 
     def __str__(self):
         # 返回标签名称作为字符串表示

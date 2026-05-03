@@ -39,6 +39,8 @@ def _publish_thumbnail_event(media_id, event_data):
     bind=True,
     max_retries=3,
     default_retry_delay=60,
+    time_limit=10 * 60,  # Hard timeout: 10 minutes
+    # Note: soft_time_limit not supported on Windows (no SIGUSR1 signal)
 )
 def generate_video_thumbnails(self, media_id: str):
     """
@@ -190,7 +192,10 @@ def _do_generate_thumbnails(media):
         return False
 
 
-@shared_task
+@shared_task(
+    time_limit=5 * 60,  # Hard timeout: 5 minutes
+    # Note: soft_time_limit not supported on Windows (no SIGUSR1 signal)
+)
 def cleanup_old_thumbnails(days: int = 30):
     """
     清理旧的临时缩略图文件

@@ -50,11 +50,13 @@ jobs:
           --exclude='logs' \
           backend/ ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:${{ env.BACKEND_PATH }}/
         
-        # 上传 systemd service 文件
+        # Upload systemd service files
         ssh -p ${{ env.SERVER_PORT }} ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} "mkdir -p ${{ env.BACKEND_PATH }}/.github"
         scp -P ${{ env.SERVER_PORT }} .github/gunicorn.service ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:${{ env.BACKEND_PATH }}/.github/
         scp -P ${{ env.SERVER_PORT }} .github/celery-worker.service ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:${{ env.BACKEND_PATH }}/.github/
         scp -P ${{ env.SERVER_PORT }} .github/celery-beat.service ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:${{ env.BACKEND_PATH }}/.github/
+        
+        echo "✅ Service files uploaded successfully"
         
         # 在服务器上执行部署命令
         ssh -p ${{ env.SERVER_PORT }} ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << 'EOF'
@@ -132,21 +134,21 @@ jobs:
             exit 1
           fi
           
-          # 重启所有服务
+          # Restart all services
           echo "Restarting services..."
           sudo systemctl restart drf_vue_backend || true
           sudo systemctl restart drf_vue_celery_worker || true
           sudo systemctl restart drf_vue_celery_beat || true
           
-          # 启用服务开机自启
+          # Enable services on boot
           sudo systemctl enable drf_vue_backend
           sudo systemctl enable drf_vue_celery_worker
           sudo systemctl enable drf_vue_celery_beat
           
-          # 等待服务启动
+          # Wait for services to start
           sleep 5
           
-          # 健康检查
+          # Health check
           echo "=== Health Check ==="
           if systemctl is-active --quiet drf_vue_backend; then
             echo "✅ Gunicorn service is active"
@@ -160,15 +162,17 @@ jobs:
             echo "✅ Celery Worker service is active"
           else
             echo "⚠️ Celery Worker service is not active (non-critical)"
+            sudo journalctl -u drf_vue_celery_worker --no-pager -n 20 || true
           fi
           
           if systemctl is-active --quiet drf_vue_celery_beat; then
             echo "✅ Celery Beat service is active"
           else
             echo "⚠️ Celery Beat service is not active (non-critical)"
+            sudo journalctl -u drf_vue_celery_beat --no-pager -n 20 || true
           fi
           
-          # 检查端口是否监听
+          # Check if port is listening
           if ss -tlnp | grep -q ":8000"; then
             echo "✅ Port 8000 is listening"
           else
@@ -176,9 +180,12 @@ jobs:
             exit 1
           fi
           
-          # 检查服务状态
+          # Check service status
           echo "=== Service Status ==="
           sudo systemctl status drf_vue_backend --no-pager -l
+          
+          echo ""
+          echo "🎉 Deployment completed successfully!"
         EOF
       
     - name: Deployment notification

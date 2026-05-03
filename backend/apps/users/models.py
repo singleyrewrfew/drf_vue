@@ -34,6 +34,16 @@ class User(AbstractUser, BaseModel):
         verbose_name_plural = verbose_name
         # 默认排序：按创建时间倒序
         ordering = ['-created_at']
+        indexes = [
+            # username 已经有 unique=True（来自 AbstractUser），会自动创建索引
+            # email 也有 unique=True（来自 AbstractUser），会自动创建索引
+            # 优化按角色查询用户
+            models.Index(fields=['role'], name='user_role_idx'),
+            # 优化按创建时间排序（用户列表）
+            models.Index(fields=['-created_at'], name='user_created_idx'),
+            # 优化按最后登录时间排序（活跃用户）
+            models.Index(fields=['-last_login'], name='user_last_login_idx'),
+        ]
 
     def __str__(self):
         # 返回用户的用户名作为字符串表示

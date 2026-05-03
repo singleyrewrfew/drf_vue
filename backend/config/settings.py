@@ -445,17 +445,36 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_ENABLE_UTC = True
 CELERY_TASK_TRACK_STARTED = True
-CELERY_TASK_TIME_LIMIT = 30 * 60
-CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60
-CELERY_WORKER_PREFETCH_MULTIPLIER = 1
-CELERY_WORKER_MAX_TASKS_PER_CHILD = 100
-CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
+# 任务超时配置（根据任务类型设置合理的超时时间）
+# 视频缩略图生成通常需要 30秒-5分钟，设置为 10 分钟足够
+CELERY_TASK_TIME_LIMIT = 10 * 60  # 硬超时：10 分钟
+# Note: soft_time_limit not supported on Windows (no SIGUSR1 signal)
+
+# Worker 并发和预取配置
+# prefetch_multiplier=4 表示每个 worker 预取 4 个任务，提高吞吐量
+# 对于 CPU 密集型任务（视频处理），建议设置为 1-2
+CELERY_WORKER_PREFETCH_MULTIPLIER = 2
+CELERY_WORKER_CONCURRENCY = 2  # 默认并发数（可根据服务器 CPU 核心数调整）
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 100  # 每执行 100 个任务重启 worker，防止内存泄漏
+
+# Broker 连接配置
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_BROKER_POOL_LIMIT = 10  # 连接池大小
+
+# 任务重试配置
+CELERY_TASK_DEFAULT_RETRY_DELAY = 60  # 默认重试延迟 60 秒
+CELERY_TASK_MAX_RETRIES = 3  # 最大重试次数
+
+# 任务结果过期时间（秒）
+CELERY_RESULT_EXPIRES = 60 * 60 * 24  # 24 小时后过期
+
+# Beat 定时任务配置
 CELERY_BEAT_SCHEDULE = {
     'cleanup-old-thumbnails': {
         'task': 'apps.media.tasks.cleanup_old_thumbnails',
-        'schedule': 60 * 60 * 24,
-        'args': (30,),
+        'schedule': 60 * 60 * 24,  # 每天执行一次
+        'args': (30,),  # 清理 30 天前的文件
     },
 }
 

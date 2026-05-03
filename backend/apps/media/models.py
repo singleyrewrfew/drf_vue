@@ -117,9 +117,16 @@ class Media(BaseModel):
         verbose_name_plural = verbose_name
         ordering = ['-created_at']
         indexes = [
+            # 文件哈希去重查询
             models.Index(fields=['file_hash'], name='media_file_hash_idx'),
+            # 用户的媒体文件列表
             models.Index(fields=['uploader', '-created_at'], name='media_uploader_created_idx'),
+            # 按文件类型筛选
             models.Index(fields=['file_type'], name='media_file_type_idx'),
+            # 新增：缩略图状态查询（用于监控生成进度）
+            models.Index(fields=['thumbnail_status'], name='media_thumbnail_status_idx'),
+            # 新增：引用计数排序（查找未使用的文件）
+            models.Index(fields=['reference_count'], name='media_reference_count_idx'),
         ]
 
     def __str__(self):
