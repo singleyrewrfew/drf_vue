@@ -5,7 +5,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
 from django.conf import settings
-from django.db import models
+import uuid
 from services.content_service import ContentService
 from utils.cache_utils import get_cache_key, invalidate_pattern, generate_smart_cache_key
 from utils.response import StandardResponse, api_error
@@ -153,19 +153,29 @@ class ContentViewSet(
         if category_id:
             # 直接使用 ORM 双下划线语法，避免额外查询
             # 支持通过 slug 或 UUID/ID 过滤
-            queryset = queryset.filter(
-                models.Q(category__slug=category_id) | 
-                models.Q(category__id=category_id)
-            )
+            
+            # 尝试判断是 UUID 还是 slug
+            try:
+                # 如果是有效的 UUID，按 ID 查询
+                uuid.UUID(category_id)
+                queryset = queryset.filter(category__id=category_id)
+            except (ValueError, AttributeError):
+                # 否则按 slug 查询
+                queryset = queryset.filter(category__slug=category_id)
 
         tag_id = self.request.query_params.get('tag')
         if tag_id:
             # 直接使用 ORM 双下划线语法，避免额外查询
             # 支持通过 slug 或 UUID/ID 过滤
-            queryset = queryset.filter(
-                models.Q(tags__slug=tag_id) | 
-                models.Q(tags__id=tag_id)
-            )
+            
+            # 尝试判断是 UUID 还是 slug
+            try:
+                # 如果是有效的 UUID，按 ID 查询
+                uuid.UUID(tag_id)
+                queryset = queryset.filter(tags__id=tag_id)
+            except (ValueError, AttributeError):
+                # 否则按 slug 查询
+                queryset = queryset.filter(tags__slug=tag_id)
 
         author_id = self.request.query_params.get('author')
         if author_id:
