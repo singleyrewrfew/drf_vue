@@ -29,9 +29,8 @@ jobs:
         path: |
           ~/.npm
           frontend/node_modules
-          mobile/node_modules
           front/node_modules
-        key: ${{ runner.os }}-node-${{ hashFiles('frontend/package-lock.json', 'mobile/package-lock.json', 'front/package-lock.json') }}
+        key: ${{ runner.os }}-node-${{ hashFiles('frontend/package-lock.json', 'front/package-lock.json') }}
         restore-keys: |
           ${{ runner.os }}-node-
     
@@ -41,14 +40,6 @@ jobs:
     
     - name: Build frontend (PC)
       working-directory: ./frontend
-      run: npm run build
-    
-    - name: Install dependencies (Mobile)
-      working-directory: ./mobile
-      run: npm ci
-    
-    - name: Build frontend (Mobile)
-      working-directory: ./mobile
       run: npm run build
     
     - name: Install dependencies (Backend Admin)
@@ -65,7 +56,6 @@ jobs:
         name: frontend-builds
         path: |
           frontend/dist_backend/
-          mobile/dist_mobile/
           front/dist/
         retention-days: 7
 

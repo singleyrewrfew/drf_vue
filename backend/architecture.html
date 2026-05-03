@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CMS 内容管理系统 - 系统架构图</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: #0d1117;
+            color: #c9d1d9;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+            padding: 40px 60px;
+        }
+        
+        .title {
+            text-align: center;
+            font-size: 28px;
+            font-weight: 700;
+            color: #f0f6fc;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            font-size: 14px;
+            color: #8b949e;
+            margin-bottom: 50px;
+        }
+        
+        .diagram-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        /* 层标签 */
+        .layer-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            padding: 6px 16px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 8px;
+        }
+        
+        .layer-row {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            flex-wrap: wrap;
+            width: 100%;
+            max-width: 1400px;
+            position: relative;
+        }
+        
+        /* 节点样式 */
+        .node {
+            border-radius: 12px;
+            padding: 18px 24px;
+            min-width: 180px;
+            max-width: 240px;
+            position: relative;
+            transition: transform 0.2s;
+        }
+        
+        .node:hover { transform: translateY(-2px); }
+        
+        .node-title {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .node-title .icon {
+            font-size: 18px;
+        }
+        
+        .node-desc {
+            font-size: 11.5px;
+            opacity: 0.75;
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+        
+        .node-items {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .item {
+            font-size: 11.5px;
+            padding: 4px 10px;
+            background: rgba(0,0,0,0.25);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .item::before { content: '›'; opacity: 0.5; font-weight: bold; }
+        
+        /* 颜色主题 - 前端 */
+        .frontend { 
+            background: linear-gradient(135deg, rgba(22,163,74,0.15) 0%, rgba(22,163,74,0.05) 100%);
+            border: 1px solid rgba(22,163,74,0.35);
+        }
+        .frontend .node-title { color: #34d399; }
+        .frontend .layer-label { color: #34d399; border-color: rgba(52,211,153,0.3); background: rgba(22,163,74,0.1); }
+        
+        /* 后端应用层 */
+        .backend { 
+            background: linear-gradient(135deg, rgba(59,130,246,0.15) 0%, rgba(59,130,246,0.05) 100%);
+            border: 1px solid rgba(59,130,246,0.35);
+        }
+        .backend .node-title { color: #60a5fa; }
+        .backend .layer-label { color: #60a5fa; border-color: rgba(96,165,250,0.3); background: rgba(59,130,246,0.1); }
+        
+        /* 数据层 */
+        .data { 
+            background: linear-gradient(135deg, rgba(168,85,247,0.15) 0%, rgba(168,85,247,0.05) 100%);
+            border: 1px solid rgba(168,85,247,0.35);
+        }
+        .data .node-title { color: #c084fc; }
+        .data .layer-label { color: #c084fc; border-color: rgba(192,132,252,0.3); background: rgba(168,85,247,0.1); }
+        
+        /* 缓存层 */
+        .cache { 
+            background: linear-gradient(135deg, rgba(251,191,36,0.15) 0%, rgba(251,191,36,0.05) 100%);
+            border: 1px solid rgba(251,191,36,0.35);
+        }
+        .cache .node-title { color: #fbbf24; }
+        .cache .layer-label { color: #fbbf24; border-color: rgba(251,191,36,0.3); background: rgba(251,191,36,0.1); }
+        
+        /* 外部服务 */
+        .external { 
+            background: linear-gradient(135deg, rgba(148,163,184,0.15) 0%, rgba(148,163,184,0.05) 100%);
+            border: 1px solid rgba(148,163,184,0.35);
+        }
+        .external .node-title { color: #94a3b8; }
+        .external .layer-label { color: #94a3b8; border-color: rgba(148,163,184,0.3); background: rgba(148,163,184,0.1); }
+        
+        /* 安全认证 */
+        .security { 
+            background: linear-gradient(135deg, rgba(244,63,94,0.15) 0%, rgba(244,63,94,0.05) 100%);
+            border: 1px solid rgba(244,63,94,0.35);
+        }
+        .security .node-title { color: #fb7185; }
+        .security .layer-label { color: #fb7185; border-color: rgba(251,113,133,0.3); background: rgba(244,63,94,0.1); }
+        
+        /* 异步任务 */
+        .async { 
+            background: linear-gradient(135deg, rgba(249,115,22,0.15) 0%, rgba(249,115,22,0.05) 100%);
+            border: 1px solid rgba(249,115,22,0.35);
+        }
+        .async .node-title { color: #fb923c; }
+        .async .layer-label { color: #fb923c; border-color: rgba(251,146,60,0.3); background: rgba(249,115,22,0.1); }
+        
+        /* 连接箭头 SVG 容器 */
+        .connections {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .layer-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        /* 流程说明区域 */
+        .flow-section {
+            margin-top: 50px;
+            max-width: 1400px;
+            width: 100%;
+        }
+        
+        .flow-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #f0f6fc;
+            margin-bottom: 20px;
+            padding-left: 12px;
+            border-left: 3px solid #3b82f6;
+        }
+        
+        .flow-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+        }
+        
+        .flow-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 20px 24px;
+        }
+        
+        .flow-card h4 {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .flow-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .flow-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        
+        .step-num {
+            min-width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: rgba(59,130,246,0.2);
+            color: #60a5fa;
+            font-size: 11px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .step-arrow {
+            color: #3b82f6;
+            font-weight: bold;
+        }
+        
+        /* 图例 */
+        .legend {
+            margin-top: 40px;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            padding: 20px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+        
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 4px;
+        }
+        
+        /* 垂直连接线 */
+        .connector {
+            width: 2px;
+            height: 30px;
+            background: linear-gradient(to bottom, rgba(59,130,246,0.4), rgba(59,130,246,0.1));
+            margin: 0 auto;
+        }
+
+        .tech-badge {
+            display: inline-block;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.08);
+            margin-top: 8px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+
+    <h1 class="title">CMS 内容管理系统</h1>
+    <p class="subtitle">Django REST Framework + Vue.js | 系统架构总览</p>
+
+    <div class="diagram-container">
+
+        <!-- ==================== 前端展示层 ==================== -->
+        <div class="layer-wrapper">
+            <span class="layer-label frontend">🖥️ 前端展示层 Presentation Layer</span>
+            <div class="layer-row" style="position:relative;">
+                
+                <!-- PC Web前端 -->
+                <div class="node frontend">
+                    <div class="node-title"><span class="icon">🖥️</span>PC Web 应用 (Frontend)</div>
+                    <div class="node-desc">Vue.js + Element Plus 桌面端管理界面</div>
+                    <div class="node-items">
+                        <div class="item">内容管理 / 编辑器</div>
+                        <div class="item">媒体库管理</div>
+                        <div class="item">用户权限管理</div>
+                        <div class="item">数据统计面板</div>
+                    </div>
+                    <span class="tech-badge">Vue 3 · ElementPlus · Pinia</span>
+                </div>
+                
+                <!-- H5移动端 -->
+                <div class="node frontend">
+                    <div class="node-title"><span class="icon">📱</span>移动端 H5 (Mobile)</div>
+                    <div class="node-desc">Vue.js + Vant 移动端展示页面</div>
+                    <div class="node-items">
+                        <div class="item">内容浏览 / 阅读</div>
+                        <div class="item">评论互动</div>
+                        <div class="item">搜索与筛选</div>
+                        <div class="item">个人中心</div>
+                    </div>
+                    <span class="tech-badge">Vue 3 · Vant · Vite</span>
+                </div>
+
+                <!-- API客户端 -->
+                <div class="node frontend">
+                    <div class="node-title"><span class="icon">🔌</span>API Client (Front)</div>
+                    <div class="node-desc">统一 HTTP 请求封装层</div>
+                    <div class="node-items">
+                        <div class="item">Axios 拦截器</div>
+                        <div class="item">Token 自动刷新</div>
+                        <div class="item">请求/响应转换</div>
+                        <div class="item">错误统一处理</div>
+                    </div>
+                    <span class="tech-badge">Axios · Interceptors</span>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="connector"></div>
+
+        <!-- ==================== 网关/安全层 ==================== -->
+        <div class="layer-wrapper">
+            <span class="layer-label security">🔐 安全认证 & API 网关 Security Layer</span>
+            <div class="layer-row" style="position:relative;">
+                
+                <!-- JWT认证 -->
+                <div class="node security">
+                    <div class="node-title"><span class="icon">🎫</span>JWT 认证系统</div>
+                    <div class="node-desc">SimpleJWT Token 认证机制</div>
+                    <div class="node-items">
+                        <div class="item">Access Token (短期)</div>
+                        <div class="item">Refresh Token (长期)</div>
+                        <div class="item">Token 自动轮换</div>
+                        <div class="item">黑名单机制</div>
+                    </div>
+                    <span class="tech-badge">djangorestframework-simplejwt</span>
+                </div>
+
+                <!-- RBAC权限 -->
+                <div class="node security">
+                    <div class="node-title"><span class="icon">🛡️</span>RBAC 权限控制</div>
+                    <div class="node-desc">基于角色的访问控制</div>
+                    <div class="node-items">
+                        <div class="item">Role 角色定义</div>
+                        <div class="item">Permission 权限粒度</div>
+                        <div class="item">M2M 关联映射</div>
+                        <div class="item">API 权限装饰器</div>
+                    </div>
+                    <span class="tech-badge">Role → Permission M2M</span>
+                </div>
+
+                <!-- CORS/Middleware -->
+                <div class="node security">
+                    <div class="node-title"><span class="icon">⚙️</span>中间件网关</div>
+                    <div class="node-desc">请求处理管道</div>
+                    <div class="node-items">
+                        <div class="item">CORS 跨域配置</div>
+                        <div class="item">请求日志记录</div>
+                        <div class="item">响应时间追踪</div>
+                        <div class="item">异常捕获处理</div>
+                    </div>
+                    <span class="tech-badge">Django Middleware</span>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="connector"></div>
+
+        <!-- ==================== 后端应用层 ==================== -->
+        <div class="layer-wrapper">
+            <span class="layer-label backend">⚡ 后端应用层 Application Layer (Django DRF)</span>
+            <div class="layer-row" style="position:relative;">
+                
+                <!-- API路由 -->
+                <div class="node backend">
+                    <div class="node-title"><span class="icon">🛤️</span>API 路由层</div>
+                    <div class="node-desc">RESTful 接口入口</div>
+                    <div class="node-items">
+                        <div class="item">/api/auth/ — 认证接口</div>
+                        <div class="item">/api/contents/ — 内容CRUD</div>
+                        <div class="item">/api/media/ — 媒体管理</div>
+                        <div class="item">/api/comments/ — 评论系统</div>
+                        <div class="item">/api/docs/ — Swagger文档</div>
+                    </div>
+                    <span class="tech-badge">DRF Router · ViewSet</span>
+                </div>
+
+                <!-- 业务模块 -->
+                <div class="node backend">
+                    <div class="node-title"><span class="icon">📦</span>业务应用 Apps</div>
+                    <div class="node-desc">9大业务模块</div>
+                    <div class="node-items">
+                        <div class="item">users — 用户管理</div>
+                        <div class="item">contents — 内容发布</div>
+                        <div class="item">categories/tags — 分类标签</div>
+                        <div class="item">media — 媒体文件</div>
+                        <div class="item">comments — 评论回复</div>
+                        <div class="item">roles/core/base — 基础服务</div>
+                    </div>
+                    <span class="tech-badge">Django App · DRF Serializer</span>
+                </div>
+
+                <!-- Service层 -->
+                <div class="node backend">
+                    <div class="node-title"><span class="icon">⚙️</span>Service 服务层</div>
+                    <div class="node-desc">业务逻辑解耦</div>
+                    <div class="node-items">
+                        <div class="item">BaseService 基础服务</div>
+                        <div class="item">ContentService 内容服务</div>
+                        <div class="item">MediaService 媒体服务</div>
+                        <div class="item">UserService 用户服务</div>
+                    </div>
+                    <span class="tech-badge">Service Pattern</span>
+                </div>
+
+                <!-- 领域事件 -->
+                <div class="node backend">
+                    <div class="node-title"><span class="icon">📡</span>领域事件 Events</div>
+                    <div class="node-desc">Django Signal 解耦</div>
+                    <div class="node-items">
+                        <div class="item">content_published</div>
+                        <div class="item">media_uploaded</div>
+                        <div class="item">comment_created</div>
+                        <div class="item">user_registered</div>
+                    </div>
+                    <span class="tech-badge">Django Signals</span>
+                </div>
+
+                <!-- 工具集 -->
+                <div class="node backend">
+                    <div class="node-title"><span class="icon">🔧</span>工具集 Utils</div>
+                    <div class="node-desc">公共工具函数</div>
+                    <div class="node-items">
+                        <div class="item">StandardResponse 统一响应</div>
+                        <div class="item">CacheUtils Redis缓存</div>
+                        <div class="item">ErrorCodes 错误码体系</div>
+                        <div class="item">SlugUtils 中文URL化</div>
+                        <div class="item">VideoUtils FFmpeg处理</div>
+                    </div>
+                    <span class="tech-badge">Custom Exceptions</span>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="connector"></div>
+
+        <!-- ==================== 缓存 & 异步层 ==================== -->
+        <div style="display:flex; gap:40px; justify-content:center; flex-wrap:wrap;">
+            
+            <!-- 缓存层 -->
+            <div class="layer-wrapper">
+                <span class="layer-label cache">💾 缓存层 Cache Layer</span>
+                <div class="layer-row">
+                    
+                    <div class="node cache">
+                        <div class="node-title"><span class="icon">⚡</span>Redis Cache</div>
+                        <div class="node-desc">高性能内存缓存</div>
+                        <div class="node-items">
+                            <div class="item">Session 存储</div>
+                            <div class="item">热点内容缓存</div>
+                            <div class="item">Token 黑名单</div>
+                            <div class="item">频率限制计数</div>
+                            <div class="item">SSE 进度推送</div>
+                        </div>
+                        <span class="tech-badge">django-redis · Redis 7</span>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- 异步任务层 -->
+            <div class="layer-wrapper">
+                <span class="layer-label async">🔄 异步任务 Async Layer</span>
+                <div class="layer-row">
+                    
+                    <div class="node async">
+                        <div class="node-title"><span class="icon">📋</span>Celery 任务队列</div>
+                        <div class="node-desc">分布式异步任务处理</div>
+                        <div class="node-items">
+                            <div class="item">视频转码 (FFmpeg)</div>
+                            <div class="item">缩略图生成</div>
+                            <div class="item">邮件发送任务</div>
+                            <div class="item">定时数据清理</div>
+                        </div>
+                        <span class="tech-badge">Celery · Beat · Broker</span>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <div class="connector"></div>
+
+        <!-- ==================== 数据存储层 ==================== -->
+        <div class="layer-wrapper">
+            <span class="layer-label data">🗄️ 数据存储层 Data Storage Layer</span>
+            <div class="layer-row" style="position:relative;">
+                
+                <!-- 主数据库 -->
+                <div class="node data">
+                    <div class="node-title"><span class="icon">🐬</span>主数据库 MySQL</div>
+                    <div class="node-desc">生产环境关系型数据库</div>
+                    <div class="node-items">
+                        <div class="item">User / Role / Permission</div>
+                        <div class="item">Content / Category / Tag</div>
+                        <div class="item">Comment / CommentLike</div>
+                        <div class="item">Media 元数据</div>
+                    </div>
+                    <span class="tech-badge">MySQL 8.0 · Django ORM</span>
+                </div>
+
+                <!-- 开发数据库 -->
+                <div class="node data">
+                    <div class="node-title"><span class="icon">📝</span>开发库 SQLite</div>
+                    <div class="node-desc">本地开发轻量数据库</div>
+                    <div class="node-items">
+                        <div class="item">开发环境默认</div>
+                        <div class="item">快速本地测试</div>
+                        <div class="item">零配置启动</div>
+                    </div>
+                    <span class="tech-badge">SQLite 3 · DJANGO_ENV=dev</span>
+                </div>
+
+                <!-- 文件存储 -->
+                <div class="node data">
+                    <div class="node-title"><span class="icon">📁</span>文件存储 File Storage</div>
+                    <div class="node-desc">媒体文件持久化存储</div>
+                    <div class="node-items">
+                        <div class="item">图片 / 视频 / 文档</div>
+                        <div class="item">MD5 去重存储</div>
+                        <div class="item">引用计数管理</div>
+                        <div class="item">视频缩略图</div>
+                    </div>
+                    <span class="tech-badge">Local Storage · FileSystem</span>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="connector"></div>
+
+        <!-- ==================== 外部服务层 ==================== -->
+        <div class="layer-wrapper">
+            <span class="layer-label external">☁️ 外部服务 External Services</span>
+            <div class="layer-row" style="position:relative;">
+                
+                <div class="node external">
+                    <div class="node-title"><span class="icon">📧</span>邮件服务</div>
+                    <div class="node-desc">通知与验证</div>
+                    <div class="node-items">
+                        <div class="item">注册验证邮件</div>
+                        <div class="item">密码重置链接</div>
+                        <div class="item">系统通知推送</div>
+                    </div>
+                    <span class="tech-badge">SMTP · Django Email</span>
+                </div>
+
+                <div class="node external">
+                    <div class="node-title"><span class="icon">🎬</span>FFmpeg 引擎</div>
+                    <div class="node-desc">音视频处理</div>
+                    <div class="node-items">
+                        <div class="item">视频格式转码</div>
+                        <div class="item">缩略图帧提取</div>
+                        <div class="item">时长/分辨率获取</div>
+                    </div>
+                    <span class="tech-badge">FFmpeg · subprocess</span>
+                </div>
+
+                <div class="node external">
+                    <div class="node-title"><span class="icon">📝</span>Pinyin 转换</div>
+                    <div class="node-desc">中文拼音处理</div>
+                    <div class="node-items">
+                        <div class="item">中文名 → Slug URL</div>
+                        <div class="item">标签名拼音化</div>
+                        <div class="item">分类路径优化</div>
+                    </div>
+                    <span class="tech-badge">xpinyin · pypinyin</span>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- ==================== 核心流程说明 ==================== -->
+    <div class="flow-section">
+        <h3 class="flow-title">核心业务流程</h3>
+        <div class="flow-grid">
+            
+            <!-- 用户认证流程 -->
+            <div class="flow-card">
+                <h4 style="color:#fb7185;">🔐 用户登录认证流程</h4>
+                <div class="flow-steps">
+                    <div class="flow-step"><span class="step-num">1</span><span>用户提交 <b>用户名+密码</b> 至 <code>/api/auth/login/</code></span></div>
+                    <div class="flow-step"><span class="step-num">2</span><span>Django Auth 后端验证凭证 <span class="step-arrow">→</span> 生成 JWT Token 对</span></div>
+                    <div class="flow-step"><span class="step-num">3</span><span>返回 Access Token + Refresh Token 给前端</span></div>
+                    <div class="flow-step"><span class="step-num">4</span><span>后续请求携带 <code>Authorization: Bearer</code></span></div>
+                    <div class="flow-step"><span class="step-num">5</span><span>RBAC 中间件校验角色权限 <span class="step-arrow">→</span> 放行/拒绝</span></div>
+                    <div class="flow-step"><span class="step-num">6</span><span>Token 过期时用 Refresh Token 自动轮换</span></div>
+                </div>
+            </div>
+
+            <!-- 内容发布流程 -->
+            <div class="flow-card">
+                <h4 style="color:#60a5fa;">📝 内容发布流程</h4>
+                <div class="flow-steps">
+                    <div class="flow-step"><span class="step-num">1</span><span>作者在编辑器创建内容 <span class="step-arrow">→</span> 状态为 <code>DRAFT</code></span></div>
+                    <div class="flow-step"><span class="step-num">2</span><span>选择分类(Category)和标签(Tag)关联</span></div>
+                    <div class="flow-step"><span class="step-num">3</span><span>上传媒体文件 <span class="step-arrow">→</span> MD5去重 + 存储元数据到 Media 表</span></div>
+                    <div class="flow-step"><span class="step-num">4</span><span>点击发布 <span class="step-arrow">→</span> ContentService.update_status(PUBLISHED)</span></div>
+                    <div class="flow-step"><span class="step-num">5</span><span>触发 Signal <code>content_published</code> <span class="step-arrow">→</span> 清除相关缓存</span></div>
+                    <div class="flow-step"><span class="step-num">6</span><span>前端实时获取最新内容列表</span></div>
+                </div>
+            </div>
+
+            <!-- 媒体上传流程 -->
+            <div class="flow-card">
+                <h4 style="color:#fbbf24;">🖼️ 媒体上传处理流程</h4>
+                <div class="flow-steps">
+                    <div class="flow-step"><span class="step-num">1</span><span>前端上传文件至 <code>/api/media/upload/</code> (SSE进度回调)</span></div>
+                    <div class="flow-step"><span class="step-num">2</span><span>计算文件 MD5 哈希值，检查是否已存在</span></div>
+                    <div class="flow-step"><span class="step-num">3</span><span><b>命中:</b> 引用计数 +1，直接返回已有记录</span></div>
+                    <div class="flow-step"><span class="step-num">4</span><span><b>未命中:</b> 写入磁盘，创建 Media 记录</span></div>
+                    <div class="flow-step"><span class="step-num">5</span><span>若为视频 <span class="step-arrow">→</span> 提交 Celery 任务异步转码+生成缩略图</span></div>
+                    <div class="flow-step"><span class="step-num">6</span><span>触发 <code>mediauploaded</code> 信号通知下游</span></div>
+                </div>
+            </div>
+
+            <!-- 评论互动流程 -->
+            <div class="flow-card">
+                <h4 style="color:#c084fc;">💬 评论互动流程</h4>
+                <div class="flow-steps">
+                    <div class="flow-step"><span class="step-num">1</span><span>用户对内容发表评论 <code>POST /api/comments/</code></span></div>
+                    <div class="flow-step"><span class="step-num">2</span><span>支持嵌套回复: parentcomment_id 指向父评论</span></div>
+                    <div class="flow-step"><span class="step-num">3</span><span>其他用户可点赞 <code>POST /api/comments/{id}/like/</code></span></div>
+                    <div class="flow-step"><span class="step-num">4</span><span>CommentLike 记录（防重复点赞）</span></div>
+                    <div class="flow-step"><span class="step-num">5</span><span>软删除支持: is_deleted 标记而非物理删除</span></div>
+                    <div class="flow-step"><span class="step-num">6</span><span>触发 <code>comment_created</code> 信号（可扩展通知）</span></div>
+                </div>
+            </div>
+
+            <!-- 数据缓存策略 -->
+            <div class="flow-card">
+                <h4 style="color:#fbbf24;">⚡ 数据缓存机制</h4>
+                <div class="flow-steps">
+                    <div class="flow-step"><span class="step-num">1</span><span><b>会话缓存:</b> Redis 存储 Session，多实例共享登录态</span></div>
+                    <div class="flow-step"><span class="step-num">2</span><span><b>内容缓存:</b> 热点文章/首页列表缓存至 Redis (TTL)</span></div>
+                    <div class="flow-step"><span class="step-num">3</span><span><b>Token黑名单:</b> 登出/吊销的 Token 存入 Redis Set</span></div>
+                    <div class="flow-step"><span class="step-num">4</span><span><b>限流计数:</b> API 请求频率限制 (IP/用户维度)</span></div>
+                    <div class="flow-step"><span class="step-num">5</span><span><b>SSE推送:</b> 上传进度通过 Redis Pub/Sub 实时推送</span></div>
+                    <div class="flow-step"><span class="step-num">6</span><span><b>失效策略:</b> Signal 触发 → 主动清除相关缓存 key</span></div>
+                </div>
+            </div>
+
+            <!-- 多环境部署 -->
+            <div class="flow-card">
+                <h4 style="color:#94a3b8;">🌍 多环境配置</h4>
+                <div class="flow-steps">
+                    <div class="flow-step"><span class="step-num">1</span><span>通过环境变量 <code>DJANGO_ENV</code> 切换配置</span></div>
+                    <div class="flow-step"><span class="step-num">2</span><span><b>DevelopmentConfig:</b> SQLite + DEBUG=True + 本地日志</span></div>
+                    <div class="flow-step"><span class="step-num">3</span><span><b>ProductionConfig:</b> MySQL + Redis + Celery + 白名单</span></div>
+                    <div class="flow-step"><span class="step-num">4</span><span><code>.env.development</code> / <code>.env.production</code> 分离敏感信息</span></div>
+                    <div class="flow-step"><span class="step-num">5</span><span>django-environ 统一加载，settings.py 自动验证</span></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- ==================== 图例 ==================== -->
+    <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(22,163,74,0.6);border:1px solid #22c55e;"></div>前端展示层 Frontend</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(244,63,94,0.6);border:1px solid #f43f5e;"></div>安全认证层 Security</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(59,130,246,0.6);border:1px solid #3b82f6;"></div>后端应用层 Backend</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(251,191,36,0.6);border:1px solid #f59e0b;"></div>缓存层 Cache</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(249,115,22,0.6);border:1px solid #f97316;"></div>异步任务层 Async</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(168,85,247,0.6);border:1px solid #a855f7;"></div>数据存储层 Data</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(148,163,184,0.6);border:1px solid #94a3b8;"></div>外部服务 External</div>
+    </div>
+
+</body>
+</html>

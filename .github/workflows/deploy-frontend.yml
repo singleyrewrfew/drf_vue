@@ -5,7 +5,6 @@ on:
     branches: [ main, master ]
     paths:
       - 'frontend/**'
-      - 'mobile/**'
       - 'front/**'
       - '.github/workflows/deploy-frontend.yml'
   workflow_dispatch:
@@ -35,22 +34,19 @@ jobs:
         path: |
           ~/.npm
           frontend/node_modules
-          mobile/node_modules
           front/node_modules
-        key: ${{ runner.os }}-node-${{ hashFiles('frontend/package-lock.json', 'mobile/package-lock.json', 'front/package-lock.json') }}
+        key: ${{ runner.os }}-node-${{ hashFiles('frontend/package-lock.json', 'front/package-lock.json') }}
         restore-keys: |
           ${{ runner.os }}-node-
     
     - name: Install all dependencies
       run: |
         npm ci --prefix frontend
-        npm ci --prefix mobile
         npm ci --prefix front
     
     - name: Build all frontends
       run: |
         npm run build --prefix frontend
-        npm run build --prefix mobile
         npm run build --prefix front
     
     - name: Set up SSH
@@ -75,13 +71,6 @@ jobs:
           echo "⚠️ frontend/dist_backend not found, skipping"
         fi
         
-        if [ -d "mobile/dist_mobile" ]; then
-          cp -r mobile/dist_mobile deploy_temp/dist_mobile
-          echo "✅ Copied mobile frontend"
-        else
-          echo "⚠️ mobile/dist_mobile not found, skipping"
-        fi
-        
         if [ -d "front/dist" ]; then
           cp -r front/dist deploy_temp/dist
           echo "✅ Copied PC frontend"
@@ -102,8 +91,8 @@ jobs:
           cd /home/front
           
           # 设置正确的权限
-          sudo chown -R www-data:www-data dist dist_mobile dist_backend
-          sudo chmod -R 755 dist dist_mobile dist_backend
+          sudo chown -R www-data:www-data dist dist_backend
+          sudo chmod -R 755 dist dist_backend
           
           # 检查 Nginx 状态
           sudo systemctl status nginx --no-pager
