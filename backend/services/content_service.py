@@ -4,6 +4,7 @@ from django.http import Http404
 from rest_framework.exceptions import APIException, PermissionDenied, ValidationError
 from apps.contents.models import Content
 from services.repositories import ContentRepository
+from apps.core.events import content_published, content_archived
 
 
 class ContentService:
@@ -71,8 +72,18 @@ class ContentService:
             exc.status_code = 409
             raise exc
         
-        # 3. 委托给 Repository 更新状态
-        return ContentRepository.publish(content)
+        # 3. 委托给 Repository 更新状态（数据访问）
+        published_content = ContentRepository.publish(content)
+        
+        # 4. 触发领域事件（解耦模块依赖）
+        content_published.send(
+            sender=ContentService,
+            content=published_content,
+            user=user,
+            published_at=published_content.published_at
+        )
+        
+        return published_content
     
     @staticmethod
     @transaction.atomic
@@ -100,8 +111,17 @@ class ContentService:
             if not (user.is_admin or (hasattr(user, 'has_permission') and user.has_permission('content_archive'))):
                 raise PermissionDenied('无归档权限')
         
-        # 2. 委托给 Repository 更新状态
-        return ContentRepository.archive(content)
+        # 2. 委托给 Repository 更新状态（数据访问）
+        archived_content = ContentRepository.archive(content)
+        
+        # 3. 触发领域事件（解耦模块依赖）
+        content_archived.send(
+            sender=ContentService,
+            content=archived_content,
+            user=user
+        )
+        
+        return archived_content
     
     # 以下方法为纯数据访问，建议直接使用 Repository 或 Model Manager
     # 保留这些方法是为了向后兼容，但应该标记为 deprecated

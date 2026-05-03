@@ -91,11 +91,13 @@ def generate_video_thumbnails(self, media_id: str):
                 'thumbnails_count': refreshed.thumbnails_count,
             })
             
-            from apps.media.signals import video_thumbnail_generated
-            video_thumbnail_generated.send(
+            # 触发媒体处理完成事件（使用新的领域事件）
+            from apps.core.events import media_processed
+            media_processed.send(
                 sender=None,
                 media_id=str(media_id),
-                success=True
+                success=True,
+                processing_type='thumbnail'
             )
             
             return {'status': 'success', 'media_id': str(media_id)}
@@ -108,11 +110,14 @@ def generate_video_thumbnails(self, media_id: str):
                 'thumbnail_status': 'failed',
             })
             
-            from apps.media.signals import video_thumbnail_generated
-            video_thumbnail_generated.send(
+            # 触发媒体处理失败事件（使用新的领域事件）
+            from apps.core.events import media_processed
+            media_processed.send(
                 sender=None,
                 media_id=str(media_id),
-                success=False
+                success=False,
+                processing_type='thumbnail',
+                error='Thumbnail generation returned False'
             )
             
             return {'status': 'failed', 'message': 'Thumbnail generation returned False'}

@@ -5,7 +5,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from .models import Media
-from .signals import video_uploaded, video_thumbnail_generated
+from apps.core.events import media_uploaded, media_processed
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +20,16 @@ def on_media_created(sender, instance, created, **kwargs):
     """
     if not created:
         return
+
+    # 触发媒体上传事件（解耦）
+    try:
+        media_uploaded.send(
+            sender=Media,
+            media=instance,
+            uploader=instance.uploader
+        )
+    except Exception as e:
+        logger.error(f'Failed to trigger media_uploaded event: {e}', exc_info=True)
 
     if not instance.is_video:
         return
@@ -39,14 +49,14 @@ def on_media_created(sender, instance, created, **kwargs):
     logger.info(f"[Signal] Video uploaded: {instance.id}, thumbnail task scheduled after transaction commit")
 
 
-@receiver(video_thumbnail_generated)
-def on_thumbnail_generated(sender, media_id, success, **kwargs):
+@receiver(media_processed)
+def on_thumbnail_generated(sender, media_id, success, processing_type=None, error=None, **kwargs):
     """
-    缩略图生成完成的信号处理
+    媒体处理完成的信号处理（统一处理所有媒体类型）
     
     可用于后续扩展，如通知用户、更新缓存等。
     """
     if success:
-        logger.info(f"[Signal] Thumbnail generated successfully for media {media_id}")
+        logger.info(f'[Signal] Media processed successfully: media_id={media_id}, type={processing_type}')
     else:
-        logger.warning(f"[Signal] Thumbnail generation failed for media {media_id}")
+        logger.warning(f'[Signal] Media processing failed: media_id={media_id}, error={error}')
