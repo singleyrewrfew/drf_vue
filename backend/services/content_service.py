@@ -1,10 +1,10 @@
 from django.utils import timezone
 from django.db import transaction
 from django.http import Http404
-from rest_framework.exceptions import APIException, PermissionDenied, ValidationError
 from apps.contents.models import Content
 from services.repositories import ContentRepository
 from apps.core.events import content_published, content_archived
+from utils.exceptions import PermissionException, ConflictException
 
 
 class ContentService:
@@ -57,20 +57,18 @@ class ContentService:
             Content: 发布后的内容对象
             
         Raises:
-            ValueError: 如果内容已经发布
-            PermissionDenied: 如果用户无发布权限
+            PermissionException: 如果用户无发布权限
+            ConflictException: 如果内容已经发布
         """
         # 1. 权限检查（如果提供了用户）
         if user is not None:
             # is_admin 已包含 is_superuser 检查
             if not (user.is_admin or (hasattr(user, 'has_permission') and user.has_permission('content_publish'))):
-                raise PermissionDenied('无发布权限')
+                raise PermissionException('无发布权限')
         
         # 2. 状态验证
         if content.status == 'published':
-            exc = APIException(detail='内容已发布')
-            exc.status_code = 409
-            raise exc
+            raise ConflictException('内容已发布')
         
         # 3. 委托给 Repository 更新状态（数据访问）
         published_content = ContentRepository.publish(content)
@@ -103,13 +101,13 @@ class ContentService:
             Content: 归档后的内容对象
             
         Raises:
-            PermissionDenied: 如果用户无归档权限
+            PermissionException: 如果用户无归档权限
         """
         # 1. 权限检查（如果提供了用户）
         if user is not None:
             # is_admin 已包含 is_superuser 检查
             if not (user.is_admin or (hasattr(user, 'has_permission') and user.has_permission('content_archive'))):
-                raise PermissionDenied('无归档权限')
+                raise PermissionException('无归档权限')
         
         # 2. 委托给 Repository 更新状态（数据访问）
         archived_content = ContentRepository.archive(content)

@@ -1,8 +1,8 @@
 from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from utils.exceptions import ValidationException
 
 from django.conf import settings
 import uuid
@@ -136,14 +136,14 @@ class ContentViewSet(
                     if status_filter:
                         # 验证状态值是否在白名单中（防止 SQL 注入）
                         if status_filter not in self.VALID_STATUSES:
-                            raise ValidationError(f"无效的状态值: {status_filter}。允许的值: {', '.join(self.VALID_STATUSES)}")
+                            raise ValidationException(f"无效的状态值: {status_filter}。允许的值: {', '.join(self.VALID_STATUSES)}")
                         queryset = queryset.filter(status=status_filter)
                 elif self.request.user.is_editor:
                     queryset = queryset.filter(author=self.request.user)
                     if status_filter:
                         # 验证状态值是否在白名单中（防止 SQL 注入）
                         if status_filter not in self.VALID_STATUSES:
-                            raise ValidationError(f"无效的状态值: {status_filter}。允许的值: {', '.join(self.VALID_STATUSES)}")
+                            raise ValidationException(f"无效的状态值: {status_filter}。允许的值: {', '.join(self.VALID_STATUSES)}")
                         queryset = queryset.filter(status=status_filter)
                 else:
                     queryset = queryset.filter(status='published')

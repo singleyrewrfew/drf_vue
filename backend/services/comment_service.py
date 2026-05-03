@@ -6,7 +6,7 @@ from apps.comments.models import Comment, CommentLike
 from services.base import ModelService
 from services.repositories import CommentRepository
 from utils.error_codes import ErrorTypes
-from rest_framework.exceptions import ValidationError
+from utils.exceptions import RateLimitException, ValidationException
 
 logger = logging.getLogger(__name__)
 
@@ -227,9 +227,7 @@ class CommentService(ModelService):
         
         if global_count >= 10:
             logger.warning(f'用户 {user.username} (ID:{user.id}) 评论频率超限（全局）')
-            raise ValidationError({
-                'content': ['评论过于频繁，请稍后再试（每分钟最多 10 条）']
-            })
+            raise RateLimitException('评论过于频繁，请稍后再试（每分钟最多 10 条）')
         
         # 文章级别频率限制：每分钟 5 条（针对同一篇文章）
         if article_id:
@@ -238,9 +236,7 @@ class CommentService(ModelService):
             
             if article_count >= 5:
                 logger.warning(f'用户 {user.username} (ID:{user.id}) 对文章 {article_id} 评论频率超限')
-                raise ValidationError({
-                    'content': ['对该文章评论过于频繁，请稍后再试（每分钟最多 5 条）']
-                })
+                raise RateLimitException('对该文章评论过于频繁，请稍后再试（每分钟最多 5 条）')
             
             # 增加文章级别计数
             cache.set(article_rate_key, article_count + 1, timeout=60)
@@ -269,9 +265,7 @@ class CommentService(ModelService):
         
         if like_count >= 20:
             logger.warning(f'用户 {user.username} (ID:{user.id}) 点赞频率超限')
-            raise ValidationError({
-                'detail': '点赞操作过于频繁，请稍后再试（每分钟最多 20 次）'
-            })
+            raise RateLimitException('点赞操作过于频繁，请稍后再试（每分钟最多 20 次）')
         
         # 增加计数
         cache.set(rate_key, like_count + 1, timeout=60)

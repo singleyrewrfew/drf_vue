@@ -5,7 +5,7 @@
 """
 import logging
 import magic
-from rest_framework.exceptions import ValidationError
+from utils.exceptions import ValidationException
 
 logger = logging.getLogger(__name__)
 
@@ -25,14 +25,14 @@ def validate_file_mime_type(file, allowed_types):
         str: 检测到的真实 MIME 类型
     
     Raises:
-        ValidationError: 如果文件类型不在允许列表中
+        ValidationException: 如果文件类型不在允许列表中
     
     Example:
         >>> validate_file_mime_type(uploaded_file, ['image/jpeg', 'image/png'])
         'image/jpeg'
     """
     if not file:
-        raise ValidationError('文件不能为空')
+        raise ValidationException('文件不能为空')
     
     try:
         # 读取文件前 2048 字节用于检测（足够识别大多数文件格式）
@@ -40,7 +40,7 @@ def validate_file_mime_type(file, allowed_types):
         file.seek(0)  # 重置文件指针，确保后续操作正常
         
         if not file_header:
-            raise ValidationError('文件内容为空')
+            raise ValidationException('文件内容为空')
         
         # 使用 libmagic 检测真实 MIME 类型
         detected_mime = magic.from_buffer(file_header, mime=True)
@@ -53,7 +53,7 @@ def validate_file_mime_type(file, allowed_types):
                 f"File type mismatch: declared={file.content_type}, "
                 f"detected={detected_mime}, allowed={allowed_types}"
             )
-            raise ValidationError(
+            raise ValidationException(
                 f'不支持的文件类型: {detected_mime}。'
                 f'请上传以下类型的文件: {", ".join(allowed_types)}'
             )
@@ -68,12 +68,12 @@ def validate_file_mime_type(file, allowed_types):
         
         return detected_mime
     
-    except ValidationError:
+    except ValidationException:
         # 重新抛出验证错误
         raise
     except Exception as e:
         logger.error(f"Failed to validate file MIME type: {type(e).__name__}: {e}", exc_info=True)
-        raise ValidationError(f'文件验证失败: {str(e)}')
+        raise ValidationException(f'文件验证失败: {str(e)}')
 
 
 def validate_image_file(file):
@@ -87,7 +87,7 @@ def validate_image_file(file):
         str: 检测到的 MIME 类型
     
     Raises:
-        ValidationError: 如果不是有效的图片文件
+        ValidationException: 如果不是有效的图片文件
     """
     from django.conf import settings
     
@@ -109,7 +109,7 @@ def validate_video_file(file):
         str: 检测到的 MIME 类型
     
     Raises:
-        ValidationError: 如果不是有效的视频文件
+        ValidationException: 如果不是有效的视频文件
     """
     from django.conf import settings
     
@@ -131,7 +131,7 @@ def validate_document_file(file):
         str: 检测到的 MIME 类型
     
     Raises:
-        ValidationError: 如果不是有效的文档文件
+        ValidationException: 如果不是有效的文档文件
     """
     from django.conf import settings
     
@@ -156,7 +156,7 @@ def sanitize_svg(svg_content):
         str: 清洗后的 SVG 内容
     
     Raises:
-        ValidationError: 如果 SVG 包含危险内容
+        ValidationException: 如果 SVG 包含危险内容
     """
     import re
     from utils.html_utils import _remove_dangerous_tags_with_content

@@ -2,9 +2,9 @@ from django.db.models import Count, Prefetch, Q
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.request import Request
+from utils.exceptions import ValidationException
 
 from apps.users.permissions import IsOwnerOrAdmin
 from services.comment_service import CommentService
@@ -78,7 +78,7 @@ class CommentViewSet(StandardListMixin, viewsets.ModelViewSet):
             if request.user.is_editor:
                 # 验证 is_approved 参数是否为有效的布尔值字符串
                 if is_approved.lower() not in ['true', 'false']:
-                    raise ValidationError(f"无效的 is_approved 值: {is_approved}。允许的值: true, false")
+                    raise ValidationException(f"无效的 is_approved 值: {is_approved}。允许的值: true, false")
                 queryset = queryset.filter(is_approved=is_approved.lower() == 'true')
 
         return queryset

@@ -6,9 +6,9 @@ from django.http import FileResponse, HttpResponse
 from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from utils.exceptions import ValidationException
 
 from apps.users.permissions import IsOwnerOrAdmin
 from services.media_service import MediaService
@@ -77,7 +77,7 @@ class MediaViewSet(StandardListMixin, viewsets.ModelViewSet):
         if file_type:
             # 验证文件类型前缀是否在白名单中（防止 SQL 注入）
             if not any(file_type.startswith(prefix) for prefix in self.VALID_FILE_TYPE_PREFIXES):
-                raise ValidationError(
+                raise ValidationException(
                     f"无效的文件类型: {file_type}。允许的前缀: {', '.join(self.VALID_FILE_TYPE_PREFIXES)}"
                 )
             queryset = queryset.filter(file_type__startswith=file_type)
