@@ -88,6 +88,34 @@ class CommentCreateSerializer(serializers.ModelSerializer):
     def validate_content(self, value):
         return sanitize_comment(value)
 
+    def validate(self, data):
+        """
+        验证评论数据并检查频率限制
+        
+        防刷机制：
+        - 检查用户评论频率（每分钟最多 5 条）
+        - 检查对同一文章的评论频率（每分钟最多 3 条）
+        """
+        # 获取当前用户和文章 ID
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            user = request.user
+            article = data.get('article')
+            
+            # 提取文章 ID
+            article_id = None
+            if hasattr(article, 'id'):
+                article_id = str(article.id)
+            elif isinstance(article, str):
+                # 如果是 slug 或 UUID 字符串，直接使用
+                article_id = article
+            
+            # 调用频率限制检查
+            from services.comment_service import CommentService
+            CommentService.check_comment_rate_limit(user, article_id)
+        
+        return data
+
     def create(self, validated_data):
         validated_data['user'] = self.context['request'].user
         reply_to_id = validated_data.pop('reply_to_id', None)

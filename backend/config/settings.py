@@ -339,6 +339,13 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     
+    'filters': {
+        # 敏感数据过滤器：自动脱敏密码、Token 等敏感信息
+        'sensitive_data': {
+            '()': 'utils.log_utils.SensitiveDataFilter',
+        },
+    },
+    
     'formatters': {
         'simple': {
             'format': '{asctime} [{levelname}] {message}',
@@ -356,7 +363,8 @@ LOGGING = {
         'console': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
-            'formatter': 'simple'
+            'formatter': 'simple',
+            'filters': ['sensitive_data'],  # 添加敏感数据过滤
         },
         'file': {
             'level': 'DEBUG',
@@ -365,7 +373,8 @@ LOGGING = {
             'maxBytes': 10 * 1024 * 1024,
             'backupCount': 5,
             'formatter': 'verbose',
-            'encoding': 'utf-8'
+            'encoding': 'utf-8',
+            'filters': ['sensitive_data'],  # 添加敏感数据过滤
         },
         'error_file': {
             'level': 'ERROR',
@@ -374,7 +383,8 @@ LOGGING = {
             'maxBytes': 10 * 1024 * 1024,
             'backupCount': 10,
             'formatter': 'verbose',
-            'encoding': 'utf-8'
+            'encoding': 'utf-8',
+            'filters': ['sensitive_data'],  # 添加敏感数据过滤
         },
     },
     

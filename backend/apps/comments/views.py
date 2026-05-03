@@ -94,5 +94,10 @@ class CommentViewSet(StandardListMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def like(self, request, pk=None):
         comment = self.get_object()
+        
+        # 检查点赞频率限制
+        from services.comment_service import CommentService
+        CommentService.check_like_rate_limit(request.user)
+        
         comment, is_liked = CommentService.toggle_like(comment, request.user)
         return StandardResponse(CommentSerializer(comment, context={'request': request}).data)

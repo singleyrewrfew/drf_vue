@@ -11,6 +11,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from services.user_service import UserService
 from utils.response import StandardResponse, api_error
 from utils.error_codes import ErrorTypes
+from utils.log_utils import mask_token
 from .permissions import IsAdminUser
 from .serializers import (
     PasswordChangeSerializer,
@@ -214,9 +215,10 @@ class UserViewSet(viewsets.ModelViewSet):
             if new_refresh_token:
                 response_data["refresh"] = new_refresh_token
             
-            # 记录成功刷新日志
+            # 记录成功刷新日志（脱敏 Token）
             logger.info(
                 f'用户 {user.username} (ID:{user_id}) Token 刷新成功, '
+                f'Access Token: {mask_token(new_access_token)}, '
                 f'IP: {request.META.get("REMOTE_ADDR", "unknown")}'
             )
             
