@@ -126,7 +126,7 @@ def invalidate_cache(key_prefix: str, *args):
     cache_delete(cache_key)
 
 
-def invalidate_pattern(pattern: str):
+def invalidate_pattern(pattern: str) -> int:
     """
     使匹配模式的所有缓存失效
 
@@ -134,19 +134,25 @@ def invalidate_pattern(pattern: str):
 
     Args:
         pattern: 缓存键模式（不含前缀，如 'categories:list'）
+        
+    Returns:
+        int: 删除的键数量
     """
     try:
         client = get_redis_client()
         full_pattern = f'{settings.CACHE_KEY_PREFIX}:{pattern}*'
         cursor = 0
+        deleted_count = 0
         while True:
             cursor, keys = client.scan(cursor, match=full_pattern, count=100)
             if keys:
-                client.delete(*keys)
+                deleted_count += client.delete(*keys)
             if cursor == 0:
                 break
-    except Exception:
-        pass
+        return deleted_count
+    except Exception as e:
+        logger.error(f"Failed to invalidate cache pattern '{pattern}': {e}")
+        return 0
 
 
 def cache_result(key_prefix: str, timeout: int = None):

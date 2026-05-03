@@ -134,7 +134,7 @@ class UserViewSet(viewsets.ModelViewSet):
         4. 生成新的 Access Token 和 Refresh Token（轮换机制）
         5. 记录刷新日志用于审计
         """
-        from django.core.cache import cache
+        from utils.cache_utils import cache_get, cache_set
         import logging
         
         logger = logging.getLogger(__name__)
@@ -169,7 +169,7 @@ class UserViewSet(viewsets.ModelViewSet):
             
             # 第 5 步：检查刷新频率限制（防止滥用）
             rate_limit_key = f'token_refresh_rate_{user_id}'
-            refresh_count = cache.get(rate_limit_key, 0)
+            refresh_count = cache_get(rate_limit_key, 0)
             
             # 每分钟最多刷新 5 次
             if refresh_count >= 5:
@@ -180,7 +180,7 @@ class UserViewSet(viewsets.ModelViewSet):
                 return rate_limit_exceeded('刷新过于频繁，请稍后再试')
             
             # 更新刷新计数（60秒过期）
-            cache.set(rate_limit_key, refresh_count + 1, timeout=60)
+            cache_set(rate_limit_key, refresh_count + 1, timeout=60)
             
             # 第 6 步：旧 Refresh Token 立即加入黑名单（防止重放攻击）
             try:

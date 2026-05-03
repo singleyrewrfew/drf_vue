@@ -1,10 +1,10 @@
 from django.db.models import Count, Prefetch, Q
-from django.core.cache import cache
 import logging
 
 from apps.comments.models import Comment, CommentLike
 from services.base import ModelService
 from services.repositories import CommentRepository
+from utils.cache_utils import cache_get, cache_set
 from utils.error_codes import ErrorTypes
 from utils.exceptions import RateLimitException, ValidationException
 
@@ -223,7 +223,7 @@ class CommentService(ModelService):
         """
         # 全局频率限制：每分钟 10 条
         global_rate_key = f'comment_rate_global_{user.id}'
-        global_count = cache.get(global_rate_key, 0)
+        global_count = cache_get(global_rate_key, 0)
         
         if global_count >= 10:
             logger.warning(f'用户 {user.username} (ID:{user.id}) 评论频率超限（全局）')
@@ -232,17 +232,17 @@ class CommentService(ModelService):
         # 文章级别频率限制：每分钟 5 条（针对同一篇文章）
         if article_id:
             article_rate_key = f'comment_rate_article_{user.id}_{article_id}'
-            article_count = cache.get(article_rate_key, 0)
+            article_count = cache_get(article_rate_key, 0)
             
             if article_count >= 5:
                 logger.warning(f'用户 {user.username} (ID:{user.id}) 对文章 {article_id} 评论频率超限')
                 raise RateLimitException('对该文章评论过于频繁，请稍后再试（每分钟最多 5 条）')
             
             # 增加文章级别计数
-            cache.set(article_rate_key, article_count + 1, timeout=60)
+            cache_set(article_rate_key, article_count + 1, timeout=60)
         
         # 增加全局计数
-        cache.set(global_rate_key, global_count + 1, timeout=60)
+        cache_set(global_rate_key, global_count + 1, timeout=60)
         
         logger.info(f'用户 {user.username} (ID:{user.id}) 评论频率检查通过')
 
@@ -261,12 +261,12 @@ class CommentService(ModelService):
             ValidationError: 如果超出频率限制
         """
         rate_key = f'like_rate_{user.id}'
-        like_count = cache.get(rate_key, 0)
+        like_count = cache_get(rate_key, 0)
         
         if like_count >= 20:
             logger.warning(f'用户 {user.username} (ID:{user.id}) 点赞频率超限')
             raise RateLimitException('点赞操作过于频繁，请稍后再试（每分钟最多 20 次）')
         
         # 增加计数
-        cache.set(rate_key, like_count + 1, timeout=60)
+        cache_set(rate_key, like_count + 1, timeout=60)
         logger.debug(f'用户 {user.username} (ID:{user.id}) 点赞频率检查通过')

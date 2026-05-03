@@ -5,7 +5,7 @@
 """
 import logging
 from django.db import connection
-from django.core.cache import cache
+from utils.cache_utils import cache_get, cache_set
 
 logger = logging.getLogger(__name__)
 
@@ -133,7 +133,7 @@ def monitor_connection_pool():
     try:
         # 从缓存获取统计数据
         stats_key = 'db_connection_stats'
-        cached_stats = cache.get(stats_key)
+        cached_stats = cache_get(stats_key)
         
         if cached_stats:
             stats.update(cached_stats)
@@ -171,7 +171,7 @@ def record_connection_usage(reused: bool, health_check_failed: bool = False):
         stats_key = 'db_connection_stats'
         
         # 获取现有统计
-        stats = cache.get(stats_key, {
+        stats = cache_get(stats_key, {
             'total_requests': 0,
             'reused_connections': 0,
             'new_connections': 0,
@@ -189,7 +189,7 @@ def record_connection_usage(reused: bool, health_check_failed: bool = False):
             stats['health_check_failures'] += 1
         
         # 保存回缓存（1小时过期）
-        cache.set(stats_key, stats, timeout=3600)
+        cache_set(stats_key, stats, timeout=3600)
         
     except Exception as e:
         logger.warning(f"记录连接使用失败: {e}")
@@ -198,7 +198,8 @@ def record_connection_usage(reused: bool, health_check_failed: bool = False):
 def reset_connection_stats():
     """重置连接池统计"""
     try:
-        cache.delete('db_connection_stats')
+        from utils.cache_utils import cache_delete
+        cache_delete('db_connection_stats')
         logger.info("连接池统计已重置")
     except Exception as e:
         logger.error(f"重置统计失败: {e}")

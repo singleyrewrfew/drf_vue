@@ -89,7 +89,8 @@ class CommentViewSet(StandardListMixin, viewsets.ModelViewSet):
                     raise ValidationException(f"无效的 is_approved 值: {is_approved}。允许的值: true, false")
                 queryset = queryset.filter(is_approved=is_approved.lower() == 'true')
 
-        return queryset
+        # 添加默认排序，避免分页警告
+        return queryset.order_by('-created_at')
 
     @extend_schema(request=None, responses=CommentSerializer)
     @action(detail=True, methods=['post'])
