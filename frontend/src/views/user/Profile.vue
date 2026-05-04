@@ -523,6 +523,7 @@ const handleAvatarSuccess = async (response, file) => {
         } catch (error) {
             console.error('头像更新失败:', error)
             ElMessage.error(extractErrorMessage(error, '头像更新失败'))
+        }
     }
 }
 

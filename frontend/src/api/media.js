@@ -47,5 +47,5 @@ export const regenerateThumbnails = (id) => api.post(`/media/${id}/regenerate_th
  *
  * @returns {string} 媒体上传接口的完整 URL（如 /api/media/ 或 https://example.com/api/media/）
  */
-export const getUploadUrl = () => `${api.defaults.baseURL}media/`
+export const getUploadUrl = () => `${api.defaults.baseURL}/media/`
 
