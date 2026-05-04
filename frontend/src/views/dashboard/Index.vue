@@ -4,42 +4,22 @@
         <template v-if="isAdmin">
             <el-row :gutter="20" class="stat-row">
                 <el-col :xs="12" :sm="6">
-                    <StatCard :value="stats.contents" label="内容总数" type="primary">
-                        <template #icon>
-                            <el-icon :size="28">
-                                <Document/>
-                            </el-icon>
-                        </template>
+                    <StatCard :value="stats.contents" label="内容总数" type="primary" icon="Document" clickable>
                         <template #footer>已发布 {{ stats.published }} · 草稿 {{ stats.drafts }}</template>
                     </StatCard>
                 </el-col>
                 <el-col :xs="12" :sm="6">
-                    <StatCard :value="stats.comments" label="评论总数" type="success">
-                        <template #icon>
-                            <el-icon :size="28">
-                                <ChatDotRound/>
-                            </el-icon>
-                        </template>
+                    <StatCard :value="stats.comments" label="评论总数" type="success" icon="ChatDotRound">
                         <template #footer>用户互动数据</template>
                     </StatCard>
                 </el-col>
                 <el-col :xs="12" :sm="6">
-                    <StatCard :value="stats.users" label="用户总数" type="warning">
-                        <template #icon>
-                            <el-icon :size="28">
-                                <User/>
-                            </el-icon>
-                        </template>
+                    <StatCard :value="stats.users" label="用户总数" type="warning" icon="User">
                         <template #footer>注册用户</template>
                     </StatCard>
                 </el-col>
                 <el-col :xs="12" :sm="6">
-                    <StatCard :value="formatNumber(stats.views)" label="总浏览量" type="danger">
-                        <template #icon>
-                            <el-icon :size="28">
-                                <View/>
-                            </el-icon>
-                        </template>
+                    <StatCard :value="formatNumber(stats.views)" label="总浏览量" type="danger" icon="View">
                         <template #footer>累计访问</template>
                     </StatCard>
                 </el-col>
@@ -50,35 +30,17 @@
         <template v-else>
             <el-row :gutter="20" class="stat-row">
                 <el-col :xs="12" :sm="8">
-                    <StatCard :value="stats.my_contents || 0" label="我的内容" type="primary">
-                        <template #icon>
-                            <el-icon :size="28">
-                                <Document/>
-                            </el-icon>
-                        </template>
-                        <template #footer>已发布 {{ stats.my_published || 0 }} · 草稿 {{
-                                stats.my_drafts || 0
-                            }}
-                        </template>
+                    <StatCard :value="stats.my_contents || 0" label="我的内容" type="primary" icon="Document" clickable>
+                        <template #footer>已发布 {{ stats.my_published || 0 }} · 草稿 {{ stats.my_drafts || 0 }}</template>
                     </StatCard>
                 </el-col>
                 <el-col :xs="12" :sm="8">
-                    <StatCard :value="formatNumber(stats.my_views || 0)" label="我的浏览量" type="success">
-                        <template #icon>
-                            <el-icon :size="28">
-                                <View/>
-                            </el-icon>
-                        </template>
+                    <StatCard :value="formatNumber(stats.my_views || 0)" label="我的浏览量" type="success" icon="View">
                         <template #footer>累计访问</template>
                     </StatCard>
                 </el-col>
                 <el-col :xs="12" :sm="8">
-                    <StatCard :value="stats.my_comments || 0" label="我的评论" type="warning">
-                        <template #icon>
-                            <el-icon :size="28">
-                                <ChatDotRound/>
-                            </el-icon>
-                        </template>
+                    <StatCard :value="stats.my_comments || 0" label="我的评论" type="warning" icon="ChatDotRound">
                         <template #footer>互动数据</template>
                     </StatCard>
                 </el-col>
@@ -91,7 +53,8 @@
                     <template #header>
                         <div class="card-header">
                             <span>{{ isAdmin ? '最新发布内容' : '我的最新发布' }}</span>
-                            <ViewAllButton :text="isAdmin ? '查看全部' : '查看我的'"
+                            <ActionButton variant="outline" type="primary" :text="isAdmin ? '查看全部' : '查看我的'"
+                                           icon="arrow-right" icon-after
                                            @click="$router.push('/contents')"/>
                         </div>
                     </template>
@@ -230,7 +193,7 @@ import {
     Platform
 } from '@element-plus/icons-vue'
 import {useUserStore} from '@/stores/user'
-import ViewAllButton from '@/components/ViewAllButton.vue'
+import ActionButton from '@/components/ActionButton.vue'
 import StatCard from '@/components/StatCard.vue'
 import QuickActionCard from '@/components/QuickActionCard.vue'
 import {fetchStats} from "@/api/stats.js"
@@ -319,7 +282,8 @@ const serviceStatusClass = (service) => {
 
 const serviceStatusText = (service) => {
     const info = healthData.value?.services?.[service]
-    if (!info) return '检测中...'
+    if (healthLoading.value) return '检测中...'
+    if (!info) return '未检测'
     if (info.status === 'healthy') {
         if (service === 'celery') return `${info.workers} Worker`
         if (service === 'redis') return info.used_memory_human || '正常'
@@ -342,7 +306,6 @@ const refreshHealth = async () => {
 
 onMounted(() => {
     asyncFetchStats()
-    refreshHealth()
 })
 </script>
 

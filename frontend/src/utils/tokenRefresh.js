@@ -69,7 +69,7 @@ async function refreshToken() {
 
     // 如果没有 refresh token，说明会话已失效（token 过期或被清除）
     if (!currentRefreshToken) {
-        throw new Error('Refresh token not found, session expired')
+        throw new Error('刷新令牌不存在，会话已过期，请重新登录')
     }
 
     try {

@@ -11,7 +11,7 @@ import api from './index'
  * @param {Object} [params] - 查询参数 {page, page_size, status, category, tag, search, ...}
  * @returns {Promise} 解析为内容列表数据
  */
-export const getContents = (params) => api.get('/contents/', { params })
+export const getContents = (params = {}) => api.get('/contents/', { params })
 
 /**
  * 获取单条内容详情

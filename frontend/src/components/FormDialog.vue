@@ -4,16 +4,15 @@
             <slot></slot>
         </el-form>
         <template #footer>
-            <ResetButton :text="cancelText" @click="handleCancel"/>
-            <ConfirmButton :text="submitText" @click="handleSubmit" :disabled="loading"/>
+            <ActionButton variant="outline" type="text" :text="cancelText" icon="reset" size="normal" @click="handleCancel"/>
+            <ActionButton :text="submitText" icon="approve" size="normal" stop @click="handleSubmit" :disabled="loading"/>
         </template>
     </el-dialog>
 </template>
 
 <script setup>
 import {ref, computed, watch} from 'vue'
-import ResetButton from '@/components/ResetButton.vue'
-import ConfirmButton from '@/components/ConfirmButton.vue'
+import ActionButton from '@/components/ActionButton.vue'
 
 const props = defineProps({
     modelValue: {

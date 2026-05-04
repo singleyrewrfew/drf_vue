@@ -1,6 +1,5 @@
 <template>
-  <span class="status-tag" :class="[`status-tag--${type}`, { 'status-tag--dot': showDot }]">
-    <span v-if="showDot" class="status-dot"></span>
+  <span class="status-tag" :class="`status-tag--${type}`">
     <slot>{{ text }}</slot>
   </span>
 </template>
@@ -15,10 +14,6 @@ defineProps({
     text: {
         type: String,
         default: ''
-    },
-    showDot: {
-        type: Boolean,
-        default: false
     }
 })
 </script>
@@ -27,72 +22,69 @@ defineProps({
 .status-tag {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
     padding: 2px 10px;
-    border-radius: 12px;
+    border-radius: 6px;
     font-size: 12px;
     font-weight: 500;
-    line-height: 1.5;
+    line-height: 1.8;
+    white-space: nowrap;
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease;
 }
 
-.status-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    flex-shrink: 0;
-}
-
+/* ---- default ---- */
 .status-tag--default {
-    background: var(--bg-tertiary);
+    background: var(--tag-bg-default, rgba(128, 128, 128, 0.12));
     color: var(--text-secondary);
 }
-
-.status-tag--default .status-dot {
-    background: var(--text-tertiary);
+.status-tag--default:hover {
+    background: var(--tag-bg-default-hover, rgba(128, 128, 128, 0.2));
 }
 
+/* ---- primary ---- */
 .status-tag--primary {
-    background: var(--primary-bg);
+    background: var(--tag-bg-primary, rgba(64, 158, 255, 0.12));
     color: var(--primary-color);
 }
-
-.status-tag--primary .status-dot {
-    background: var(--primary-color);
+.status-tag--primary:hover {
+    background: var(--tag-bg-primary-hover, rgba(64, 158, 255, 0.2));
 }
 
+/* ---- success ---- */
 .status-tag--success {
-    background: var(--success-bg);
+    background: var(--tag-bg-success, rgba(103, 194, 58, 0.12));
     color: var(--success-color);
 }
-
-.status-tag--success .status-dot {
-    background: var(--success-color);
+.status-tag--success:hover {
+    background: var(--tag-bg-success-hover, rgba(103, 194, 58, 0.2));
 }
 
+/* ---- warning ---- */
 .status-tag--warning {
-    background: var(--warning-bg);
+    background: var(--tag-bg-warning, rgba(230, 162, 60, 0.12));
     color: var(--warning-color);
 }
-
-.status-tag--warning .status-dot {
-    background: var(--warning-color);
+.status-tag--warning:hover {
+    background: var(--tag-bg-warning-hover, rgba(230, 162, 60, 0.2));
 }
 
+/* ---- danger ---- */
 .status-tag--danger {
-    background: var(--danger-bg);
+    background: var(--tag-bg-danger, rgba(245, 108, 108, 0.12));
     color: var(--danger-color);
 }
-
-.status-tag--danger .status-dot {
-    background: var(--danger-color);
+.status-tag--danger:hover {
+    background: var(--tag-bg-danger-hover, rgba(245, 108, 108, 0.2));
 }
 
+/* ---- info ---- */
 .status-tag--info {
-    background: var(--info-bg);
+    background: var(--tag-bg-info, rgba(144, 147, 153, 0.12));
     color: var(--info-color);
 }
-
-.status-tag--info .status-dot {
-    background: var(--info-color);
+.status-tag--info:hover {
+    background: var(--tag-bg-info-hover, rgba(144, 147, 153, 0.2));
 }
 </style>

@@ -1,9 +1,28 @@
+/* ============================================
+   components.css — 应用级可复用工具类
+
+   职责：
+     - 页面布局工具（卡片头、操作按钮区、搜索表单）
+     - 表单输入组合组件
+     - 信息展示列表
+     - 空状态 / 加载状态
+   不包含：
+     - Element Plus 组件覆盖 → element-override.css
+     - 全局基础样式       → main.css
+   ============================================ */
+
+/* ================================================================
+   一、页面布局
+   ================================================================ */
+
+/** 卡片标题栏：左右分布 */
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
+/** 操作按钮组：自动换行 */
 .action-buttons {
   display: flex;
   flex-wrap: wrap;
@@ -11,32 +30,32 @@
   align-items: center;
 }
 
-.page-header {
-  margin-bottom: 24px;
+/* ---- 页面级布局（从 main.css 迁入） ---- */
+.page-card-header { display: flex; justify-content: space-between; align-items: center; }
+.page-action-buttons { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.page-search-form { margin-bottom: 16px; }
+
+.page-header { margin-bottom: 24px; }
+.page-title { margin: 0; font-size: 24px; font-weight: 600; color: var(--text-primary); }
+.page-subtitle { margin: 4px 0 0; font-size: 14px; color: var(--text-secondary); }
+
+.page-form-tip {
+  font-size: 12px; color: var(--text-tertiary);
+  margin-top: 4px; line-height: 1.5;
+  padding-left: 4px; display: flex; align-items: center;
 }
 
-.page-title {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.page-subtitle {
-  margin: 4px 0 0;
-  font-size: 14px;
-  color: var(--text-secondary);
-}
+/* ================================================================
+   二、表单输入组合
+   ================================================================ */
 
 .form-input-wrapper {
-  display: flex;
-  align-items: center;
+  display: flex; align-items: center;
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   transition: all 0.15s ease;
 }
-
 .form-input-wrapper:focus-within {
   background: var(--bg-primary);
   border-color: var(--primary-color);
@@ -44,64 +63,37 @@
 }
 
 .form-input-icon {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-tertiary);
-  flex-shrink: 0;
+  width: 40px; height: 40px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); flex-shrink: 0;
 }
-
-.form-input-icon svg {
-  width: 16px;
-  height: 16px;
-}
+.form-input-icon svg { width: 16px; height: 16px; }
 
 .form-input {
-  flex: 1;
-  height: 40px;
-  border: none;
-  background: transparent;
-  font-size: 14px;
-  color: var(--text-primary);
+  flex: 1; height: 40px;
+  border: none; background: transparent;
+  font-size: 14px; color: var(--text-primary);
   outline: none;
 }
-
-.form-input::placeholder {
-  color: var(--text-tertiary);
-}
+.form-input::placeholder { color: var(--text-tertiary); }
 
 .form-input-suffix {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  transition: color 0.15s ease;
-  flex-shrink: 0;
+  width: 40px; height: 40px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); cursor: pointer;
+  transition: color 0.15s ease; flex-shrink: 0;
 }
+.form-input-suffix:hover { color: var(--primary-color); }
+.form-input-suffix svg { width: 16px; height: 16px; }
 
-.form-input-suffix:hover {
-  color: var(--primary-color);
-}
+/* ================================================================
+   三、信息展示列表
+   ================================================================ */
 
-.form-input-suffix svg {
-  width: 16px;
-  height: 16px;
-}
-
-.info-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
+.info-list { display: flex; flex-direction: column; gap: 12px; }
 
 .info-item {
-  display: flex;
-  align-items: center;
+  display: flex; align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
   background: var(--bg-secondary);
@@ -109,83 +101,47 @@
 }
 
 .info-label {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--text-secondary);
-  font-size: 14px;
+  display: flex; align-items: center; gap: 10px;
+  color: var(--text-secondary); font-size: 14px;
 }
+.info-label svg { width: 16px; height: 16px; color: var(--text-tertiary); }
 
-.info-label svg {
-  width: 16px;
-  height: 16px;
-  color: var(--text-tertiary);
-}
+.info-value { font-size: 14px; color: var(--text-primary); font-weight: 500; }
 
-.info-value {
-  font-size: 14px;
-  color: var(--text-primary);
-  font-weight: 500;
-}
+/* ================================================================
+   四、空状态 / 加载状态
+   ================================================================ */
 
 .empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
-  text-align: center;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 60px 20px; text-align: center;
 }
-
 .empty-state-icon {
-  width: 80px;
-  height: 80px;
-  margin-bottom: 16px;
+  width: 80px; height: 80px; margin-bottom: 16px;
   color: var(--text-tertiary);
 }
-
-.empty-state-title {
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  margin-bottom: 8px;
-}
-
-.empty-state-description {
-  font-size: 14px;
-  color: var(--text-tertiary);
-  max-width: 300px;
-}
+.empty-state-title { font-size: 16px; font-weight: 500; color: var(--text-secondary); margin-bottom: 8px; }
+.empty-state-description { font-size: 14px; color: var(--text-tertiary); max-width: 300px; }
 
 .loading-spinner {
-  width: 16px;
-  height: 16px;
+  width: 16px; height: 16px;
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-top-color: #fff;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
-
 .loading-spinner--dark {
   border-color: rgba(0, 0, 0, 0.1);
   border-top-color: var(--primary-color);
 }
+@keyframes spin { to { transform: rotate(360deg); } }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
+/* ================================================================
+   五、响应式适配
+   ================================================================ */
 
 @media (max-width: 768px) {
-  .info-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-  }
-  
-  .action-buttons {
-    flex-direction: column;
-    align-items: stretch;
-  }
+  .info-item { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .action-buttons { flex-direction: column; align-items: stretch; }
 }

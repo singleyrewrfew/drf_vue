@@ -21,6 +21,16 @@
   --info-color: #616161;
   --info-bg: rgba(97, 97, 97, 0.08);
 
+  /* Message / Alert 语义色 */
+  --msg-info-color: #0078D4;
+  --msg-info-bg: #E8F4FD;
+  --msg-success-color: #107C10;
+  --msg-success-bg: #E8F5E9;
+  --msg-warning-color: #B27D00;
+  --msg-warning-bg: #FFF8E1;
+  --msg-error-color: #D13438;
+  --msg-error-bg: #FDE7E8;
+
   --bg-color: #F3F3F4;
   --bg-primary: #FFFFFF;
   --bg-secondary: #FAFAFA;
@@ -90,6 +100,16 @@
 
   --info-color: #616161;
   --info-bg: rgba(97, 97, 97, 0.15);
+
+  /* Message / Alert 语义色（暗色） */
+  --msg-info-color: #6CB8E6;
+  --msg-info-bg: #1A3A4D;
+  --msg-success-color: #6BB76B;
+  --msg-success-bg: #1A3D1A;
+  --msg-warning-color: #E6B800;
+  --msg-warning-bg: #3D351A;
+  --msg-error-color: #E66B6B;
+  --msg-error-bg: #3D1A1A;
 
   --bg-color: #1A1A1A;
   --bg-primary: #252526;

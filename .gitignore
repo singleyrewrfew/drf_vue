@@ -84,6 +84,7 @@ htmlcov
 .claude/
 .lingma/
 .trae/
+.codebuddy/
 
 # Documentation (keep locally, don't push)
 docs/

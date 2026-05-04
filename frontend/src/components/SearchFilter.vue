@@ -15,8 +15,8 @@
             :label-key="filter.labelKey || 'label'"
             :value-key="filter.valueKey || 'value'"
         />
-        <SearchButton v-if="showSearch" text="搜索" @click="handleSearch"/>
-        <ResetButton text="重置" @click="handleReset"/>
+        <ActionButton v-if="showSearch" icon="search" text="搜索" size="normal" stop @click="handleSearch"/>
+        <ActionButton variant="outline" type="text" icon="reset" text="重置" size="normal" @click="handleReset"/>
     </div>
 </template>
 
@@ -24,8 +24,7 @@
 import {ref, reactive, watch} from 'vue'
 import SearchInput from '@/components/SearchInput.vue'
 import CustomSelect from '@/components/CustomSelect.vue'
-import SearchButton from '@/components/SearchButton.vue'
-import ResetButton from '@/components/ResetButton.vue'
+import ActionButton from '@/components/ActionButton.vue'
 
 const props = defineProps({
     showSearch: {

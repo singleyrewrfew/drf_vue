@@ -92,13 +92,72 @@ export function extractTokenFromHeader(authHeaderValue) {
 }
 
 /**
- * 验证 token 格式是否有效
- * 
- * 检查 token 是否为非空字符串且符合基本格式要求。
- * 
- * @param {string} token - 待验证的 token
- * @returns {boolean} token 是否有效
+ * 解析 JWT Token 的 Payload（不验证签名）
+ *
+ * JWT 格式：header.payload.signature
+ * Payload 是 Base64URL 编码的 JSON，包含 exp（过期时间戳）等声明。
+ *
+ * @param {string} token - JWT token 字符串
+ * @returns {Object|null} 解析后的 payload 对象，格式错误返回 null
+ *
+ * @example
+ * const payload = decodeJWTPayload('eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3MTAwMDAwMDB9.xxx')
+ * // 返回: { exp: 1710000000, ... }
  */
-export function isValidToken(token) {
-    return typeof token === 'string' && token.trim().length > 0
+export function decodeJWTPayload(token) {
+    try {
+        if (!token || typeof token !== 'string') return null
+        const parts = token.split('.')
+        if (parts.length !== 3) return null
+        // Base64URL → Base64 → UTF-8 JSON
+        const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+        const jsonPayload = decodeURIComponent(
+            atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
+        )
+        return JSON.parse(jsonPayload)
+    } catch (e) {
+        return null
+    }
+}
+
+/**
+ * 检查 JWT Token 是否已过期
+ *
+ * 解析 token payload 中的 exp 字段（Unix 时间戳，秒），
+ * 与当前时间比较。提前 bufferSeconds 秒视为已过期，
+ * 避免网络延迟导致请求时刚好过期。
+ *
+ * @param {string} token - JWT token 字符串
+ * @param {number} [bufferSeconds=30] - 过期前多少秒即视为过期（安全缓冲）
+ * @returns {boolean} true=已过期或无效, false=未过期
+ *
+ * @example
+ * isTokenExpired('eyJ...')           // 默认 30 秒缓冲
+ * isTokenExpired('eyJ...', 60)       // 60 秒缓冲
+ * isTokenExpired('invalid-token')    // → true（无效 token 视为过期）
+ */
+export function isTokenExpired(token, bufferSeconds = 30) {
+    if (!token || typeof token !== 'string') return true
+
+    const payload = decodeJWTPayload(token)
+    if (!payload || !payload.exp) return true
+
+    // exp 是 Unix 时间戳（秒），Date.now() 是毫秒
+    const now = Math.floor(Date.now() / 1000)
+    return now >= (payload.exp - bufferSeconds)
+}
+
+/**
+ * 验证 token 格式是否有效且未过期
+ *
+ * 综合检查：非空字符串 + 可解析 + 未超过过期时间。
+ *
+ * @param {string} token - 待验证的 token
+ * @param {number} [bufferSeconds=30] - 过期安全缓冲秒数
+ * @returns {boolean} token 是否有效且未过期
+ */
+export function isValidToken(token, bufferSeconds = 30) {
+    return typeof token === 'string'
+        && token.trim().length > 0
+        && !isTokenExpired(token, bufferSeconds)
 }

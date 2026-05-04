@@ -6,6 +6,7 @@
  */
 import {createRouter, createWebHistory} from 'vue-router'
 import {useUserStore} from '@/stores/user'
+import {refreshToken} from '@/utils/tokenRefresh'
 
 /**
  * 路由规则配置
@@ -126,10 +127,11 @@ const router = createRouter({
  * 在每次路由跳转前执行，进行权限验证和导航控制。
  *
  * 权限检查流程：
- * 1. 需要认证但未登录 → 跳转到登录页
- * 2. 已登录但无后台权限 → 清除状态并跳转到登录页
- * 3. 访客页面且已登录 → 重定向到仪表盘或停留
- * 4. 需要管理员权限但非管理员 → 重定向到仪表盘
+ * 1. 需要认证但未登录（无 token 或 token 过期且刷新失败）→ 跳转登录页
+ * 2. Token 存在但已过期 → 尝试自动刷新，成功则放行，失败跳转登录
+ * 3. 已登录但无后台权限 → 清除状态并跳转到登录页
+ * 4. 访客页面且已登录 → 重定向到仪表盘或停留
+ * 5. 需要管理员权限但非管理员 → 重定向到仪表盘
  *
  * @param {import('vue-router').RouteLocationNormalized} to - 目标路由
  * @param {import('vue-router').RouteLocationNormalizedLoaded} from - 当前路由
@@ -138,25 +140,40 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
     const userStore = useUserStore()
 
-    // 需要认证但未登录
-    if (to.meta.requiresAuth && !userStore.isLoggedIn()) {
-        return next({name: 'Login', query: {redirect: to.fullPath}})
+    // ===== 需要 Auth 的路由处理 =====
+    if (to.meta.requiresAuth) {
+        // 场景 A：token 完全不存在 → 直接跳转登录
+        if (!userStore.accessToken) {
+            return next({name: 'Login', query: {redirect: to.fullPath}})
+        }
+
+        // 场景 B：token 存在但已过期 → 尝试自动刷新
+        if (userStore.isAccessTokenExpired()) {
+            try {
+                await refreshToken()
+                // 刷新成功，继续后续权限检查（不 return，往下走）
+            } catch {
+                // refresh token 也失效了 → 清除状态并跳转登录
+                await userStore.logout()
+                return next({name: 'Login', query: {redirect: to.fullPath}})
+            }
+        }
+
+        // 场景 C：token 有效但仍需验证后台访问权限
+        if (!userStore.canAccessBackend()) {
+            await userStore.logout()
+            return next({name: 'Login', query: {error: 'no_permission'}})
+        }
     }
 
-    // 已登录但无后台访问权限
-    if (to.meta.requiresAuth && userStore.isLoggedIn() && !userStore.canAccessBackend()) {
-        await userStore.logout()
-        return next({name: 'Login', query: {error: 'no_permission'}})
-    }
-
-    // 访客页面且已登录
+    // ===== 访客页面且已登录 =====
     if (to.meta.guest && userStore.isLoggedIn()) {
         if (userStore.canAccessBackend()) {
             return next({name: 'Dashboard'})
         }
     }
 
-    // 需要管理员权限但非管理员
+    // ===== 管理员权限校验 =====
     if (to.meta.requiresAdmin && !userStore.isAdmin()) {
         return next({name: 'Dashboard'})
     }

@@ -49,7 +49,7 @@ export default defineConfig({
      * 包括模板编译、样式处理和热模块替换（HMR）
      */
     plugins: [
-        vue()
+        vue(),
     ],
 
     /**

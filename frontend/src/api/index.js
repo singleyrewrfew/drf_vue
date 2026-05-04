@@ -11,27 +11,72 @@ const AXIOS_ERROR_CODES = {
     TIMEOUT: 'ECONNABORTED',
 }
 
+/**
+ * 多标签页登出状态同步
+ *
+ * 使用 BroadcastChannel 在同源标签页之间实时广播登出事件。
+ * 任一标签页登出 → 所有标签页同步更新 isLoggingOut 状态，
+ * 避免重复执行登出逻辑或 token 刷新请求。
+ */
+const LOGOUT_CHANNEL_NAME = 'auth-logout'
+const logoutChannel =
+    typeof BroadcastChannel !== 'undefined'
+        ? new BroadcastChannel(LOGOUT_CHANNEL_NAME)
+        : null
+
+/** 当前标签页的登出锁 */
 let isLoggingOut = false
 
 /**
- * 创建 Axios 实例并配置默认选项
+ * 403 防重入标记
  *
- * 所有通过此实例发送的请求都会自动应用以下配置：
- * - 基础 URL：从环境变量读取，支持不同部署环境
- * - 超时时间：10 秒
- * - 请求头：默认使用 JSON 格式
+ * 问题背景：
+ *   403 响应拦截器中会调用 userStore.fetchProfile()，
+ *   而 fetchProfile 内部通过 getProfileApi() 发请求，使用的是带拦截器的 api 实例。
+ *   如果 getProfileApi 也返回 403，会再次进入同一拦截器 → 无限递归。
+ *
+ * 解决方案：
+ *   在进入 403 处理逻辑前设置标记，退出后清除。
+ *   如果检测到已在处理中，直接跳过 fetchProfile 调用，避免递归。
  */
-const api = axios.create({
+let isHandlingForbidden = false
+
+// 监听其他标签页的登出广播
+if (logoutChannel) {
+    logoutChannel.onmessage = (event) => {
+        if (event.data?.type === 'logging-out' && !isLoggingOut) {
+            isLoggingOut = true
+        }
+    }
+}
+
+/**
+ * Axios 实例公共默认配置
+ *
+ * 集中管理 baseURL/timeout/headers，避免多实例重复定义。
+ * 后续修改超时时间等只需改此处一处。
+ */
+const AXIOS_DEFAULT_CONFIG = {
     // API 基础 URL，从环境变量读取以支持多环境配置
     baseURL: import.meta.env.VITE_API_BASE_URL,
-    // 请求超时时间（毫秒）
-    timeout: 10000,
+    // 请求超时时间（毫秒），从环境变量读取（默认 10 秒）
+    timeout: Number(import.meta.env.VITE_API_TIMEOUT) || 10000,
     // 默认请求头配置
     headers: {
         // 声明请求体数据格式为 JSON
         'Content-Type': 'application/json',
     },
-})
+}
+
+/**
+ * 创建带拦截器的 Axios 实例
+ *
+ * 所有通过此实例发送的请求都会自动应用以下功能：
+ * - 基础 URL / 超时 / Content-Type（来自 AXIOS_DEFAULT_CONFIG）
+ * - 请求拦截器：自动添加 JWT 认证头
+ * - 响应拦截器：统一错误处理 + 自动 token 刷新
+ */
+const api = axios.create(AXIOS_DEFAULT_CONFIG)
 
 /**
  * 创建不带拦截器的 Axios 实例（用于登出等特殊场景）
@@ -40,14 +85,10 @@ const api = axios.create({
  * - 用户登出（Token 可能已失效）
  * - Token 刷新（避免循环依赖）
  * - 其他不需要认证的请求
+ *
+ * 配置复用 AXIOS_DEFAULT_CONFIG，确保 baseURL/timeout/headers 与 api 实例一致。
  */
-const logoutApi = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL,
-    timeout: 10000,
-    headers: {
-        'Content-Type': 'application/json',
-    },
-})
+const logoutApi = axios.create(AXIOS_DEFAULT_CONFIG)
 
 
 /**
@@ -88,7 +129,7 @@ api.interceptors.request.use(
             }
         } catch (error) {
             // 如果获取 store 失败，记录错误但不阻断请求
-            console.warn('Failed to get user store for auth header:', error)
+            console.warn('获取用户 store 失败，无法添加认证头:', error)
         }
 
         return config
@@ -97,51 +138,44 @@ api.interceptors.request.use(
 
 
 /**
- * 提取用户友好的错误消息
+ * 统一提取错误消息（支持后端所有可能的错误字段格式）
  *
- * ⚠️⚠️⚠️ 重要依赖说明 ⚠️⚠️⚠️
- * 
- * 此函数依赖于 error.response 对象的存在和结构，该对象由以下两处设置：
- * 
- * 1. 【Axios 自动设置】HTTP 错误（如 401/403/500）
- *    - Axios 会自动填充 error.response.status 和 error.response.data
- *    - 后端返回的数据会直接放在 error.response.data 中
- * 
- * 🔴 如果需要修改错误响应结构，请务必同步更新此函数的取值逻辑！
- * 🔴 当前支持的错误字段优先级：message > detail > 兜底文本
+ * 按优先级依次检查以下字段：
+ *   1. message      — 标准业务错误（推荐）
+ *   2. detail       — DRF REST framework 默认格式
+ *   3. error        — 简单错误类型字符串
+ *   4. data.message — 嵌套包装格式
+ *   5. 表单字段错误 — { username: ['用户名已存在'] } 取第一条
+ *   6. error.message — Axios 网络层错误消息
+ *   7. 兜底文本
  *
- * 后端统一响应格式（使用 HTTP 状态码）：
- *   成功: { message: "操作成功", data: {...} }  (HTTP 2xx)
- *   错误: { message: "错误信息", error: "错误类型", data: null }  (HTTP 4xx/5xx)
- *
- * @param {Error} error - Axios 错误对象，必须包含 error.response 或 error.message
+ * @param {Error} error - Axios 错误对象
+ * @param {string} [fallback] - 自定义兜底文案
  * @returns {string} 用户友好的错误消息
- * 
- * @example
- * // 场景1：后端返回的业务错误
- * error.response.data = { message: "用户名已存在", error: "bad_request" }
- * extractErrorMessage(error) // → "用户名已存在"
- * 
- * @example
- * // 场景2：DRF 标准错误格式（兼容旧接口）
- * error.response.data = { detail: "未提供有效的认证凭据" }
- * extractErrorMessage(error) // → "未提供有效的认证凭据"
- * 
- * @example
- * // 场景3：网络错误（无 response 对象）
- * error.message = "Network Error"
- * extractErrorMessage(error) // → "Network Error"
- * 
- * @example
- * // 场景4：所有字段都缺失
- * error = {}
- * extractErrorMessage(error) // → "请求失败，请稍后重试"
  */
-function extractErrorMessage(error) {
-    return error.response?.data?.message ||
-        error.response?.data?.detail ||
-        error.message ||
-        '请求失败，请稍后重试'
+export function extractErrorMessage(error, fallback = '请求失败，请稍后重试') {
+    const data = error.response?.data
+    if (!data) return error.message || fallback
+
+    // 1. 顶层标准字段
+    if (data.message) return data.message
+    if (data.detail) return data.detail
+    if (typeof data.error === 'string') return data.error
+
+    // 2. 嵌套 data.message 格式
+    if (data.data?.message) return data.data.message
+
+    // 3. 表单字段级错误（DRF serializer errors）：{ field: ['msg1', 'msg2'] }
+    if (typeof data === 'object') {
+        for (const key of Object.keys(data)) {
+            const val = data[key]
+            if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'string') {
+                return val[0]
+            }
+        }
+    }
+
+    return error.message || fallback
 }
 
 /**
@@ -157,6 +191,8 @@ async function handleLogoutAndRedirect(userStore, routerInstance, redirectParams
     }
 
     isLoggingOut = true
+    // 广播给其他标签页，同步登出状态
+    logoutChannel?.postMessage({ type: 'logging-out' })
     try {
         await userStore.logout()
         if (redirectParams) {
@@ -230,31 +266,41 @@ api.interceptors.response.use(
 
         // 处理 403 禁止访问错误
         if (error.response?.status === CLIENT_ERROR_STATUS.FORBIDDEN) {
-            // 主动检查用户权限状态（单一事实来源）
-            if (userStore.isLoggedIn()) {
-                try {
-                    // 强制从后端重新获取最新的用户信息
-                    await userStore.fetchProfile(true)
-                    
-                    // 如果没有后台访问权限，执行登出
-                    if (!userStore.canAccessBackend()) {
-                        console.warn('检测到用户已失去后台访问权限')
-                        await handleLogoutAndRedirect(userStore, router, {
-                            name: 'Login',
-                            query: {
-                                error: 'no_permission',
-                                message: error.response?.data?.message || '您没有后台访问权限'
-                            }
-                        })
-                        return Promise.reject(error)
-                    }
-                } catch (e) {
-                    console.error('Failed to fetch user profile:', e)
-                }
+            // 防重入：如果已在处理 403（fetchProfile 可能触发递归），跳过
+            if (isHandlingForbidden) {
+                return Promise.reject(error)
             }
-            
-            // 其他 403 错误，正常拒绝
-            return Promise.reject(error)
+            isHandlingForbidden = true
+
+            try {
+                // 主动检查用户权限状态（单一事实来源）
+                if (userStore.isLoggedIn()) {
+                    try {
+                        // 强制从后端重新获取最新的用户信息
+                        await userStore.fetchProfile(true)
+
+                        // 如果没有后台访问权限，执行登出
+                        if (!userStore.canAccessBackend()) {
+                            console.warn('检测到用户已失去后台访问权限')
+                            await handleLogoutAndRedirect(userStore, router, {
+                                name: 'Login',
+                                query: {
+                                    error: 'no_permission',
+                                    message: extractErrorMessage(error, '您没有后台访问权限')
+                                }
+                            })
+                            return Promise.reject(error)
+                        }
+                    } catch (e) {
+                        console.error('获取用户信息失败:', e)
+                    }
+                }
+
+                // 其他 403 错误，正常拒绝
+                return Promise.reject(error)
+            } finally {
+                isHandlingForbidden = false
+            }
         }
 
         // 其他错误直接拒绝，交给调用方处理
@@ -264,3 +310,24 @@ api.interceptors.response.use(
 
 export default api
 export { logoutApi }
+
+/**
+ * 统一提取列表数据（兼容 DRF 分页格式与普通数组）
+ *
+ * DRF 分页响应：{ results: [...], count: 100 }
+ * 普通数组/对象：直接返回数据本身
+ *
+ * @param {Object|Array} responseData - API 响应的 data 字段（即 response.data）
+ * @returns {Array} 标准化的列表数组
+ *
+ * @example
+ * // DRF 分页格式
+ * normalizeListResponse({ results: [{id:1}], count: 1 }) // → [{id:1}]
+ * // 普通数组
+ * normalizeListResponse([{id:1}])                       // → [{id:1}]
+ */
+export function normalizeListResponse(responseData) {
+    if (!responseData) return []
+    if (Array.isArray(responseData)) return responseData
+    return responseData.results || responseData || []
+}

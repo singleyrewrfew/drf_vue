@@ -37,9 +37,9 @@
                                 name="file"
                                 :before-upload="beforeAvatarUpload"
                             >
-                                <UploadButtonSmall>上传头像</UploadButtonSmall>
+                                <ActionButton icon="upload" size="normal">上传头像</ActionButton>
                             </el-upload>
-                            <UploadButtonSmall @click="showMediaDialog = true">从媒体库选择</UploadButtonSmall>
+                            <ActionButton icon="upload" size="normal" @click="showMediaDialog = true">从媒体库选择</ActionButton>
                         </div>
                     </div>
 
@@ -127,7 +127,7 @@
                             </div>
                         </el-form-item>
                         <div class="form-actions">
-                            <ConfirmButton text="保存修改" @click="handleUpdateProfile" :disabled="loading"/>
+                            <ActionButton text="保存修改" icon="approve" size="normal" stop @click="handleUpdateProfile" :disabled="loading"/>
                         </div>
                     </el-form>
                 </div>
@@ -273,8 +273,8 @@
                 <el-empty v-if="!mediaLoading && filteredMedia.length === 0" description="暂无媒体文件"/>
             </div>
             <template #footer>
-                <ResetButton text="取消" @click="showMediaDialog = false"/>
-                <ConfirmButton text="确定" @click="handleMediaSelect" :disabled="!selectedMedia"/>
+                <ActionButton variant="outline" type="text" text="取消" icon="reset" size="normal" @click="showMediaDialog = false"/>
+                <ActionButton text="确定" icon="approve" size="normal" stop @click="handleMediaSelect" :disabled="!selectedMedia"/>
             </template>
         </el-dialog>
     </div>
@@ -293,9 +293,8 @@ import {useUserStore} from '@/stores/user'
 import {updateProfile, changePassword} from '@/api/user'
 import {getUploadUrl, getMedia} from '@/api/media'
 import {getAvatarUrl} from '@/utils'
-import UploadButtonSmall from '@/components/UploadButtonSmall.vue'
-import ConfirmButton from '@/components/ConfirmButton.vue'
-import ResetButton from '@/components/ResetButton.vue'
+import {extractErrorMessage, normalizeListResponse} from '@/api/index.js'
+import ActionButton from '@/components/ActionButton.vue'
 import SearchInput from '@/components/SearchInput.vue'
 
 const userStore = useUserStore()
@@ -453,7 +452,7 @@ const fetchMedia = async () => {
     mediaLoading.value = true
     try {
         const {data} = await getMedia({limit: 50})
-        mediaList.value = data.results || data
+        mediaList.value = normalizeListResponse(data)
     } catch (error) {
         console.error('获取媒体列表失败:', error)
     } finally {
@@ -499,7 +498,7 @@ const handleMediaSelect = async () => {
         selectedMedia.value = null
         mediaSearch.value = ''
     } catch (error) {
-        ElMessage.error(error.response?.data?.message || '头像更新失败')
+        ElMessage.error(extractErrorMessage(error, '头像更新失败'))
     }
 }
 
@@ -523,11 +522,7 @@ const handleAvatarSuccess = async (response, file) => {
             ElMessage.success('头像更新成功')
         } catch (error) {
             console.error('头像更新失败:', error)
-            ElMessage.error(error.response?.data?.message || '头像更新失败')
-        }
-    } else {
-        console.error('头像上传响应格式错误:', response)
-        ElMessage.error('头像上传失败：未返回媒体信息')
+            ElMessage.error(extractErrorMessage(error, '头像更新失败'))
     }
 }
 
@@ -557,7 +552,7 @@ const handleUpdateProfile = async () => {
         form.email = userStore.user?.email || ''
     } catch (error) {
         console.error('修改邮箱失败:', error)
-        ElMessage.error(error.response?.data?.message || error.response?.data?.detail || '修改失败')
+        ElMessage.error(extractErrorMessage(error, '修改失败'))
     } finally {
         loading.value = false
     }
@@ -578,7 +573,7 @@ const handleChangePassword = async () => {
             new_password_confirm: '',
         })
     } catch (error) {
-        ElMessage.error(error.response?.data?.message || '密码修改失败')
+        ElMessage.error(extractErrorMessage(error, '密码修改失败'))
     } finally {
         passwordLoading.value = false
     }

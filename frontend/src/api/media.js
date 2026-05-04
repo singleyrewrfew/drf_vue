@@ -42,7 +42,10 @@ export const regenerateThumbnails = (id) => api.post(`/media/${id}/regenerate_th
 /**
  * 获取媒体上传接口 URL
  *
- * @returns {string} 媒体上传接口的完整 URL
+ * 从 api 实例的 baseURL 派生，确保与其他 API 函数使用一致的地址。
+ * 适用于需要直接访问原始 URL 的场景（如 fetch / XMLHttpRequest / 第三方库）。
+ *
+ * @returns {string} 媒体上传接口的完整 URL（如 /api/media/ 或 https://example.com/api/media/）
  */
-export const getUploadUrl = () => `${import.meta.env.VITE_API_BASE_URL || '/api'}/media/`
+export const getUploadUrl = () => `${api.defaults.baseURL}media/`
 

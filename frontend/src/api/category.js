@@ -11,7 +11,7 @@ import api from './index'
  * @param {Object} [params] - 查询参数 {page, page_size, search, ...}
  * @returns {Promise} 解析为分类列表数据
  */
-export const getCategories = (params) => api.get('/categories/', { params })
+export const getCategories = (params = {}) => api.get('/categories/', { params })
 
 /**
  * 获取单个分类详情
@@ -52,7 +52,7 @@ export const deleteCategory = (id) => api.delete(`/categories/${id}/`)
  * @param {Object} [params] - 查询参数 {page, page_size, search, ...}
  * @returns {Promise} 解析为标签列表数据
  */
-export const getTags = (params) => api.get('/tags/', { params })
+export const getTags = (params = {}) => api.get('/tags/', { params })
 
 /**
  * 获取单个标签详情

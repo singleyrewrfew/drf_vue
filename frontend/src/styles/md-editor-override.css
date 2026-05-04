@@ -1,0 +1,653 @@
+/**
+ * MdEditor v3 样式覆盖 — 全局唯一来源
+ *
+ * 设计原则：
+ * 1. 所有颜色通过 CSS 变量引用，支持亮/暗主题自动切换
+ * 2. 不使用 !important，改用 :deep() + 高优先级选择器
+ * 3. 同时覆盖 md-editor 自身的 --md-* 变量和 CodeMirror 的 .cm-* 类
+ * 4. 此文件在 main.js 全局引入，任何使用 MdEditor 的页面自动生效
+ *
+ * @module styles/md-editor-override
+ */
+
+/* ============================================================
+ *   第零部分：全局编辑器美化（亮暗通用）
+ * ============================================================ */
+
+/* ---- 编辑器外容器：圆角 + 阴影 + 过渡 ---- */
+.md-editor {
+    border-radius: var(--radius-lg, 12px) !important;
+    border: 1px solid var(--border-color, #dcdfe6) !important;
+    box-shadow:
+        0 1px 3px rgba(0, 0, 0, 0.04),
+        0 4px 12px rgba(0, 0, 0, 0.03) !important;
+    overflow: hidden;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease !important;
+}
+
+/* 聚焦时无边框变化 */
+.md-editor:focus-within,
+.md-editor.cm-focused {
+    border-color: var(--border-color, #dcdfe6) !important;
+    box-shadow:
+        0 1px 3px rgba(0, 0, 0, 0.04),
+        0 4px 12px rgba(0, 0, 0, 0.03) !important;
+}
+
+/* ---- 工具栏容器（去除内边距和底部边框） ---- */
+.md-editor-toolbar-wrapper {
+    padding-block: 0 !important;
+    padding-inline: 0 !important;
+    border-block-end: none !important;
+}
+
+/* ---- 工具栏美化 ---- */
+.md-editor-toolbar {
+    background: linear-gradient(180deg, var(--bg-primary, #fff), var(--bg-secondary, #f5f7fa)) !important;
+    border-bottom: none !important;
+    padding: 6px 12px !important;
+}
+
+.md-editor-toolbar-item {
+    border-radius: 6px !important;
+    transition: all 0.18s ease !important;
+    padding: 5px 8px !important;
+    color: var(--text-secondary, #606266) !important;
+}
+
+.md-editor-toolbar-item:hover {
+    background: var(--bg-tertiary, #ebeef5) !important;
+    color: var(--primary-color, #409eff) !important;
+    transform: translateY(-1px);
+}
+
+.md-editor-toolbar-item.active {
+    background: var(--primary-bg-hover, rgba(64,158,255,0.12)) !important;
+    color: var(--primary-color, #409eff) !important;
+}
+
+/* 分隔线 */
+.md-editor-divider {
+    height: 20px !important;
+    margin: 2px 6px !important;
+    opacity: 0.35;
+}
+
+/* ---- 编辑区域（CodeMirror）排版优化 ---- */
+.md-editor-input-wrapper .cm-scroller {
+    /* 更舒适的字体与行高 */
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC',
+                 'PingFang SC', 'Microsoft YaHei', sans-serif !important;
+    line-height: 1.75 !important;
+    padding: 16px 20px !important;
+    font-size: 14.5px !important;
+    letter-spacing: 0.3px;
+}
+
+/* 行号区域 */
+.md-editor-input-wrapper .cm-gutters {
+    padding-top: 16px !important;
+    padding-bottom: 16px !important;
+    border-right: 1px solid var(--border-color-light, #e4e7ed) !important;
+}
+
+.md-editor-input-wrapper .cm-lineNumbers {
+    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace !important;
+    font-size: 12px !important;
+    color: var(--text-quaternary, #c0c4cc) !important;
+    min-width: 36px !important;
+}
+
+/* 当前行高亮 */
+.md-editor-input-wrapper .cm-activeLine {
+    background: rgba(64, 158, 255, 0.04) !important;
+}
+
+.md-editor-input-wrapper .cm-activeLineGutter {
+    background: rgba(64, 158, 255, 0.06) !important;
+    border-right-color: transparent !important;
+}
+
+/* 光标样式 */
+.md-editor-input-wrapper .cm-cursor {
+    border-left-width: 2px !important;
+    border-left-color: var(--primary-color, #409eff) !important;
+}
+
+.md-editor-input-wrapper .cm-cursorLayer {
+    caret-color: var(--primary-color, #409eff);
+}
+
+/* 选中文本 */
+.md-editor-input-wrapper ::selection {
+    background: rgba(64, 158, 255, 0.22) !important;
+}
+
+.md-editor-input-wrapper .cm-selectionBackground {
+    background: rgba(64, 158, 255, 0.15) !important;
+}
+
+/* 匹配括号高亮 */
+.md-editor-input-wrapper .cm-matchingBracket {
+    background: rgba(230, 162, 60, 0.18) !important;
+    border-bottom: 2px solid var(--warning-color, #e6a23c) !important;
+}
+
+/* 滚动条美化 */
+.md-editor-input-wrapper .cm-scroller::-webkit-scrollbar,
+.md-editor-preview-wrapper::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.md-editor-input-wrapper .cm-scroller::-webkit-scrollbar-thumb,
+.md-editor-preview-wrapper::-webkit-scrollbar-thumb {
+    background: var(--border-color, #c0c4cc);
+    border-radius: 3px;
+    transition: background 0.2s;
+}
+
+.md-editor-input-wrapper .cm-scroller::-webkit-scrollbar-thumb:hover,
+.md-editor-preview-wrapper::-webkit-scrollbar-thumb:hover {
+    background: var(--text-tertiary, #909399);
+}
+
+/* 占位符文字 */
+.md-editor .md-editor-content .cm-line.cm-placeholder {
+    color: var(--text-quaternary, #c0c4cc) !important;
+    font-style: italic;
+}
+
+/* 状态栏（字数统计等） */
+.md-editor-status {
+    border-top: 1px solid var(--border-color-light, #e4e7ed) !important;
+    padding: 4px 14px !important;
+    font-size: 12px !important;
+    color: var(--text-quaternary, #c0c4cc) !important;
+    background: var(--bg-secondary, #f5f7fa) !important;
+}
+
+/* ---- 预览区排版美化 ---- */
+.md-editor-preview-wrapper {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC',
+                 'PingFang SC', 'Microsoft YaHei', sans-serif !important;
+    line-height: 1.8 !important;
+    padding: 20px 28px !important;
+    font-size: 15px !important;
+}
+
+.md-editor-preview-wrapper h1 {
+    font-size: 28px !important;
+    font-weight: 700 !important;
+    margin-top: 36px !important;
+    margin-bottom: 16px !important;
+    letter-spacing: -0.5px;
+}
+
+.md-editor-preview-wrapper h2 {
+    font-size: 22px !important;
+    font-weight: 600 !important;
+    margin-top: 30px !important;
+    margin-bottom: 12px !important;
+    padding-left: 12px !important;
+    border-left: 3px solid var(--primary-color, #409eff) !important;
+}
+
+.md-editor-preview-wrapper h3 {
+    font-size: 18px !important;
+    font-weight: 600 !important;
+    margin-top: 24px !important;
+    margin-bottom: 10px !important;
+}
+
+.md-editor-preview-wrapper p {
+    margin: 10px 0 !important;
+    color: var(--text-primary, #303133) !important;
+}
+
+.md-editor-preview-wrapper blockquote {
+    border-left: 4px solid var(--primary-color, #409eff) !important;
+    padding: 12px 20px !important;
+    margin: 16px 0 !important;
+    background: var(--primary-bg, rgba(64,158,255,0.04)) !important;
+    border-radius: 0 6px 6px 0 !important;
+    color: var(--text-secondary, #606266) !important;
+}
+
+.md-editor-preview-wrapper code {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
+    font-size: 13px !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+    background: var(--bg-tertiary, #f0f2f5) !important;
+    color: var(--danger-color, #e74c3c) !important;
+}
+
+.md-editor-preview-wrapper pre {
+    border-radius: 8px !important;
+    margin: 16px 0 !important;
+    box-shadow: inset 0 0 0 1px var(--border-color-light, #e4e7ed) !important;
+    overflow: hidden;
+}
+
+.md-editor-preview-wrapper pre code {
+    background: transparent !important;
+    padding: 0 !important;
+    color: inherit !important;
+    font-size: 13.5px !important;
+    line-height: 1.65 !important;
+}
+
+.md-editor-preview-wrapper table {
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    border: 1px solid var(--border-color-light, #e4e7ed) !important;
+    margin: 16px 0 !important;
+}
+
+.md-editor-preview-wrapper table th {
+    background: var(--bg-secondary, #f5f7fa) !important;
+    font-weight: 600 !important;
+    padding: 10px 16px !important;
+    color: var(--text-primary, #303133) !important;
+}
+
+.md-editor-preview-wrapper table td {
+    padding: 8px 16px !important;
+}
+
+.md-editor-preview-wrapper img {
+    max-width: 100% !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08) !important;
+    transition: transform 0.25s ease;
+}
+
+.md-editor-preview-wrapper img:hover {
+    transform: scale(1.02);
+}
+
+.md-editor-preview-wrapper hr {
+    border: none !important;
+    height: 2px !important;
+    background: linear-gradient(90deg, transparent, var(--border-color, #dcdfe6), transparent) !important;
+    margin: 24px 0 !important;
+}
+
+.md-editor-preview-wrapper a {
+    color: var(--primary-color, #409eff) !important;
+    text-decoration: none !important;
+    border-bottom: 1px dashed var(--primary-color, #409eff) !important;
+    transition: all 0.18s ease;
+}
+
+.md-editor-preview-wrapper a:hover {
+    color: var(--primary-hover, #66b1ff) !important;
+    border-bottom-style: solid !important;
+}
+
+/* 列表美化 */
+.md-editor-preview-wrapper ul,
+.md-editor-preview-wrapper ol {
+    padding-left: 24px !important;
+    margin: 8px 0 !important;
+}
+
+.md-editor-preview-wrapper li {
+    margin: 4px 0 !important;
+}
+
+.md-editor-preview-wrapper ul li::marker {
+    color: var(--primary-color, #409eff) !important;
+}
+
+/* ---- 代码块语言标签 ---- */
+.md-editor-code-block-language {
+    top: 4px !important;
+    right: 8px !important;
+    padding: 3px 10px !important;
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    border-radius: 4px !important;
+    background: rgba(0,0,0,0.05) !important;
+    color: var(--text-tertiary, #909399) !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ---- 全屏模式适配 ---- */
+.md-editor-fullscreen {
+    z-index: 2100 !important;
+    border-radius: 0 !important;
+}
+
+.md-editor-page-fullscreen {
+    z-index: 2050 !important;
+}
+
+
+/* ============================================================
+ *   第一部分：MdEditor 暗色模式变量重定义
+ *   统一配色体系：GitHub Dark 风格，三级层次
+ * ============================================================ */
+
+.md-editor-dark,
+.md-editor-modal-container[data-theme=dark] {
+    /* ---- 背景层次 ---- */
+    --md-bk-color: transparent;
+    --md-bk-color-outstand: var(--bg-secondary);
+    --md-bk-hover-color: var(--bg-tertiary);
+
+    /* ---- 边框 ---- */
+    --md-border-color: var(--border-color);
+    --md-border-hover-color: var(--border-dark);
+    --md-border-active-color: var(--text-tertiary);
+    --md-bar-border-color: var(--border-color);
+
+    /* ---- 文字 ---- */
+    --md-color: var(--text-secondary);
+    --md-hover-color: var(--text-primary);
+    --md-text-color: var(--text-secondary);
+    --md-text-active-color: var(--primary-color);
+    --md-text-unchecked-color: var(--text-tertiary);
+
+    /* ---- 工具栏 ---- */
+    --md-bar-color: var(--bg-secondary);
+    --md-icon-color: var(--text-tertiary);
+    --md-icon-hover-color: var(--text-primary);
+
+    /* ---- 弹窗 / 下拉 ---- */
+    --md-modal-color: var(--bg-secondary);
+    --md-modal-mask: rgba(0, 0, 0, 0.45);
+    --md-modal-shadow: var(--shadow-lg);
+
+    /* ---- 滚动条 ---- */
+    --md-scrollbar-bg-color: transparent;
+    --md-scrollbar-thumb-color: var(--border-dark);
+    --md-scrollbar-thumb-hover-color: var(--text-tertiary);
+    --md-scrollbar-thumb-active-color: var(--text-tertiary);
+}
+
+/* ============================================================
+ *   第二部分：CodeMirror 深色模式适配
+ *   覆盖代码编辑区的 .cm-* 类（在通用美化基础上补充深色）
+ * ============================================================ */
+
+.md-editor-dark .cm-scroller {
+    background-color: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+}
+
+.md-editor-dark .cm-gutters {
+    background-color: var(--bg-primary) !important;
+    border-right-color: var(--border-color) !important;
+}
+
+.md-editor-dark .cm-lineNumbers {
+    color: var(--text-tertiary) !important;
+}
+
+.md-editor-dark .cm-activeLineGutter {
+    background-color: var(--bg-secondary) !important;
+}
+
+.md-editor-dark .cm-cursorLayer {
+    caret-color: var(--primary-color) !important;
+}
+
+.md-editor-dark .cm-selectionBackground,
+.md-editor-dark ::selection {
+    background: rgba(88, 166, 255, 0.22) !important;
+}
+
+.md-editor-dark .cm-focused .cm-cursor {
+    border-left-color: var(--primary-color) !important;
+}
+
+.md-editor-dark .cm-activeLine {
+    background: rgba(0, 120, 212, 0.06) !important;
+}
+
+.md-editor-dark .cm-matchingBracket {
+    background: rgba(230, 162, 60, 0.18) !important;
+}
+
+.md-editor-dark .cm-foldPlaceholder {
+    background: var(--bg-secondary) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-tertiary) !important;
+}
+
+/* ============================================================
+ *   第三部分：[data-theme="dark"] 全局深色覆盖
+ *   用于 data-theme 属性驱动的主题系统
+ * ============================================================ */
+
+/* ---- 编辑器容器：柔和边框 + 内敛阴影 ---- */
+[data-theme="dark"] .md-editor {
+    border-color: var(--border-color) !important;
+    box-shadow:
+        0 1px 4px rgba(0, 0, 0, 0.25),
+        0 4px 20px rgba(0, 0, 0, 0.18) !important;
+}
+
+[data-theme="dark"] .md-editor:focus-within {
+    border-color: var(--border-color) !important;
+    box-shadow:
+        0 1px 4px rgba(0, 0, 0, 0.25),
+        0 4px 20px rgba(0, 0, 0, 0.18) !important;
+}
+
+[data-theme="dark"] .md-editor-preview-wrapper {
+    background: var(--bg-primary) !important;
+}
+
+/* ---- 预览区排版元素 ---- */
+[data-theme="dark"] .md-editor-preview-wrapper h1,
+[data-theme="dark"] .md-editor-preview-wrapper h2,
+[data-theme="dark"] .md-editor-preview-wrapper h3,
+[data-theme="dark"] .md-editor-preview-wrapper h4,
+[data-theme="dark"] .md-editor-preview-wrapper h5,
+[data-theme="dark"] .md-editor-preview-wrapper h6 {
+    color: var(--text-primary) !important;
+    border-bottom-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .md-editor-preview-wrapper p,
+[data-theme="dark"] .md-editor-preview-wrapper li {
+    color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .md-editor-preview-wrapper blockquote {
+    color: var(--text-tertiary) !important;
+    background: var(--primary-bg) !important;
+    border-left-color: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .md-editor-preview-wrapper code {
+    background: rgba(110, 118, 129, 0.22) !important;
+    color: #ff7b72 !important;
+}
+
+[data-theme="dark"] .md-editor-preview-wrapper pre {
+    background: var(--bg-secondary) !important;
+    border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .md-editor-preview-wrapper table td,
+[data-theme="dark"] .md-editor-preview-wrapper table th {
+    border-color: var(--border-color) !important;
+    background: transparent !important;
+    color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .md-editor-preview-wrapper table th {
+    background: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .md-editor-preview-wrapper table tr:nth-child(2n) {
+    background: rgba(255,255,255,0.02) !important;
+}
+
+[data-theme="dark"] .md-editor-preview-wrapper hr {
+    background: linear-gradient(90deg, transparent, var(--border-color), transparent) !important;
+}
+
+[data-theme="dark"] .md-editor-preview-wrapper a {
+    color: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .md-editor-preview-wrapper img {
+    box-shadow: 0 2px 16px rgba(0,0,0,0.40) !important;
+}
+
+/* ---- 工具栏：纯色背景，消除色差断层 ---- */
+[data-theme="dark"] .md-editor-toolbar {
+    background: var(--bg-secondary) !important;
+    border-bottom: none !important;
+}
+
+[data-theme="dark"] .md-editor-toolbar-item {
+    color: var(--text-tertiary) !important;
+}
+
+[data-theme="dark"] .md-editor-toolbar-item:hover {
+    background: rgba(255,255,255,0.07) !important;
+    color: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .md-editor-toolbar-item.active {
+    background: var(--primary-bg-hover) !important;
+    color: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .md-editor-divider {
+    background: var(--border-dark) !important;
+}
+
+/* ---- 输入区域：统一底色 ---- */
+[data-theme="dark"] .md-editor-input-wrapper {
+    background: var(--bg-primary) !important;
+}
+
+[data-theme="dark"] .md-editor-input-wrapper textarea {
+    color: var(--text-primary) !important;
+    background: var(--bg-primary) !important;
+}
+
+/* CodeMirror 编辑器容器：确保整条链路背景一致 */
+[data-theme="dark"] .md-editor-input-wrapper .cm-editor,
+[data-theme="dark"] .md-editor-input-wrapper .cm-editor .cm-content,
+[data-theme="dark"] .md-editor-input-wrapper .cm-editor .cm-scroller,
+[data-theme="dark"] .md-editor-input-wrapper .cm-editor .cm-scroller .cm-content,
+.md-editor-dark .md-editor-input-wrapper .cm-editor,
+.md-editor-dark .md-editor-input-wrapper .cm-editor .cm-content,
+.md-editor-dark .md-editor-input-wrapper .cm-editor .cm-scroller {
+    background: var(--bg-primary) !important;
+    background-color: var(--bg-primary) !important;
+}
+
+[data-theme="dark"] .md-editor-input-wrapper .cm-focused {
+    outline: none !important;
+}
+
+/* ---- 行号区域（暗色） ---- */
+[data-theme="dark"] .md-editor-input-wrapper .cm-gutters {
+    border-right-color: #2d2f33 !important;
+}
+
+[data-theme="dark"] .md-editor-input-wrapper .cm-lineNumbers {
+    color: #52575e !important;
+}
+
+/* ---- CodeMirror 全局暗色补充（data-theme 兜底） ---- */
+[data-theme="dark"] .cm-scroller {
+    background: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .cm-scroller .cm-content {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .cm-scroller .cm-line {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .cm-scroller ::selection {
+    background: rgba(0, 120, 212, 0.22) !important;
+}
+
+[data-theme="dark"] .cm-gutters {
+    background: var(--bg-primary) !important;
+    border-right-color: var(--border-color) !important;
+    color: var(--text-tertiary) !important;
+}
+
+[data-theme="dark"] .cm-cursor {
+    border-left-color: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .cm-activeLine {
+    background: rgba(0, 120, 212, 0.05) !important;
+}
+
+[data-theme="dark"] .cm-activeLineGutter {
+    background: rgba(0, 120, 212, 0.05) !important;
+}
+
+/* ---- 占位符（暗色） ---- */
+[data-theme="dark"] .md-editor .md-editor-content .cm-line.cm-placeholder {
+    color: var(--text-tertiary) !important;
+}
+
+/* ---- 滚动条（暗色） ---- */
+[data-theme="dark"] .md-editor-input-wrapper .cm-scroller::-webkit-scrollbar-thumb,
+[data-theme="dark"] .md-editor-preview-wrapper::-webkit-scrollbar-thumb {
+    background: var(--border-dark);
+}
+
+[data-theme="dark"] .md-editor-input-wrapper .cm-scroller::-webkit-scrollbar-thumb:hover,
+[data-theme="dark"] .md-editor-preview-wrapper::-webkit-scrollbar-thumb:hover {
+    background: var(--text-tertiary);
+}
+
+/* ---- 代码块语言标签（暗色） ---- */
+[data-theme="dark"] .md-editor-code-block-language {
+    background: rgba(255,255,255,0.08) !important;
+    color: var(--text-tertiary) !important;
+}
+
+/* ---- 状态栏（暗色，融入整体色调）---- */
+[data-theme="dark"] .md-editor-status {
+    background: var(--bg-secondary) !important;
+    border-top-color: var(--border-color) !important;
+    color: var(--text-tertiary) !important;
+}
+
+/* ============================================================
+ *   第四部分：亮色模式基础修正
+ *   确保 md-editor 在浅色主题下的默认表现正确
+ * ============================================================ */
+
+.md-editor:not(.md-editor-dark) .cm-scroller,
+[data-theme="light"] .md-editor-input-wrapper .cm-scroller {
+    background: #fff;
+}
+
+.md-editor:not(.md-editor-dark) .cm-content,
+[data-theme="light"] .cm-content {
+    color: #24292f;
+}
+
+/* ---- 亮色聚焦（无变化） ---- */
+.md-editor:not(.md-editor-dark):focus-within,
+[data-theme="light"] .md-editor:focus-within {
+    border-color: var(--border-color, #dcdfe6) !important;
+    box-shadow:
+        0 1px 3px rgba(0, 0, 0, 0.04),
+        0 4px 12px rgba(0, 0, 0, 0.03) !important;
+}

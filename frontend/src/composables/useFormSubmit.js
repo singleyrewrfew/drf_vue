@@ -15,6 +15,7 @@
  */
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import { extractErrorMessage } from '@/api/index.js'
 
 /**
  * 表单提交管理组合式函数
@@ -171,9 +172,7 @@ export function useFormSubmit(createFn, updateFn, options = {}) {
       visible.value = false
       onSuccess?.()
     } catch (error) {
-      const message = error.response?.data?.message || 
-        error.response?.data?.detail ||
-        (isEdit.value ? updateErrorMessage : createErrorMessage)
+      const message = extractErrorMessage(error, isEdit.value ? updateErrorMessage : createErrorMessage)
       ElMessage.error(message)
       throw error
     } finally {
@@ -336,7 +335,12 @@ export function useDelete(deleteFn, options = {}) {
    */
   const handleDelete = async (id, onSuccess) => {
     const { ElMessageBox } = await import('element-plus')
-    await ElMessageBox.confirm(message, '提示', { type: 'warning' })
+    try {
+      await ElMessageBox.confirm(message, '提示', { type: 'warning' })
+    } catch {
+      // 用户点击取消或关闭对话框，静默退出
+      return
+    }
     
     loading.value = true
     try {
@@ -344,9 +348,7 @@ export function useDelete(deleteFn, options = {}) {
       ElMessage.success(successMessage)
       onSuccess?.()
     } catch (error) {
-      const msg = error.response?.data?.message || 
-        error.response?.data?.detail || 
-        errorMessage
+      const msg = extractErrorMessage(error, errorMessage)
       ElMessage.error(msg)
       throw error
     } finally {

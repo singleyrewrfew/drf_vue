@@ -1,10 +1,9 @@
 /**
  * 通用工具函数库
  *
- * 提供媒体 URL 处理、消息提示、加载状态管理、日期格式化、
+ * 提供媒体 URL 处理、日期格式化、
  * 文件处理、文本处理、函数防抖节流、对象操作等常用工具函数。
  */
-import {ElMessage, ElMessageBox} from 'element-plus'
 
 /**
  * 获取媒体资源的基础 URL
@@ -50,78 +49,6 @@ export const getMediaUrl = (url) => {
         return `${baseUrl}${url}`
     }
     return `${baseUrl}/media/${url}`
-}
-
-/**
- * 显示删除确认对话框
- *
- * @param {string} [message='确定删除该项？此操作不可恢复。'] - 确认消息文本
- * @returns {Promise} 用户确认时 resolve，取消时 reject
- */
-export const confirmDelete = async (message = '确定删除该项？此操作不可恢复。') => {
-    await ElMessageBox.confirm(message, '确认删除', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-    })
-}
-
-/**
- * 显示成功消息
- *
- * @param {string} [message='操作成功'] - 消息文本
- */
-export const showSuccess = (message = '操作成功') => {
-    ElMessage.success(message)
-}
-
-/**
- * 显示错误消息
- *
- * @param {string} [message='操作失败'] - 消息文本
- */
-export const showError = (message = '操作失败') => {
-    ElMessage.error(message)
-}
-
-/**
- * 显示警告消息
- *
- * @param {string} message - 消息文本
- */
-export const showWarning = (message) => {
-    ElMessage.warning(message)
-}
-
-/**
- * 显示信息消息
- *
- * @param {string} message - 消息文本
- */
-export const showInfo = (message) => {
-    ElMessage.info(message)
-}
-
-/**
- * 带加载状态执行的异步函数包装器
- *
- * 自动管理 loading 状态，执行前后切换状态，确保异常时也能正确重置。
- *
- * @param {Function} fn - 要执行的异步函数
- * @param {import('vue').Ref<boolean>} loadingRef - Vue ref 加载状态引用
- * @returns {Promise} 异步函数的执行结果
- */
-export const withLoading = async (fn, loadingRef) => {
-    if (loadingRef && typeof loadingRef === 'object') {
-        loadingRef.value = true
-    }
-    try {
-        return await fn()
-    } finally {
-        if (loadingRef && typeof loadingRef === 'object') {
-            loadingRef.value = false
-        }
-    }
 }
 
 /**
@@ -296,12 +223,18 @@ export const isEmpty = (value) => {
 /**
  * 生成唯一 ID
  *
- * 基于时间戳和随机数生成简短的唯一标识符。
+ * 优先使用 crypto.randomUUID() 生成标准 UUID v4（浏览器原生支持），
+ * 降级方案基于时间戳 + 随机数。
  *
  * @returns {string} 唯一 ID 字符串
  */
 export const generateId = () => {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2)
+    // 浏览器原生 UUID（RFC 4122 标准，加密安全）
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID()
+    }
+    // 降级：时间戳 + 随机数（非关键场景）
+    return Date.now().toString(36) + Math.random().toString(36).substring(2)
 }
 
 /**

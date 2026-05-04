@@ -71,7 +71,7 @@ export const changePassword = (data) => api.post('/auth/change_password/', data)
  * @param {Object} [params] - 查询参数 {limit, offset, search, ...}
  * @returns {Promise} 解析为用户列表数据
  */
-export const getUsers = (params) => api.get('/auth/', { params })
+export const getUsers = (params = {}) => api.get('/auth/', { params })
 
 /**
  * 获取单个用户详情

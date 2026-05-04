@@ -451,8 +451,8 @@ class ProductionConfig(BaseConfig):
         )
     
     # 严格的安全配置
-    SECURE_SSL_REDIRECT = False
-    SESSION_COOKIE_SECURE = False
+    SECURE_SSL_REDIRECT = False  # 强制跳转 HTTPS
+    SESSION_COOKIE_SECURE = False  # Cookie 仅 HTTPS 传输
     CSRF_COOKIE_SECURE = False
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True

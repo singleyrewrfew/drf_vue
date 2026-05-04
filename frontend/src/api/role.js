@@ -11,7 +11,7 @@ import api from './index'
  * @param {Object} [params] - 查询参数 {page, page_size, search, ...}
  * @returns {Promise} 解析为角色列表数据
  */
-export const getRoles = (params) => api.get('/roles/', { params })
+export const getRoles = (params = {}) => api.get('/roles/', { params })
 
 /**
  * 获取单个角色详情
@@ -52,7 +52,7 @@ export const deleteRole = (id) => api.delete(`/roles/${id}/`)
  * @param {Object} [params] - 查询参数 {page, page_size, search, ...}
  * @returns {Promise} 解析为权限列表数据
  */
-export const getPermissions = (params) => api.get('/permissions/', { params })
+export const getPermissions = (params = {}) => api.get('/permissions/', { params })
 
 /**
  * 获取单个权限详情

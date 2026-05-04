@@ -11,6 +11,9 @@ import './styles/main.css'
 import './styles/element-override.css'
 import './styles/components.css'
 
+import 'md-editor-v3/lib/style.css'
+import './styles/md-editor-override.css'
+
 /**
  * 初始化主题配置
  * 从本地存储中读取用户之前保存的主题设置，如果不存在则使用默认的浅色主题

@@ -5,10 +5,10 @@
                 <div class="card-header">
                     <span>{{ isEdit ? '编辑内容' : '新建内容' }}</span>
                     <div class="header-actions">
-                        <el-tag v-if="autoSaveStatus" :type="autoSaveStatus === 'saving' ? 'warning' : 'success'"
-                                size="small">
-                            {{ autoSaveStatus === 'saving' ? '自动保存中...' : '已自动保存' }}
-                        </el-tag>
+                        <StatusTag v-if="autoSaveStatus"
+                                   :type="autoSaveStatus === 'saving' ? 'warning' : 'success'"
+                                   :text="autoSaveStatus === 'saving' ? '自动保存中...' : '已自动保存'"
+                        />
                     </div>
                 </div>
             </template>
@@ -229,6 +229,7 @@ import {createContent, updateContent, getContent} from '@/api/content'
 import api from '@/api'
 import {useUserStore} from '@/stores/user'
 import {useThemeStore} from '@/stores/theme'
+import StatusTag from '@/components/StatusTag.vue'
 
 const route = useRoute()
 const router = useRouter()

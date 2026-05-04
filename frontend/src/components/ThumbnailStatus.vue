@@ -17,14 +17,14 @@
         </el-tag>
         <div v-else-if="status === 'failed'" class="failed-status">
             <el-tag type="danger" size="small">失败</el-tag>
-            <RetryButton @click="$emit('retry')"/>
+            <ActionButton type="warning" icon="retry" text="重试" @click="$emit('retry')"/>
         </div>
     </div>
 </template>
 
 <script setup>
 import { Loading } from '@element-plus/icons-vue'
-import RetryButton from '@/components/RetryButton.vue'
+import ActionButton from '@/components/ActionButton.vue'
 
 defineProps({
     status: {

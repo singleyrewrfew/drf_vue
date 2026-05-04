@@ -7,7 +7,7 @@
 import {defineStore} from 'pinia'
 import {ref} from 'vue'
 import {getProfile as getProfileApi, login as loginApi, logout as logoutApi} from '@/api/user'
-import { AUTH_CONFIG } from '@/constants/authConfig'
+import { AUTH_CONFIG, isTokenExpired } from '@/constants/authConfig'
 
 export const useUserStore = defineStore('user', () => {
     /**
@@ -16,6 +16,11 @@ export const useUserStore = defineStore('user', () => {
     const accessToken = ref(localStorage.getItem(AUTH_CONFIG.ACCESS_TOKEN_KEY) || '')
     const refreshToken = ref(localStorage.getItem(AUTH_CONFIG.REFRESH_TOKEN_KEY) || '')
     const user = ref(JSON.parse(localStorage.getItem(AUTH_CONFIG.USER_INFO_KEY) || 'null'))
+
+    /** fetchProfile 缓存 TTL（毫秒），默认 5 分钟 */
+    const PROFILE_CACHE_TTL = 5 * 60 * 1000
+    /** 上次成功获取 profile 的时间戳 */
+    const _lastFetchTime = ref(0)
 
     /**
      * 设置令牌并同步到本地存储
@@ -72,7 +77,7 @@ export const useUserStore = defineStore('user', () => {
                 await logoutApi({ [AUTH_CONFIG.REFRESH_TOKEN_KEY]: currentRefreshToken })
             }
         } catch (e) {
-            console.error('Logout API error:', e)
+            console.error('登出 API 调用失败:', e)
         }
 
         // 清空响应式状态
@@ -87,29 +92,55 @@ export const useUserStore = defineStore('user', () => {
     }
 
     /**
-     * 获取用户个人信息
+     * 获取用户个人信息（带 TTL 缓存）
      *
-     * 支持缓存机制，避免重复请求。可强制刷新以获取最新数据。
+     * 缓存逻辑：
+     *   - force=true → 无条件重新请求
+     *   - user 不存在 → 请求
+     *   - user 存在但距上次请求超过 TTL（5 分钟）→ 重新请求
+     *   - user 存在且未过期 → 返回缓存
      *
      * @param {boolean} [force=false] - 是否强制刷新（忽略缓存）
      * @returns {Promise<Object>} 用户信息对象
      */
     const fetchProfile = async (force = false) => {
-        if (!force && user.value) {
+        const now = Date.now()
+        if (!force && user.value && now - _lastFetchTime.value < PROFILE_CACHE_TTL) {
             return user.value
         }
 
         const {data} = await getProfileApi()
         setUser(data)
+        _lastFetchTime.value = Date.now()
         return data
     }
 
     /**
-     * 检查用户是否已登录
+     * 检查用户是否已登录（含 token 过期验证）
      *
-     * @returns {boolean} 是否存在 access token
+     * 不仅检查 token 是否存在，还解析 JWT payload 的 exp 字段
+     * 判断是否已过期。过期 token 视为未登录状态。
+     *
+     * @returns {boolean} token 存在且未过期
      */
-    const isLoggedIn = () => !!accessToken.value
+    const isLoggedIn = () => {
+        if (!accessToken.value) return false
+        return !isTokenExpired(accessToken.value)
+    }
+
+    /**
+     * 检查 access token 是否已过期（不检查是否存在）
+     *
+     * 供路由守卫等场景判断是否需要提前刷新 token。
+     * 即使 token 存在，如果即将过期也返回 true。
+     *
+     * @param {number} [bufferSeconds=60] - 过期前多少秒即视为过期
+     * @returns {boolean} true=已过期或不存在, false=有效
+     */
+    const isAccessTokenExpired = (bufferSeconds = 60) => {
+        if (!accessToken.value) return true
+        return isTokenExpired(accessToken.value, bufferSeconds)
+    }
 
     /**
      * 检查用户是否为管理员
@@ -175,6 +206,7 @@ export const useUserStore = defineStore('user', () => {
         logout,
         fetchProfile,
         isLoggedIn,
+        isAccessTokenExpired,
         isAdmin,
         isEditor,
         canAccessBackend,
