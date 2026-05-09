@@ -54,13 +54,13 @@ const fetchData = async () => {
         status: 'published',
         category: categoryId,
         offset: offset,
-        limit: pageSize.value,
-      }),
+        limit: pageSize.value
+      })
     ])
-    
+
     // 拦截器已经提取了 data 字段
     category.value = catRes.data
-    
+
     // 处理分页数据和非分页数据
     if (contentRes.data.results) {
       articles.value = contentRes.data.results
@@ -75,7 +75,7 @@ const fetchData = async () => {
     }
   } catch (e) {
     console.error('Failed to fetch category data:', e)
-    
+
     // 如果是 404 错误，跳转到 404 页面
     if (e.response?.status === 404) {
       router.replace({ name: 'NotFound' })

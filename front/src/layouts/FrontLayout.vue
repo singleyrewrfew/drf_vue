@@ -9,17 +9,14 @@
     <main class="main">
       <router-view v-slot="{ Component }">
         <transition name="fade-slide" mode="out-in">
-          <component :is="Component"/>
+          <component :is="Component" />
         </transition>
       </router-view>
     </main>
 
     <AppFooter />
 
-    <MobileMenu
-      :visible="mobileMenuVisible"
-      @close="mobileMenuVisible = false"
-    />
+    <MobileMenu :visible="mobileMenuVisible" @close="mobileMenuVisible = false" />
   </div>
 </template>
 

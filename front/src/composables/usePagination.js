@@ -1,11 +1,7 @@
 import { ref, computed } from 'vue'
 
 export function usePagination(options = {}) {
-  const {
-    defaultPage = 1,
-    defaultPageSize = 10,
-    pageSizes = [10, 20, 50, 100]
-  } = options
+  const { defaultPage = 1, defaultPageSize = 10, pageSizes = [10, 20, 50, 100] } = options
 
   const currentPage = ref(defaultPage)
   const pageSize = ref(defaultPageSize)
@@ -16,16 +12,16 @@ export function usePagination(options = {}) {
   const hasNextPage = computed(() => currentPage.value < totalPages.value)
   const hasPrevPage = computed(() => currentPage.value > 1)
 
-  const setPage = (page) => {
+  const setPage = page => {
     currentPage.value = Math.max(1, Math.min(page, totalPages.value))
   }
 
-  const setPageSize = (size) => {
+  const setPageSize = size => {
     pageSize.value = size
     currentPage.value = 1
   }
 
-  const setTotal = (newTotal) => {
+  const setTotal = newTotal => {
     total.value = newTotal
   }
 

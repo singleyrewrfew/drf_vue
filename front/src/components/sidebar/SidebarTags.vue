@@ -38,7 +38,7 @@ const displayTags = computed(() => {
   return props.tags.slice(0, props.maxItems)
 })
 
-const handleClick = (tag) => {
+const handleClick = tag => {
   router.push(`/tag/${tag.slug || tag.id}`)
 }
 </script>

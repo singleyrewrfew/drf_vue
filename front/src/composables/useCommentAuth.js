@@ -1,6 +1,6 @@
 /**
  * 评论认证组合式函数
- * 
+ *
  * 封装评论相关操作的登录验证逻辑，避免代码重复
  */
 
@@ -31,7 +31,7 @@ export function useCommentAuth() {
    * 点赞操作的认证检查
    * @param {Function} callback - 认证通过后的回调
    */
-  const checkLikeAuth = (callback) => {
+  const checkLikeAuth = callback => {
     if (requireAuth('点赞')) {
       callback()
     }
@@ -41,7 +41,7 @@ export function useCommentAuth() {
    * 评论操作的认证检查
    * @param {Function} callback - 认证通过后的回调
    */
-  const checkCommentAuth = (callback) => {
+  const checkCommentAuth = callback => {
     if (requireAuth('评论')) {
       callback()
     }

@@ -5,8 +5,8 @@
     @click="handleClick"
   >
     <div v-if="showImage && article.cover_image" class="article-cover">
-      <img 
-        :src="getCoverUrl(article.cover_image)" 
+      <img
+        :src="getCoverUrl(article.cover_image)"
         :alt="article.title"
         loading="lazy"
         decoding="async"
@@ -44,8 +44,12 @@
           <span>{{ article.author_name }}</span>
         </div>
         <div v-if="showStats" class="article-stats">
-          <span><el-icon><View /></el-icon> {{ article.view_count }}</span>
-          <span><el-icon><Clock /></el-icon> {{ formatDate(article.created_at) }}</span>
+          <span
+            ><el-icon><View /></el-icon> {{ article.view_count }}</span
+          >
+          <span
+            ><el-icon><Clock /></el-icon> {{ formatDate(article.created_at) }}</span
+          >
         </div>
       </div>
     </div>
@@ -66,7 +70,7 @@ const props = defineProps({
   mode: {
     type: String,
     default: 'grid',
-    validator: (v) => ['grid', 'horizontal', 'list'].includes(v)
+    validator: v => ['grid', 'horizontal', 'list'].includes(v)
   },
   showImage: {
     type: Boolean,
@@ -108,7 +112,7 @@ const router = useRouter()
 
 const animationDelay = computed(() => `${props.index * 0.1}s`)
 
-const highlightText = (text) => {
+const highlightText = text => {
   if (!text || !props.highlightKeyword) return text
   const regex = new RegExp(`(${props.highlightKeyword})`, 'gi')
   return text.replace(regex, '<mark>$1</mark>')
@@ -358,7 +362,7 @@ const handleClick = () => {
   color: var(--primary-color);
 }
 
-[data-theme="dark"] .article-card--horizontal .article-stats span {
+[data-theme='dark'] .article-card--horizontal .article-stats span {
   background: var(--bg-tertiary);
 }
 

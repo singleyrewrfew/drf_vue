@@ -67,8 +67,8 @@ const routes = [
         name: ROUTE_NAMES.PROFILE,
         component: () => import('@/views/Profile.vue'),
         meta: { requiresAuth: true, title: '个人中心' }
-      },
-    ],
+      }
+    ]
   },
   {
     path: '/login',
@@ -87,7 +87,7 @@ const routes = [
     name: ROUTE_NAMES.NOT_FOUND,
     component: () => import('@/views/NotFound.vue'),
     meta: { title: '页面未找到' }
-  },
+  }
 ]
 
 const router = createRouter({
@@ -99,26 +99,26 @@ const router = createRouter({
     } else {
       return { top: 0 }
     }
-  },
+  }
 })
 
 router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
-  
+
   if (to.meta.title) {
     document.title = `${to.meta.title} - CMS`
   }
-  
+
   if (to.meta.requiresAuth && !userStore.isLoggedIn) {
     next({ name: ROUTE_NAMES.LOGIN, query: { redirect: to.fullPath } })
     return
   }
-  
+
   if (to.meta.guestOnly && userStore.isLoggedIn) {
     next({ name: ROUTE_NAMES.HOME })
     return
   }
-  
+
   next()
 })
 

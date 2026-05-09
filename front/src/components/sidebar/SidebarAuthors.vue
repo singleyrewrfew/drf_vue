@@ -41,7 +41,7 @@ const props = defineProps({
 const emit = defineEmits(['select'])
 const router = useRouter()
 
-const handleClick = (author) => {
+const handleClick = author => {
   emit('select', author)
 }
 </script>

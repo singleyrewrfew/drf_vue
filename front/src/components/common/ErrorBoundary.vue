@@ -31,7 +31,7 @@ const router = useRouter()
 const hasError = ref(false)
 const errorMessage = ref('页面加载失败，请重试')
 
-onErrorCaptured((error) => {
+onErrorCaptured(error => {
   console.error('Error captured by ErrorBoundary:', error)
   hasError.value = true
   errorMessage.value = error.message || '页面加载失败，请重试'

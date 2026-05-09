@@ -1,0 +1,172 @@
+/* ===================================
+   文章目录（TOC）导航样式
+   包含桌面端侧边栏和移动端抽屉
+   =================================== */
+
+/* 移动端目录按钮 */
+.mobile-toc-btn {
+  display: none;
+  position: fixed;
+  right: 16px;
+  bottom: 80px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  z-index: 999;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.mobile-toc-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.mobile-toc-btn svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* 移动端目录抽屉遮罩层 */
+.toc-drawer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 2000;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* 移动端目录抽屉容器 */
+.toc-drawer {
+  width: 280px;
+  max-width: 80vw;
+  height: 100%;
+  background: var(--bg-primary);
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.toc-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.toc-drawer-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.toc-drawer-close:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.toc-drawer-close svg {
+  width: 18px;
+  height: 18px;
+}
+
+.toc-drawer-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 0;
+}
+
+.toc-drawer-item {
+  padding: 12px 20px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border-left: 3px solid transparent;
+}
+
+.toc-drawer-item:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.toc-drawer-item.active {
+  color: var(--primary-color);
+  background: rgba(var(--primary-rgb), 0.08);
+  border-left-color: var(--primary-color);
+}
+
+.toc-drawer-item.toc-level-2 {
+  padding-left: 20px;
+  font-weight: 500;
+}
+
+.toc-drawer-item.toc-level-3 {
+  padding-left: 32px;
+  font-size: 13px;
+}
+
+.toc-drawer-item.toc-level-4 {
+  padding-left: 44px;
+  font-size: 12px;
+}
+
+/* 抽屉动画效果 */
+.toc-drawer-enter-active,
+.toc-drawer-leave-active {
+  transition: all 0.25s ease;
+}
+
+.toc-drawer-enter-active .toc-drawer,
+.toc-drawer-leave-active .toc-drawer {
+  transition: transform 0.25s ease;
+}
+
+.toc-drawer-enter-from,
+.toc-drawer-leave-to {
+  background: rgba(0, 0, 0, 0);
+}
+
+.toc-drawer-enter-from .toc-drawer,
+.toc-drawer-leave-to .toc-drawer {
+  transform: translateX(100%);
+}
+
+/* 响应式：显示/隐藏桌面端和移动端 TOC */
+@media (min-width: 769px) {
+  .mobile-toc-btn {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .mobile-toc-btn {
+    display: flex !important;
+  }
+
+  .desktop-toc {
+    display: none !important;
+  }
+}

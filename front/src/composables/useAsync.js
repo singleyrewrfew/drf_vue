@@ -1,12 +1,7 @@
 import { ref, computed } from 'vue'
 
 export function useAsync(asyncFunction, options = {}) {
-  const {
-    immediate = false,
-    initialData = null,
-    onSuccess = null,
-    onError = null
-  } = options
+  const { immediate = false, initialData = null, onSuccess = null, onError = null } = options
 
   const data = ref(initialData)
   const error = ref(null)

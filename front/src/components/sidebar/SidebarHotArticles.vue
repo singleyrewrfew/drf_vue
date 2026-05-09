@@ -11,7 +11,9 @@
         <div class="hot-info">
           <h4>{{ article.title }}</h4>
           <div class="hot-meta">
-            <span><el-icon><View /></el-icon> {{ article.view_count }}</span>
+            <span
+              ><el-icon><View /></el-icon> {{ article.view_count }}</span
+            >
           </div>
         </div>
       </div>
@@ -43,7 +45,7 @@ const displayArticles = computed(() => {
   return props.articles.slice(0, props.maxItems)
 })
 
-const handleClick = (article) => {
+const handleClick = article => {
   router.push(getArticleUrl(article))
 }
 </script>

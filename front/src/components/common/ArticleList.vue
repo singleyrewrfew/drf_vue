@@ -95,7 +95,7 @@ const props = defineProps({
 
 const emit = defineEmits(['article-click'])
 
-const handleClick = (article) => {
+const handleClick = article => {
   emit('article-click', article)
 }
 </script>

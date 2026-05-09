@@ -43,7 +43,7 @@ const props = defineProps({
 const emit = defineEmits(['select'])
 const router = useRouter()
 
-const handleClick = (cat) => {
+const handleClick = cat => {
   if (props.selectable) {
     emit('select', cat)
   } else {

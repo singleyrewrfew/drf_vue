@@ -1,49 +1,49 @@
 :root {
-  --primary-color: #0078D4;
-  --primary-hover: #106EBE;
+  --primary-color: #0078d4;
+  --primary-hover: #106ebe;
   --primary-pressed: #004578;
-  --primary-light: #DEECF9;
+  --primary-light: #deecf9;
   --primary-dark: #004578;
   --primary-bg: rgba(0, 120, 212, 0.1);
-  --primary-gradient: linear-gradient(135deg, #0078D4 0%, #106EBE 100%);
-  
-  --secondary-color: #005A9E;
-  --secondary-light: #EFF6FC;
-  
-  --success-color: #107C10;
-  --success-light: #DFF6DD;
+  --primary-gradient: linear-gradient(135deg, #0078d4 0%, #106ebe 100%);
+
+  --secondary-color: #005a9e;
+  --secondary-light: #eff6fc;
+
+  --success-color: #107c10;
+  --success-light: #dff6dd;
   --success-bg: rgba(16, 124, 16, 0.1);
-  
-  --warning-color: #FFB900;
-  --warning-light: #FFF4CE;
+
+  --warning-color: #ffb900;
+  --warning-light: #fff4ce;
   --warning-bg: rgba(255, 185, 0, 0.1);
-  
-  --danger-color: #D13438;
-  --danger-light: #FDE7E9;
+
+  --danger-color: #d13438;
+  --danger-light: #fde7e9;
   --danger-bg: rgba(209, 52, 56, 0.1);
-  --error-color: #D13438;
-  
-  --info-color: #0078D4;
-  --info-light: #DEECF9;
+  --error-color: #d13438;
+
+  --info-color: #0078d4;
+  --info-light: #deecf9;
   --info-bg: rgba(0, 120, 212, 0.1);
-  
-  --text-primary: #1A1A1A;
+
+  --text-primary: #1a1a1a;
   --text-secondary: #606266;
-  --text-tertiary: #8A8B8E;
-  --text-placeholder: #A19F9D;
-  
-  --bg-primary: #FFFFFF;
-  --bg-secondary: #F3F3F4;
-  --bg-tertiary: #E5E5E5;
-  --bg-color: #F3F3F4;
-  
-  --card-bg: #FFFFFF;
-  --card-bg-hover: #FAFAFA;
-  
-  --border-color: #E5E5E5;
-  --border-light: #F0F0F0;
-  --border-dark: #D1D1D1;
-  
+  --text-tertiary: #8a8b8e;
+  --text-placeholder: #a19f9d;
+
+  --bg-primary: #ffffff;
+  --bg-secondary: #f3f3f4;
+  --bg-tertiary: #e5e5e5;
+  --bg-color: #f3f3f4;
+
+  --card-bg: #ffffff;
+  --card-bg-hover: #fafafa;
+
+  --border-color: #e5e5e5;
+  --border-light: #f0f0f0;
+  --border-dark: #d1d1d1;
+
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.03);
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.04);
   --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.06);
@@ -52,18 +52,18 @@
   --shadow-primary: 0 2px 8px rgba(0, 120, 212, 0.15);
   --shadow-primary-md: 0 4px 12px rgba(0, 120, 212, 0.2);
   --shadow-primary-lg: 0 8px 20px rgba(0, 120, 212, 0.25);
-  
+
   --radius-xs: 2px;
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 8px;
   --radius-xl: 12px;
   --radius-full: 9999px;
-  
+
   --transition-fast: 0.1s ease;
   --transition-normal: 0.2s ease;
   --transition-slow: 0.3s ease;
-  
+
   --z-dropdown: 100;
   --z-sticky: 200;
   --z-fixed: 300;
@@ -71,70 +71,71 @@
   --z-modal: 500;
   --z-popover: 600;
   --z-tooltip: 700;
-  
-  --font-sans: "Segoe UI", -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
-  --font-mono: "Cascadia Code", "Fira Code", "Monaco", "Consolas", monospace;
-  
+
+  --font-sans:
+    'Segoe UI', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-mono: 'Cascadia Code', 'Fira Code', 'Monaco', 'Consolas', monospace;
+
   --header-height: 64px;
   --sidebar-width: 280px;
   --container-max: 1200px;
-  
+
   --breakpoint-xs: 576px;
   --breakpoint-sm: 768px;
   --breakpoint-md: 992px;
   --breakpoint-lg: 1200px;
-  
+
   --mobile-header-height: 56px;
   --mobile-padding: 16px;
   --mobile-card-padding: 16px;
 }
 
-[data-theme="dark"] {
-  --primary-color: #0078D4;
-  --primary-hover: #106EBE;
+[data-theme='dark'] {
+  --primary-color: #0078d4;
+  --primary-hover: #106ebe;
   --primary-pressed: #004578;
-  --primary-light: #003D5C;
-  --primary-dark: #DEECF9;
+  --primary-light: #003d5c;
+  --primary-dark: #deecf9;
   --primary-bg: rgba(0, 120, 212, 0.15);
-  --primary-gradient: linear-gradient(135deg, #0078D4 0%, #106EBE 100%);
-  
-  --secondary-color: #3D8EB0;
-  --secondary-light: #1A3A4A;
-  
-  --success-color: #107C10;
-  --success-light: #0F3D0F;
+  --primary-gradient: linear-gradient(135deg, #0078d4 0%, #106ebe 100%);
+
+  --secondary-color: #3d8eb0;
+  --secondary-light: #1a3a4a;
+
+  --success-color: #107c10;
+  --success-light: #0f3d0f;
   --success-bg: rgba(16, 124, 16, 0.15);
-  
-  --warning-color: #FFB900;
-  --warning-light: #4D3D00;
+
+  --warning-color: #ffb900;
+  --warning-light: #4d3d00;
   --warning-bg: rgba(255, 185, 0, 0.15);
-  
-  --danger-color: #D13438;
-  --danger-light: #4D1A1A;
+
+  --danger-color: #d13438;
+  --danger-light: #4d1a1a;
   --danger-bg: rgba(209, 52, 56, 0.15);
-  --error-color: #D13438;
-  
-  --info-color: #0078D4;
-  --info-light: #003D5C;
+  --error-color: #d13438;
+
+  --info-color: #0078d4;
+  --info-light: #003d5c;
   --info-bg: rgba(0, 120, 212, 0.15);
-  
-  --text-primary: #FFFFFF;
-  --text-secondary: #C5C5C5;
-  --text-tertiary: #8A8A8A;
-  --text-placeholder: #6E6E6E;
-  
-  --bg-primary: #1A1A1A;
+
+  --text-primary: #ffffff;
+  --text-secondary: #c5c5c5;
+  --text-tertiary: #8a8a8a;
+  --text-placeholder: #6e6e6e;
+
+  --bg-primary: #1a1a1a;
   --bg-secondary: #252526;
-  --bg-tertiary: #2D2D2D;
-  --bg-color: #1A1A1A;
-  
+  --bg-tertiary: #2d2d2d;
+  --bg-color: #1a1a1a;
+
   --card-bg: #252526;
-  --card-bg-hover: #2D2D2D;
-  
-  --border-color: #3C3C3C;
+  --card-bg-hover: #2d2d2d;
+
+  --border-color: #3c3c3c;
   --border-light: #333333;
-  --border-dark: #4A4A4A;
-  
+  --border-dark: #4a4a4a;
+
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.25);
   --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.3);
@@ -146,8 +147,12 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes fadeInUp {
@@ -195,7 +200,8 @@
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -203,6 +209,12 @@
   }
 }
 
-.animate-fade-in { animation: fadeIn var(--transition-normal); }
-.animate-fade-in-up { animation: fadeInUp var(--transition-normal); }
-.animate-scale-in { animation: scaleIn var(--transition-normal); }
+.animate-fade-in {
+  animation: fadeIn var(--transition-normal);
+}
+.animate-fade-in-up {
+  animation: fadeInUp var(--transition-normal);
+}
+.animate-scale-in {
+  animation: scaleIn var(--transition-normal);
+}

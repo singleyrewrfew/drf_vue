@@ -1,17 +1,21 @@
 <template>
   <div :class="['skeleton-card', `skeleton-card--${mode}`]">
     <div v-if="showImage" class="skeleton-cover">
-      <el-skeleton-item variant="image" style="width: 100%; height: 100%;" />
+      <el-skeleton-item variant="image" style="width: 100%; height: 100%" />
     </div>
     <div class="skeleton-info">
       <el-skeleton animated>
         <template #template>
           <el-skeleton-item variant="h3" :style="{ width: titleWidth }" />
-          <el-skeleton-item v-if="showExcerpt" variant="text" style="width: 100%; margin-top: 12px;" />
-          <el-skeleton-item v-if="showExcerpt" variant="text" style="width: 60%; margin-top: 8px;" />
+          <el-skeleton-item
+            v-if="showExcerpt"
+            variant="text"
+            style="width: 100%; margin-top: 12px"
+          />
+          <el-skeleton-item v-if="showExcerpt" variant="text" style="width: 60%; margin-top: 8px" />
           <div v-if="showFooter" class="skeleton-footer">
-            <el-skeleton-item variant="text" style="width: 30%;" />
-            <el-skeleton-item variant="text" style="width: 40%;" />
+            <el-skeleton-item variant="text" style="width: 30%" />
+            <el-skeleton-item variant="text" style="width: 40%" />
           </div>
         </template>
       </el-skeleton>
@@ -24,7 +28,7 @@ const props = defineProps({
   mode: {
     type: String,
     default: 'grid',
-    validator: (v) => ['grid', 'horizontal', 'list'].includes(v)
+    validator: v => ['grid', 'horizontal', 'list'].includes(v)
   },
   showImage: {
     type: Boolean,

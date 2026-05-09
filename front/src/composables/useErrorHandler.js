@@ -2,7 +2,7 @@ import { ElMessage } from 'element-plus'
 import { ERROR_MESSAGES, ERROR_CODES } from '@/constants/errorMessages'
 
 export function useErrorHandler() {
-  const getErrorMessage = (error) => {
+  const getErrorMessage = error => {
     if (!error) return ERROR_MESSAGES.UNKNOWN
 
     if (error.code === ERROR_CODES.NETWORK_ERROR) {

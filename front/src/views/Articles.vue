@@ -83,7 +83,7 @@ const fetchArticles = async () => {
     const params = {
       status: 'published',
       offset: offset,
-      limit: pageSize.value,
+      limit: pageSize.value
     }
     if (currentCategory.value) {
       params.category = currentCategory.value
@@ -154,7 +154,7 @@ const fetchAuthors = async () => {
     authors.value = []
     return
   }
-  
+
   try {
     const { data } = await getPopularAuthors()
     authors.value = data.results || data
@@ -166,13 +166,13 @@ const fetchAuthors = async () => {
   }
 }
 
-const filterByCategory = (cat) => {
+const filterByCategory = cat => {
   currentCategory.value = currentCategory.value === cat.id ? null : cat.id
   page.value = 1
   fetchArticles()
 }
 
-const filterByAuthor = (author) => {
+const filterByAuthor = author => {
   currentAuthor.value = currentAuthor.value === author.id ? null : author.id
   page.value = 1
   fetchArticles()
@@ -185,12 +185,16 @@ const clearFilters = () => {
   fetchArticles()
 }
 
-watch(() => route.query, () => {
-  if (route.query.category) {
-    currentCategory.value = route.query.category
-  }
-  fetchArticles()
-}, { immediate: true })
+watch(
+  () => route.query,
+  () => {
+    if (route.query.category) {
+      currentCategory.value = route.query.category
+    }
+    fetchArticles()
+  },
+  { immediate: true }
+)
 
 onMounted(() => {
   fetchCategories()

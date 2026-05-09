@@ -14,9 +14,15 @@
               <h2>{{ item.title }}</h2>
               <p>{{ item.summary || '暂无摘要' }}</p>
               <div class="hero-meta">
-                <span><el-icon><User /></el-icon> {{ item.author_name }}</span>
-                <span><el-icon><View /></el-icon> {{ item.view_count }} 阅读</span>
-                <span><el-icon><Calendar /></el-icon> {{ formatDate(item.created_at) }}</span>
+                <span
+                  ><el-icon><User /></el-icon> {{ item.author_name }}</span
+                >
+                <span
+                  ><el-icon><View /></el-icon> {{ item.view_count }} 阅读</span
+                >
+                <span
+                  ><el-icon><Calendar /></el-icon> {{ formatDate(item.created_at) }}</span
+                >
               </div>
             </div>
           </div>
@@ -108,11 +114,11 @@ const fetchData = async () => {
       getContents({ status: 'published', offset: offset, limit: pageSize.value }),
       getContents({ status: 'published', ordering: '-view_count', limit: 8 }),
       getCategories(),
-      getTags(),
+      getTags()
     ])
 
     // 统一处理分页数据和非分页数据
-    const extractData = (response) => {
+    const extractData = response => {
       if (response.results) {
         return response.results
       } else if (Array.isArray(response)) {
@@ -145,13 +151,13 @@ const fetchData = async () => {
   }
 }
 
-const handleSizeChange = (size) => {
+const handleSizeChange = size => {
   pageSize.value = size
   currentPage.value = 1
   fetchData()
 }
 
-const handleCurrentChange = (page) => {
+const handleCurrentChange = page => {
   currentPage.value = page
   fetchData()
 }
@@ -476,7 +482,7 @@ router.afterEach((to, from) => {
     gap: 12px;
   }
 
-  .hero-meta span:nth-child(n+3) {
+  .hero-meta span:nth-child(n + 3) {
     display: none;
   }
 }
