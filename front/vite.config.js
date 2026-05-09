@@ -41,7 +41,7 @@ export default defineConfig({
         cssCodeSplit: true
     },
     server: {
-        port: 3000,
+        port: 4000,
         strictPort: false,
         proxy: {
             '/api': {

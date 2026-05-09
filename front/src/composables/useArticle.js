@@ -91,17 +91,26 @@ export function useArticle() {
   const loadArticle = async () => {
     loading.value = true
     try {
-      const data = await getContent(route.params.id)
-      article.value = data
+      const response = await getContent(route.params.id)
+
+      // 兼容多种响应格式
+      let articleData = response.data || response
+      if (articleData && typeof articleData === 'object' && 'data' in articleData && !Array.isArray(articleData.data)) {
+        if (articleData.data?.id || articleData.data?.title) {
+          articleData = articleData.data
+        }
+      }
+
+      article.value = articleData
 
       // 初始化内容渲染
       initArticleContent()
 
       // 加载上一篇/下一篇文章
-      await loadAdjacentArticles(data)
+      await loadAdjacentArticles(articleData)
 
       // 加载相关文章
-      await loadRelatedArticles(data)
+      await loadRelatedArticles(articleData)
 
       // 加载评论
       await loadComments()
@@ -122,15 +131,29 @@ export function useArticle() {
         ordering: '-created_at'
       }
 
-      const prevData = await getContents(params)
-      if (prevData.results.length > 0) {
-        prevArticle.value = prevData.results[0]
+      const prevResponse = await getContents(params)
+      let prevData = prevResponse.data || prevResponse
+      if (prevData && Array.isArray(prevData.results)) {
+        if (prevData.results.length > 0) {
+          prevArticle.value = prevData.results[0]
+        }
+      } else if (Array.isArray(prevData)) {
+        if (prevData.length > 0) {
+          prevArticle.value = prevData[0]
+        }
       }
 
       const nextParams = { ...params, ordering: 'created_at' }
-      const nextData = await getContents(nextParams)
-      if (nextData.results.length > 0) {
-        nextArticle.value = nextData.results[0]
+      const nextResponse = await getContents(nextParams)
+      let nextData = nextResponse.data || nextResponse
+      if (nextData && Array.isArray(nextData.results)) {
+        if (nextData.results.length > 0) {
+          nextArticle.value = nextData.results[0]
+        }
+      } else if (Array.isArray(nextData)) {
+        if (nextData.length > 0) {
+          nextArticle.value = nextData[0]
+        }
       }
     } catch (error) {
       console.error('Failed to load adjacent articles:', error)
@@ -140,13 +163,25 @@ export function useArticle() {
   // 加载相关文章列表
   const loadRelatedArticles = async (currentArticle) => {
     try {
-      const relatedData = await getContents({
+      const relatedResponse = await getContents({
         category: currentArticle.category,
         exclude: currentArticle.id,
         limit: CONFIG.API.RELATED_ARTICLES_COUNT,
         ordering: '-view_count'
       })
-      relatedArticles.value = relatedData.results || []
+
+      let relatedData = relatedResponse.data || relatedResponse
+
+      // 处理列表响应格式
+      let results = []
+      if (relatedData && Array.isArray(relatedData.results)) {
+        results = relatedData.results
+      } else if (Array.isArray(relatedData)) {
+        results = relatedData
+      }
+
+      // 过滤掉当前文章，最多取指定数量
+      relatedArticles.value = results.filter(item => item.id !== currentArticle.id).slice(0, CONFIG.API.RELATED_ARTICLES_COUNT)
     } catch (error) {
       console.error('Failed to load related articles:', error)
     }
@@ -155,8 +190,17 @@ export function useArticle() {
   // 加载评论列表
   const loadComments = async () => {
     try {
-      const data = await getComments(route.params.id)
-      comments.value = data.results || []
+      const response = await getComments({ article: route.params.id })
+      let data = response.data || response
+
+      // 处理评论响应格式
+      if (data && Array.isArray(data.results)) {
+        comments.value = data.results
+      } else if (Array.isArray(data)) {
+        comments.value = data
+      } else {
+        comments.value = []
+      }
     } catch (error) {
       console.error(MESSAGES.ERROR.LOAD_COMMENTS_FAILED, error)
     }

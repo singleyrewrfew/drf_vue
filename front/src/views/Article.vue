@@ -76,6 +76,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { getContent, getContents, getComments, createComment, likeComment } from '@/api/content'
 import { ArticleHeader, ArticleContent, ArticleNav, CommentsSection } from '@/components/article'
@@ -185,26 +186,49 @@ const fetchArticle = async () => {
   fullContentLoaded.value = false
   try {
     const articleId = route.params.slug || route.params.id
-    const { data } = await getContent(articleId)
-    article.value = data
+    const response = await getContent(articleId)
+
+    // 兼容多种响应格式：
+    // 格式1: { data: 文章对象 } (axios 拦截器处理后)
+    // 格式2: { data: { data: 文章对象 } } (原始 DRF 响应)
+    // 格式3: 直接是文章对象
+    let articleData = response.data || response
+
+    // 如果还有嵌套的 data 字段（DRF Response 格式）
+    if (articleData && typeof articleData === 'object' && 'data' in articleData && !Array.isArray(articleData.data)) {
+      // 检查是否真的是文章对象（有 id 或 title）
+      if (articleData.data?.id || articleData.data?.title) {
+        articleData = articleData.data
+      }
+    }
+
+    article.value = articleData
 
     // 使用预览内容优化首屏加载
-    if (data.content_preview && data.content.length > data.content_preview.length) {
-      article.value.content = data.content_preview
+    if (articleData.content_preview && articleData.content && articleData.content.length > articleData.content_preview.length) {
+      article.value.content = articleData.content_preview
     }
 
     // 提取目录标题
     headings.value = extractHeadingsFromMarkdown(article.value.content)
+
+    // 设置完整内容已加载标记
+    if (!articleData.content_preview || articleData.content === articleData.content_preview) {
+      fullContentLoaded.value = true
+    }
 
     // 并行加载评论和相关文章
     Promise.all([fetchComments(), fetchRelatedArticles()]).catch(e => {
       console.error('加载评论或相关文章失败:', e)
     })
   } catch (e) {
-    console.error(e)
+    console.error('Failed to fetch article:', e)
 
     if (e.response?.status === 404) {
       router.replace({ name: 'NotFound' })
+    } else if (e.response?.status === 401) {
+      // 未授权，跳转登录
+      router.push('/login')
     } else {
       ElMessage.error(MESSAGES.ERROR.ARTICLE_NOT_FOUND)
     }
@@ -217,9 +241,11 @@ const fetchArticle = async () => {
 const fetchComments = async () => {
   try {
     const articleId = route.params.slug || route.params.id
-    const { data } = await getComments({ article: articleId })
+    const response = await getComments({ article: articleId })
+    let data = response.data || response
 
-    if (data.results) {
+    // 处理评论响应格式
+    if (data && Array.isArray(data.results)) {
       comments.value = data.results
     } else if (Array.isArray(data)) {
       comments.value = data
@@ -242,15 +268,15 @@ const fetchRelatedArticles = async () => {
       params.category = article.value.category
     }
 
-    const { data } = await getContents(params)
-    let results = []
+    const response = await getContents(params)
+    let data = response.data || response
 
-    if (data.results) {
+    // 处理列表响应格式
+    let results = []
+    if (data && Array.isArray(data.results)) {
       results = data.results
     } else if (Array.isArray(data)) {
       results = data
-    } else {
-      results = []
     }
 
     // 过滤掉当前文章，最多取 5 篇
