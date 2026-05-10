@@ -511,7 +511,7 @@ const handleReplyToReply = reply => {
   background: rgba(39, 39, 42, 0.5);
   border-color: #3f3f46;
 }
-</style>
+
 @media (max-width: 768px) {
   .comment-item {
     padding: 16px 0;
