@@ -1,90 +1,95 @@
 :root {
   /* ===================================
-     PREMIUM COLOR SYSTEM
-     基于设计工程规范的精确配色
+     《剑来》古风仙侠配色系统
+     水墨 · 宣纸 · 印章 · 诗意
      =================================== */
 
-  /* Primary Accent - Electric Blue (去饱和化) */
-  --primary-color: #0891b2;
-  --primary-hover: #0e7490;
-  --primary-pressed: #155e75;
-  --primary-light: #cffafe;
-  --primary-dark: #164e63;
-  --primary-bg: rgba(8, 145, 178, 0.08);
-  --primary-gradient: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
-  --primary-rgb: 8, 145, 178;
+  /* Primary Accent - 青绿山水 */
+  --primary-color: #2d5a4a;
+  --primary-hover: #3d7a5f;
+  --primary-pressed: #1a3529;
+  --primary-light: #e8f0ec;
+  --primary-dark: #1a3529;
+  --primary-bg: rgba(45, 90, 74, 0.08);
+  --primary-gradient: linear-gradient(135deg, #3d7a5f 0%, #2d5a4a 100%);
+  --primary-rgb: 45, 90, 74;
 
-  /* Secondary - Slate */
-  --secondary-color: #475569;
-  --secondary-light: #f1f5f9;
+  /* Secondary - 朱砂红（印章/强调）*/
+  --vermilion-color: #c53d43;
+  --vermilion-hover: #a02f33;
+  --vermilion-light: #fce4e4;
+  --secondary-color: #8b4513;
 
-  /* Semantic Colors (低饱和度) */
-  --success-color: #059669;
-  --success-light: #d1fae5;
-  --success-bg: rgba(5, 150, 105, 0.08);
+  /* Semantic Colors (古典色调) */
+  --success-color: #2d5a4a;
+  --success-light: #e8f0ec;
+  --success-bg: rgba(45, 90, 74, 0.08);
 
-  --warning-color: #d97706;
+  --warning-color: #b8860b;
   --warning-light: #fef3c7;
-  --warning-bg: rgba(217, 119, 6, 0.08);
+  --warning-bg: rgba(184, 134, 11, 0.08);
 
-  --danger-color: #dc2626;
+  --danger-color: #c53d43;
   --danger-light: #fee2e2;
-  --danger-bg: rgba(220, 38, 38, 0.08);
-  --error-color: #dc2626;
+  --danger-bg: rgba(197, 61, 67, 0.08);
+  --error-color: #c53d43;
 
-  --info-color: #0891b2;
-  --info-light: #cffafe;
-  --info-bg: rgba(8, 145, 178, 0.08);
+  --info-color: #2d5a4a;
+  --info-light: #e8f0ec;
+  --info-bg: rgba(45, 90, 74, 0.08);
 
-  /* Text Hierarchy (Zinc Scale) */
-  --text-primary: #18181b;       /* Off-Black - Zinc-950 */
-  --text-secondary: #52525b;      /* Zinc-600 */
-  --text-tertiary: #a1a1aa;      /* Zinc-400 */
-  --text-placeholder: #d4d4d8;    /* Zinc-300 */
+  /* Text Hierarchy (水墨灰阶) */
+  --text-primary: #1a1a1a;       /* 墨黑 */
+  --text-secondary: #2d2d2d;      /* 浓墨 */
+  --text-tertiary: #595959;      /* 中墨 */
+  --text-placeholder: #8c8c8c;    /* 淡墨 */
 
-  /* Background System (Warm Gray) */
-  --bg-primary: #fafafa;         /* Near White */
-  --bg-secondary: #f4f4f5;       /* Zinc-100 */
-  --bg-tertiary: #e4e4e7;        /* Zinc-200 */
-  --bg-color: #fafafa;
+  /* Background System (宣纸色系) */
+  --bg-primary: #f5f2eb;         /* 宣纸白 */
+  --bg-secondary: #ede8dc;       /* 米黄宣纸 */
+  --bg-tertiary: #ddd6c8;        /* 泛黄旧纸 */
+  --bg-color: #f5f2eb;
 
-  /* Surface Colors */
-  --card-bg: #ffffff;
-  --card-bg-hover: #fefefe;
+  /* Surface Colors (纸张层次) */
+  --card-bg: #faf7f2;
+  --card-bg-hover: #f5f2eb;
   --elevated-bg: #ffffff;
 
-  /* Border System (Subtle) */
-  --border-color: #e4e4e7;       /* Zinc-200 */
-  --border-light: #f4f4f5;       /* Zinc-100 */
-  --border-dark: #d4d4d8;        /* Zinc-300 */
+  /* Border System (墨线) */
+  --border-color: #ddd6c8;       /* 旧纸色 */
+  --border-light: #ede8dc;       /* 米黄 */
+  --border-dark: #c4b8a8;        /* 深旧纸 */
 
-  /* Premium Shadow System (扩散阴影 + 色彩调色) */
-  --shadow-xs: 0 1px 2px rgba(24, 24, 27, 0.03);
-  --shadow-sm: 0 2px 4px rgba(24, 24, 27, 0.04);
-  --shadow-md: 0 4px 12px rgba(24, 24, 27, 0.05);
-  --shadow-lg: 0 8px 24px rgba(24, 24, 27, 0.07);
-  --shadow-xl: 0 16px 40px rgba(24, 24, 27, 0.09);
-  --shadow-diffusion: 0 20px 40px -15px rgba(24, 24, 27, 0.05); /* 扩散阴影 */
+  /* Premium Shadow System (纸张投射阴影) */
+  --shadow-xs: 0 1px 2px rgba(26, 26, 26, 0.04);
+  --shadow-sm: 0 2px 4px rgba(26, 26, 26, 0.06);
+  --shadow-md: 0 4px 12px rgba(26, 26, 26, 0.08);
+  --shadow-lg: 0 8px 24px rgba(26, 26, 26, 0.1);
+  --shadow-xl: 0 16px 40px rgba(26, 26, 26, 0.12);
+  --shadow-diffusion: 0 20px 40px -15px rgba(26, 26, 26, 0.08);
 
-  /* Primary Shadows (带色彩调色) */
-  --shadow-primary: 0 2px 12px rgba(8, 145, 178, 0.15);
-  --shadow-primary-md: 0 4px 16px rgba(8, 145, 178, 0.18);
-  --shadow-primary-lg: 0 8px 24px rgba(8, 145, 178, 0.22);
+  /* Primary Shadows (墨绿调色) */
+  --shadow-primary: 0 2px 12px rgba(45, 90, 74, 0.15);
+  --shadow-primary-md: 0 4px 16px rgba(45, 90, 74, 0.18);
+  --shadow-primary-lg: 0 8px 24px rgba(45, 90, 74, 0.22);
 
-  /* Border Radius System (更大更柔和) */
-  --radius-xs: 4px;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
-  --radius-2xl: 24px;
+  /* Vermilion Shadows (朱砂调色) */
+  --shadow-vermilion: 0 2px 12px rgba(197, 61, 67, 0.15);
+
+  /* Border Radius System (方正古典) */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
   --radius-full: 9999px;
 
-  /* Transition System (Premium Easing) */
-  --transition-fast: 0.15s cubic-bezier(0.16, 1, 0.3, 1);
-  --transition-normal: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  --transition-slow: 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-  --transition-spring: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); /* 弹性效果 */
+  /* Transition System (典雅过渡) */
+  --transition-fast: 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+  --transition-normal: 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+  --transition-slow: 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+  --transition-spring: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 
   /* Z-Index Layer System */
   --z-dropdown: 100;
@@ -95,50 +100,44 @@
   --z-popover: 600;
   --z-tooltip: 700;
 
-  /* Typography System (Modern Font Stack) */
+  /* Typography System (书卷字体栈) */
   --font-sans:
-    'Inter',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    'PingFang SC',
-    'Microsoft YaHei',
-    sans-serif;
+    'KaiTi', 'STKaiti', '楷体',
+    'Noto Serif SC', 'Source Han Serif SC',
+    'SimSun', '宋体',
+    Georgia, "Palatino Linotype", "Book Antiqua", serif;
   --font-mono:
-    'JetBrains Mono',
-    'Cascadia Code',
-    'Fira Code',
-    Monaco,
-    Consolas,
-    monospace;
+    'FangSong', '仿宋',
+    'SimFang', 'STFangsong',
+    "Courier New", "Lucida Console", monospace;
   --font-display:
-    'Geist',
-    'Inter',
-    sans-serif;
+    'Noto Serif SC', 'Source Han Serif SC',
+    'SimSun', '宋体',
+    Georgia, "Palatino Linotype", "Times New Roman", serif;
 
-  /* Type Scale (Precise) */
+  /* Type Scale (古籍字号) */
   --font-size-xs: 0.75rem;     /* 12px */
   --font-size-sm: 0.875rem;    /* 14px */
-  --font-size-base: 1rem;      /* 16px */
-  --font-size-lg: 1.125rem;    /* 18px */
-  --font-size-xl: 1.25rem;     /* 20px */
-  --font-size-2xl: 1.5rem;     /* 24px */
-  --font-size-3xl: 1.875rem;   /* 30px */
-  --font-size-4xl: 2.25rem;    /* 36px */
+  --font-size-base: 1.0625rem; /* 17px */
+  --font-size-lg: 1.1875rem;   /* 19px */
+  --font-size-xl: 1.375rem;    /* 22px */
+  --font-size-2xl: 1.625rem;   /* 26px */
+  --font-size-3xl: 2rem;       /* 32px */
+  --font-size-4xl: 2.5rem;     /* 40px */
   --font-size-5xl: 3rem;       /* 48px */
 
-  /* Line Height (Relaxed for readability) */
-  --line-height-tight: 1.15;
-  --line-height-snug: 1.375;
-  --line-height-normal: 1.625;
-  --line-height-relaxed: 1.75;
+  /* Line Height (舒展如诗词) */
+  --line-height-tight: 1.25;
+  --line-height-snug: 1.5;
+  --line-height-normal: 1.8;
+  --line-height-relaxed: 2.0;
 
-  /* Letter Spacing */
-  --tracking-tighter: -0.02em;
-  --tracking-tight: -0.01em;
-  --tracking-normal: 0;
-  --tracking-wide: 0.02em;
-  --tracking-wider: 0.05em;
+  /* Letter Spacing (宽松字距) */
+  --tracking-tighter: -0.01em;
+  --tracking-tight: 0;
+  --tracking-normal: 0.05em;
+  --tracking-wide: 0.1em;
+  --tracking-wider: 0.15em;
 
   /* Spacing System (8px Grid) */
   --space-1: 0.25rem;   /* 4px */
@@ -155,7 +154,7 @@
   --space-24: 6rem;     /* 96px */
 
   /* Layout Dimensions */
-  --header-height: 72px;
+  --header-height: 80px;
   --sidebar-width: 320px;
   --container-max: 1280px;
   --container-narrow: 900px;
@@ -168,85 +167,85 @@
   --breakpoint-xl: 1400px;
 
   /* Mobile Specifics */
-  --mobile-header-height: 64px;
+  --mobile-header-height: 72px;
   --mobile-padding: 20px;
   --mobile-card-padding: 20px;
 }
 
 /* ===================================
-   DARK THEME (Premium Dark Mode)
-   使用深灰而非纯黑
+   DARK THEME (夜读秘籍模式)
+   古卷暗色 · 萤火微光
    =================================== */
 [data-theme='dark'] {
   /* Primary Accent - 保持一致性 */
-  --primary-color: #22d3ee;
-  --primary-hover: #67e8f9;
-  --primary-pressed: #a5f3fc;
-  --primary-light: #164e63;
-  --primary-dark: #cffafe;
-  --primary-bg: rgba(34, 211, 238, 0.12);
-  --primary-gradient: linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%);
-  --primary-rgb: 34, 211, 238;
+  --primary-color: #4a9d82;
+  --primary-hover: #5db396;
+  --primary-pressed: #3d8a70;
+  --primary-light: #1a3529;
+  --primary-dark: #e8f0ec;
+  --primary-bg: rgba(74, 157, 130, 0.15);
+  --primary-gradient: linear-gradient(135deg, #5db396 0%, #4a9d82 100%);
+  --primary-rgb: 74, 157, 130;
 
-  --secondary-color: #94a3b8;
-  --secondary-light: #1e293b;
+  --secondary-color: #d4a574;
+  --secondary-light: #2a2318;
 
   /* Semantic Colors (暗色适配) */
-  --success-color: #34d399;
-  --success-light: #064e3b;
-  --success-bg: rgba(52, 211, 153, 0.12);
+  --success-color: #4a9d82;
+  --success-light: #1a3529;
+  --success-bg: rgba(74, 157, 130, 0.15);
 
-  --warning-color: #fbbf24;
-  --warning-light: #451a03;
-  --warning-bg: rgba(251, 191, 36, 0.12);
+  --warning-color: #d4a520;
+  --warning-light: #2a2208;
+  --warning-bg: rgba(212, 165, 32, 0.15);
 
-  --danger-color: #f87171;
-  --danger-light: #450a0a;
-  --danger-bg: rgba(248, 113, 113, 0.12);
-  --error-color: #f87171;
+  --danger-color: #e85a60;
+  --danger-light: #2a1517;
+  --danger-bg: rgba(232, 90, 96, 0.15);
+  --error-color: #e85a60;
 
-  --info-color: #22d3ee;
-  --info-light: #164e63;
-  --info-bg: rgba(34, 211, 238, 0.12);
+  --info-color: #4a9d82;
+  --info-light: #1a3529;
+  --info-bg: rgba(74, 157, 130, 0.15);
 
-  /* Text Hierarchy (暗色适配) */
-  --text-primary: #fafafa;        /* Near White */
-  --text-secondary: #a1a1aa;      /* Zinc-400 */
-  --text-tertiary: #71717a;       /* Zinc-500 */
-  --text-placeholder: #52525b;     /* Zinc-600 */
+  /* Text Hierarchy (夜读适配) */
+  --text-primary: #e8e4d9;        /* 月光白 */
+  --text-secondary: #c4beb0;      /* 淡月色 */
+  --text-tertiary: #8c8578;       /* 暗墨 */
+  --text-placeholder: #5c5649;     /* 极暗墨 */
 
-  /* Background System (暗色层级) */
-  --bg-primary: #09090b;          /* Zinc-950 */
-  --bg-secondary: #18181b;        /* Zinc-900 */
-  --bg-tertiary: #27272a;         /* Zinc-800 */
-  --bg-color: #09090b;
+  /* Background System (古卷暗色层级) */
+  --bg-primary: #0d0d0a;          /* 夜空墨 */
+  --bg-secondary: #1a1814;        /* 古卷暗色 */
+  --bg-tertiary: #252219;         /* 泛黄暗纸 */
+  --bg-color: #0d0d0a;
 
-  /* Surface Colors */
-  --card-bg: #18181b;             /* Zinc-900 */
-  --card-bg-hover: #1f1f23;
-  --elevated-bg: #27272a;         /* Zinc-800 */
+  /* Surface Colors (暗色纸张) */
+  --card-bg: #1a1814;
+  --card-bg-hover: #201d18;
+  --elevated-bg: #252219;
 
-  /* Border System (微妙边框) */
-  --border-color: #27272a;        /* Zinc-800 */
-  --border-light: #1f1f23;
-  --border-dark: #3f3f46;         /* Zinc-700 */
+  /* Border System (暗金边框) */
+  --border-color: #3d3830;
+  --border-light: #2a2520;
+  --border-dark: #4d463c;
 
-  /* Shadow System (暗色增强) */
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.35);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.45);
-  --shadow-xl: 0 16px 40px rgba(0, 0, 0, 0.5);
-  --shadow-diffusion: 0 20px 40px -15px rgba(0, 0, 0, 0.4);
+  /* Shadow System (暗色增强 + 微光) */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.45);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.55);
+  --shadow-xl: 0 16px 40px rgba(0, 0, 0, 0.6);
+  --shadow-diffusion: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
 
-  /* Primary Shadows (暗色发光效果) */
-  --shadow-primary: 0 2px 12px rgba(34, 211, 238, 0.2);
-  --shadow-primary-md: 0 4px 16px rgba(34, 211, 238, 0.25);
-  --shadow-primary-lg: 0 8px 24px rgba(34, 211, 238, 0.3);
+  /* Primary Shadows (萤火绿光效果) */
+  --shadow-primary: 0 2px 12px rgba(74, 157, 130, 0.25);
+  --shadow-primary-md: 0 4px 16px rgba(74, 157, 130, 0.3);
+  --shadow-primary-lg: 0 8px 24px rgba(74, 157, 130, 0.35);
 }
 
 /* ===================================
-   ANIMATION KEYFRAMES (Premium Motion)
+   ANIMATION KEYFRAMES (水墨动效)
    =================================== */
 
 @keyframes fadeIn {
@@ -298,6 +297,32 @@
   }
 }
 
+/* ====== 水墨晕染动画 ====== */
+@keyframes inkWashIn {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+  }
+}
+
+@keyframes inkWashOut {
+  from {
+    opacity: 1;
+    filter: blur(0);
+  }
+  to {
+    opacity: 0;
+    filter: blur(6px);
+    transform: scale(1.02);
+  }
+}
+
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.65; }
@@ -316,6 +341,12 @@
 @keyframes breathe {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.85; transform: scale(1.02); }
+}
+
+/* ====== 水墨线条闪烁（骨架屏）===== */
+@keyframes inkShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
 /* Animation Utility Classes */

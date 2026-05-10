@@ -292,7 +292,9 @@ router.afterEach((to, from) => {
 
 .hero-content p {
   font-size: 16px;
-  opacity: 0.9;
+  opacity: 1;
+  color: #ffffff;
+  font-weight: 500;
   line-height: 1.7;
   max-width: 600px;
   display: -webkit-box;

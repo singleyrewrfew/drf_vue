@@ -1,5 +1,5 @@
 <template>
-  <SidebarContainer title="分类导航" :icon="FolderOpened">
+  <SidebarContainer title="分类导航">
     <div class="category-list">
       <div
         v-for="cat in categories"
@@ -9,12 +9,10 @@
         @click="handleClick(cat)"
       >
         <div class="category-left">
-          <el-icon class="category-icon">
-            <FolderOpened />
-          </el-icon>
-          <span>{{ cat.name }}</span>
+          <span class="category-dot"></span>
+          <span class="category-name">{{ cat.name }}</span>
         </div>
-        <el-tag size="small" type="primary" round>{{ cat.content_count || 0 }}</el-tag>
+        <span class="category-count">{{ cat.content_count || 0 }}</span>
       </div>
     </div>
   </SidebarContainer>
@@ -22,7 +20,6 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
-import { FolderOpened } from '@element-plus/icons-vue'
 import SidebarContainer from './SidebarContainer.vue'
 
 const props = defineProps({
@@ -56,7 +53,7 @@ const handleClick = cat => {
 .category-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .category-item {
@@ -64,46 +61,23 @@ const handleClick = cat => {
   justify-content: space-between;
   align-items: center;
   padding: 10px 12px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-xs);
   cursor: pointer;
   transition: all var(--transition-fast);
   font-size: 14px;
-  color: var(--text-secondary);
+  color: var(--ink-medium, #595959);
+  font-family: "KaiTi", "STKaiti", "楷体", "Noto Serif SC", serif;
+  letter-spacing: var(--tracking-normal, 0.05em);
 }
 
 .category-item:hover {
-  background: var(--primary-bg);
-  color: var(--primary-color);
+  background: rgba(45, 90, 74, 0.08);
+  color: var(--primary-color, #2d5a4a);
 }
 
 .category-item.active {
-  background: var(--primary-color);
+  background: var(--primary-color, #2d5a4a);
   color: #fff;
-}
-
-.category-item.active .el-tag {
-  background: rgba(255, 255, 255, 0.2) !important;
-  color: #fff !important;
-  border-color: transparent !important;
-}
-
-.category-item:hover .el-tag {
-  background: var(--primary-color) !important;
-  color: #fff !important;
-  border-color: transparent !important;
-}
-
-.category-item .el-tag {
-  font-weight: 600;
-  background: var(--primary-color);
-  color: #fff !important;
-  border: none;
-  min-width: 24px;
-  text-align: center;
-}
-
-.category-item .el-tag .el-tag__content {
-  color: #fff !important;
 }
 
 .category-left {
@@ -112,19 +86,76 @@ const handleClick = cat => {
   gap: 10px;
 }
 
-.category-icon {
-  font-size: 18px;
-  opacity: 0.6;
+.category-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink-light, #8c8c8c);
+  flex-shrink: 0;
   transition: all var(--transition-fast);
 }
 
-.category-item:hover .category-icon {
-  opacity: 1;
-  color: var(--primary-color);
+.category-item:hover .category-dot {
+  background: var(--primary-color, #2d5a4a);
+  box-shadow: 0 0 4px rgba(45, 90, 74, 0.3);
 }
 
-.category-item.active .category-icon {
-  opacity: 1;
+.category-item.active .category-dot {
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.5);
+}
+
+.category-name {
+  font-weight: 500;
+}
+
+.category-count {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  background: var(--bg-primary, #f5f2eb);
+  color: var(--ink-light, #8c8c8c);
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--paper-aged, #ddd6c8);
+  min-width: 24px;
+  text-align: center;
+  font-family: 'SimSun', serif;
+  transition: all var(--transition-fast);
+}
+
+.category-item:hover .category-count {
+  background: var(--primary-light, #e8f0ec);
+  color: var(--primary-color, #2d5a4a);
+  border-color: var(--primary-color, #2d5a4a);
+}
+
+.category-item.active .category-count {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+[data-theme='dark'] .category-item {
+  color: var(--text-secondary, #c4beb0);
+}
+
+[data-theme='dark'] .category-item:hover {
+  background: rgba(74, 157, 130, 0.12);
+  color: var(--primary-color, #4a9d82);
+}
+
+[data-theme='dark'] .category-item.active {
+  background: var(--primary-color, #4a9d82);
   color: #fff;
+}
+
+[data-theme='dark'] .category-dot {
+  background: var(--text-tertiary, #8c8578);
+}
+
+[data-theme='dark'] .category-count {
+  background: var(--bg-tertiary, #252219);
+  color: var(--text-tertiary, #8c8578);
+  border-color: var(--border-color, #3d3830);
 }
 </style>

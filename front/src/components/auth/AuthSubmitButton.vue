@@ -1,15 +1,14 @@
 <template>
-  <el-button
-    type="primary"
-    :loading="loading"
-    :disabled="disabled"
+  <button
+    type="button"
     class="auth-submit-btn"
-    size="default"
+    :class="{ 'is-disabled': disabled, 'is-loading': loading }"
+    :disabled="disabled"
     @click="$emit('click')"
   >
     <span v-if="!loading">{{ text }}</span>
     <span v-else>{{ loadingText }}</span>
-  </el-button>
+  </button>
 </template>
 
 <script setup>
@@ -41,14 +40,25 @@ defineEmits(['click'])
   height: 40px;
   font-size: 14px;
   font-weight: 600;
-  border-radius: var(--radius-sm);
-  letter-spacing: 1px;
+  border-radius: var(--radius-xs);
+  letter-spacing: var(--tracking-wide, 0.1em);
+  background: var(--vermilion-color, #c53d43);
+  border: none;
+  color: #fff;
+  font-family: "KaiTi", "STKaiti", "楷体", serif;
+  cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.15),
+    1px 1px 6px rgba(197, 61, 67, 0.3);
 }
 
 .auth-submit-btn:hover:not(:disabled) {
+  background: var(--vermilion-hover, #a02f33);
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.35);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.2),
+    0 4px 12px rgba(197, 61, 67, 0.35);
 }
 
 .auth-submit-btn:active:not(:disabled) {
@@ -57,5 +67,12 @@ defineEmits(['click'])
 
 .auth-submit-btn.is-disabled {
   opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--ink-light, #8c8c8c) !important;
+  box-shadow: none !important;
+}
+
+.auth-submit-btn.is-loading {
+  cursor: wait;
 }
 </style>

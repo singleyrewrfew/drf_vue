@@ -286,6 +286,7 @@ onMounted(() => {
   padding: 32px 0;
   min-height: calc(100vh - var(--header-height) - 200px);
   background: var(--bg-color);
+  font-family: "KaiTi", "STKaiti", "楷体", serif;
 }
 
 .container {
@@ -295,23 +296,25 @@ onMounted(() => {
 }
 
 .profile-card {
-  background: var(--card-bg);
-  border-radius: var(--radius-lg);
+  background: var(--paper-cream, #ede8dc);
+  border-radius: var(--radius-sm, 4px);
   padding: 24px;
-  border: 1px solid var(--border-light);
+  border: 1.5px solid var(--paper-aged, #ddd6c8);
   position: sticky;
   top: 96px;
 }
 
 .avatar-section {
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   padding: 24px 0;
-  border-bottom: 2px solid var(--border-light);
+  border-bottom: 2px solid var(--paper-aged, #ddd6c8);
   margin-bottom: 20px;
 }
 
 .avatar-wrapper {
-  display: inline-block;
   position: relative;
 }
 
@@ -322,28 +325,31 @@ onMounted(() => {
   left: -4px;
   right: -4px;
   bottom: -4px;
-  background: var(--primary-color);
+  background: var(--vermilion-color, #c53d43);
   border-radius: 50%;
   z-index: -1;
   opacity: 0.15;
 }
 
 .avatar-section .el-avatar {
-  border: 4px solid #fff;
-  box-shadow: var(--shadow-lg);
+  border: 3px solid var(--vermilion-color, #c53d43);
+  box-shadow: 0 2px 8px rgba(197, 61, 67, 0.25);
 }
 
 .avatar-section h3 {
   margin-top: 16px;
   font-size: 20px;
-  color: var(--text-primary);
-  font-weight: 600;
+  color: var(--ink-dark, #1a1a1a);
+  font-weight: 700;
+  font-family: "Noto Serif SC", "SimSun", serif;
+  letter-spacing: 0.05em;
 }
 
 .avatar-section p {
   font-size: 14px;
-  color: var(--text-tertiary);
+  color: var(--ink-medium, #595959);
   margin-top: 6px;
+  font-family: "KaiTi", "STKaiti", serif;
 }
 
 .profile-menu {
@@ -351,17 +357,20 @@ onMounted(() => {
 }
 
 .profile-menu .el-menu-item {
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-xs, 2px);
   margin: 4px 0;
   transition: all var(--transition-fast);
+  font-family: "KaiTi", "STKaiti", serif;
+  letter-spacing: 0.05em;
 }
 
 .profile-menu .el-menu-item:hover {
-  background: var(--primary-bg) !important;
+  background: rgba(197, 61, 67, 0.08) !important;
+  color: var(--vermilion-color, #c53d43) !important;
 }
 
 .profile-menu .el-menu-item.is-active {
-  background: var(--primary-color) !important;
+  background: var(--vermilion-color, #c53d43) !important;
   color: #fff !important;
 }
 
@@ -370,11 +379,11 @@ onMounted(() => {
 }
 
 .content-card {
-  background: var(--card-bg);
-  border-radius: var(--radius-lg);
+  background: var(--paper-cream, #ede8dc);
+  border-radius: var(--radius-sm, 4px);
   padding: 32px;
   min-height: 500px;
-  border: 1px solid var(--border-light);
+  border: 1.5px solid var(--paper-aged, #ddd6c8);
 }
 
 .content-card h2 {
@@ -382,14 +391,17 @@ onMounted(() => {
   align-items: center;
   gap: 10px;
   font-size: 20px;
-  color: var(--text-primary);
+  color: var(--ink-dark, #1a1a1a);
   margin-bottom: 28px;
   padding-bottom: 16px;
-  border-bottom: 2px solid var(--border-light);
+  border-bottom: 2px solid var(--paper-aged, #ddd6c8);
+  font-family: "Noto Serif SC", "SimSun", serif;
+  font-weight: 700;
+  letter-spacing: 0.08em;
 }
 
 .content-card h2 .el-icon {
-  color: var(--primary-color);
+  color: var(--vermilion-color, #c53d43);
   font-size: 22px;
 }
 
@@ -398,25 +410,28 @@ onMounted(() => {
 }
 
 .profile-form :deep(.el-form-item__label) {
-  font-weight: 500;
-  color: var(--text-primary);
+  font-weight: 600;
+  color: var(--ink-dark, #1a1a1a);
+  font-family: "KaiTi", "STKaiti", serif;
+  letter-spacing: 0.03em;
 }
 
 .profile-form :deep(.el-input__wrapper) {
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-xs, 2px);
   padding: 4px 12px;
   box-shadow: none;
-  border: 1px solid var(--border-color);
+  border: 1.5px solid var(--paper-aged, #ddd6c8);
   transition: all var(--transition-fast);
+  background: var(--bg-primary, #f5f2eb);
 }
 
 .profile-form :deep(.el-input__wrapper:hover) {
-  border-color: var(--border-dark);
+  border-color: var(--ink-medium, #595959);
 }
 
 .profile-form :deep(.el-input__wrapper.is-focus) {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 1px var(--primary-color);
+  border-color: var(--vermilion-color, #c53d43);
+  box-shadow: 0 0 0 1px rgba(197, 61, 67, 0.12);
 }
 
 .profile-form :deep(.el-input.is-disabled .el-input__wrapper) {
@@ -425,8 +440,24 @@ onMounted(() => {
 
 .save-btn {
   padding: 12px 28px;
-  font-weight: 500;
-  border-radius: var(--radius-sm);
+  font-weight: 600;
+  border-radius: var(--radius-xs, 2px);
+  background: var(--vermilion-color, #c53d43) !important;
+  border: none !important;
+  letter-spacing: 0.1em;
+  font-family: "KaiTi", "STKaiti", serif;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.15),
+    1px 1px 6px rgba(197, 61, 67, 0.3);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.save-btn:hover {
+  background: var(--vermilion-hover, #a02f33) !important;
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.2),
+    0 4px 12px rgba(197, 61, 67, 0.35);
 }
 
 .comment-list {
@@ -437,29 +468,30 @@ onMounted(() => {
 
 .comment-item {
   padding: 20px;
-  background: var(--bg-secondary);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-light);
+  background: var(--bg-primary, #f5f2eb);
+  border-radius: var(--radius-xs, 2px);
+  border: 1.5px solid var(--paper-aged, #ddd6c8);
   transition: all var(--transition-fast);
   animation: fadeInUp 0.15s ease-out backwards;
 }
 
 .comment-item:hover {
-  border-color: rgba(0, 120, 212, 0.2);
+  border-color: var(--vermilion-color, #c53d43);
 }
 
 .comment-content p {
   font-size: 15px;
-  color: var(--text-primary);
+  color: var(--ink-dark, #1a1a1a);
   line-height: 1.7;
   margin-bottom: 12px;
+  font-family: "KaiTi", "STKaiti", serif;
 }
 
 .comment-meta {
   display: flex;
   justify-content: space-between;
   font-size: 13px;
-  color: var(--text-tertiary);
+  color: var(--ink-light, #8c8c8c);
 }
 
 .comment-meta span {
@@ -469,7 +501,7 @@ onMounted(() => {
 }
 
 .article-title {
-  color: var(--primary-color);
+  color: var(--vermilion-color, #c53d43);
 }
 
 .animate-fade-in {
@@ -612,5 +644,106 @@ onMounted(() => {
   .save-btn {
     width: 100%;
   }
+}
+
+/* ===================================
+   暗色模式适配
+   Dark Mode Styles
+   =================================== */
+
+[data-theme='dark'] .profile-page {
+  background: var(--bg-color);
+}
+
+[data-theme='dark'] .profile-card,
+[data-theme='dark'] .content-card {
+  background: #27272a;
+  border-color: #3f3f46;
+}
+
+[data-theme='dark'] .avatar-section {
+  border-bottom-color: #3f3f46;
+}
+
+[data-theme='dark'] .avatar-wrapper::before {
+  background: rgba(197, 61, 67, 0.4);
+}
+
+[data-theme='dark'] .avatar-section h3 {
+  color: #e4e4e7;
+}
+
+[data-theme='dark'] .avatar-section p {
+  color: #a1a1aa;
+}
+
+[data-theme='dark'] .profile-menu .el-menu-item:hover {
+  background: rgba(197, 61, 67, 0.15) !important;
+}
+
+[data-theme='dark'] .content-card h2 {
+  color: #e4e4e7;
+  border-bottom-color: #3f3f46;
+}
+
+[data-theme='dark'] .content-card h2 .el-icon {
+  color: #ef4444;
+}
+
+[data-theme='dark'] .profile-form :deep(.el-form-item__label) {
+  color: #e4e4e7;
+}
+
+[data-theme='dark'] .profile-form :deep(.el-input__wrapper) {
+  background: #3f3f46;
+  border-color: #52525b;
+}
+
+[data-theme='dark'] .profile-form :deep(.el-input__wrapper:hover) {
+  border-color: #71717a;
+}
+
+[data-theme='dark'] .profile-form :deep(.el-input__wrapper.is-focus) {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.15);
+}
+
+[data-theme='dark'] .profile-form :deep(.el-input.is-disabled .el-input__wrapper) {
+  background: #27272a;
+}
+
+[data-theme='dark'] .save-btn {
+  background: #dc2626 !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.15),
+    1px 1px 6px rgba(220, 38, 38, 0.35);
+}
+
+[data-theme='dark'] .save-btn:hover {
+  background: #b91c1c !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.2),
+    0 4px 12px rgba(220, 38, 38, 0.45);
+}
+
+[data-theme='dark'] .comment-item {
+  background: #3f3f46;
+  border-color: #52525b;
+}
+
+[data-theme='dark'] .comment-item:hover {
+  border-color: #ef4444;
+}
+
+[data-theme='dark'] .comment-content p {
+  color: #e4e4e7;
+}
+
+[data-theme='dark'] .comment-meta {
+  color: #a1a1aa;
+}
+
+[data-theme='dark'] .article-title {
+  color: #f87171;
 }
 </style>

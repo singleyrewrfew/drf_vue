@@ -13,10 +13,9 @@
       />
       <div class="cover-overlay"></div>
       <div v-if="showTopTag && article.is_top" class="article-badges">
-        <el-tag type="danger" size="small" effect="dark" class="top-tag">
-          <el-icon><Top /></el-icon>
+        <span class="top-tag">
           置顶
-        </el-tag>
+        </span>
       </div>
       <div v-if="showCategory && article.category_name" class="article-category">
         {{ article.category_name }}
@@ -44,12 +43,8 @@
           <span>{{ article.author_name }}</span>
         </div>
         <div v-if="showStats" class="article-stats">
-          <span
-            ><el-icon><View /></el-icon> {{ article.view_count }}</span
-          >
-          <span
-            ><el-icon><Clock /></el-icon> {{ formatDate(article.created_at) }}</span
-          >
+          <span><el-icon><View /></el-icon> {{ article.view_count }}</span>
+          <span><el-icon><Calendar /></el-icon> {{ formatDate(article.created_at) }}</span>
         </div>
       </div>
     </div>
@@ -59,7 +54,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { View, Clock, Top } from '@element-plus/icons-vue'
+import { Calendar, View } from '@element-plus/icons-vue'
 import { getCoverUrl, getAvatarUrl, getArticleUrl, formatDate } from '@/utils'
 
 const props = defineProps({
@@ -110,7 +105,7 @@ const emit = defineEmits(['click'])
 
 const router = useRouter()
 
-const animationDelay = computed(() => `${props.index * 0.1}s`)
+const animationDelay = computed(() => `${props.index * 0.12}s`)
 
 const highlightText = text => {
   if (!text || !props.highlightKeyword) return text
@@ -126,30 +121,36 @@ const handleClick = () => {
 </script>
 
 <style scoped>
+/* ====== 卡片容器 (宣纸书卷风格) ====== */
 .article-card {
-  background: var(--card-bg);
-  border-radius: var(--radius-lg);
+  background: var(--paper-cream, #ede8dc);
+  border-radius: var(--radius-sm);
   overflow: hidden;
   cursor: pointer;
-  transition: all var(--transition-fast);
-  border: 1px solid var(--border-light);
+  transition: all var(--transition-normal);
+  border: 1px solid var(--paper-aged, #ddd6c8);
   position: relative;
-  animation: fadeInUp 0.15s ease-out backwards;
+  box-shadow:
+    0 2px 4px rgba(26, 26, 26, 0.04),
+    0 4px 8px rgba(26, 26, 26, 0.02);
 }
 
 .article-card:hover {
-  border-color: var(--primary-color);
-  box-shadow: var(--shadow-md);
+  border-color: var(--ink-medium, #595959);
+  box-shadow:
+    0 4px 8px rgba(26, 26, 26, 0.08),
+    0 8px 16px rgba(26, 26, 26, 0.04);
 }
 
+/* ====== 布局模式 ====== */
 .article-card--grid {
   display: block;
 }
 
 .article-card--horizontal {
   display: flex;
-  gap: 24px;
-  padding: 24px;
+  gap: 20px;
+  padding: 20px;
 }
 
 .article-card--list {
@@ -157,9 +158,11 @@ const handleClick = () => {
   flex-direction: column;
 }
 
+/* ====== 封面图区域 (水墨边框) ====== */
 .article-cover {
   position: relative;
   overflow: hidden;
+  border-bottom: 1px solid var(--paper-aged, #ddd6c8);
 }
 
 .article-card--grid .article-cover {
@@ -170,7 +173,9 @@ const handleClick = () => {
   width: 220px;
   height: 140px;
   flex-shrink: 0;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--paper-aged, #ddd6c8);
+  border-bottom: none;
 }
 
 .article-card--list .article-cover {
@@ -181,11 +186,13 @@ const handleClick = () => {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.6s ease;
+  transition: transform 0.4s ease;
+  filter: sepia(0.05) contrast(1.05);
 }
 
 .article-card:hover .article-cover img {
-  transform: scale(1.08);
+  transform: scale(1.03);
+  filter: sepia(0.08) contrast(1.08);
 }
 
 .cover-overlay {
@@ -194,7 +201,10 @@ const handleClick = () => {
   left: 0;
   right: 0;
   height: 50%;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.3));
+  background: linear-gradient(
+    transparent,
+    rgba(45, 90, 74, 0.15)
+  );
   opacity: 0;
   transition: opacity var(--transition-normal);
 }
@@ -203,43 +213,54 @@ const handleClick = () => {
   opacity: 1;
 }
 
+/* ====== 徽章/标签 (印章风格) ====== */
 .article-badges {
   position: absolute;
-  top: 12px;
-  left: 12px;
+  top: 10px;
+  left: 10px;
   z-index: 1;
 }
 
 .top-tag {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-weight: 500;
-}
-
-.top-tag :deep(.el-tag__content) {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+  padding: 3px 10px;
+  background: var(--vermilion-color, #c53d43);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'SimSun', serif;
+  letter-spacing: 0.05em;
+  border-radius: var(--radius-xs);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.2),
+    1px 1px 4px rgba(197, 61, 67, 0.25);
 }
 
 .article-category {
   position: absolute;
-  bottom: 12px;
-  left: 12px;
-  padding: 4px 12px;
-  background: var(--primary-color);
+  bottom: 10px;
+  left: 10px;
+  padding: 3px 10px;
+  background: var(--vermilion-color, #c53d43);
   color: #fff;
-  font-size: 12px;
-  border-radius: var(--radius-sm);
-  font-weight: 500;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'SimSun', serif;
+  letter-spacing: 0.03em;
+  border-radius: var(--radius-xs);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.2),
+    1px 1px 4px rgba(197, 61, 67, 0.25);
 }
 
 .article-card--horizontal .article-category {
   position: static;
   margin-top: 8px;
+  display: inline-block;
 }
 
+/* ====== 信息区域 ====== */
 .article-info {
   flex: 1;
   display: flex;
@@ -247,7 +268,7 @@ const handleClick = () => {
 }
 
 .article-card--grid .article-info {
-  padding: 20px;
+  padding: 18px;
 }
 
 .article-card--horizontal .article-info {
@@ -255,20 +276,23 @@ const handleClick = () => {
 }
 
 .article-card--list .article-info {
-  padding: 16px;
+  padding: 14px;
 }
 
+/* ====== 标题 (楷体墨黑) ====== */
 .article-title {
   font-size: 17px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--ink-black, #1a1a1a);
   margin-bottom: 10px;
-  line-height: 1.5;
+  line-height: 1.7;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   transition: color var(--transition-fast);
+  font-family: "KaiTi", "STKaiti", "楷体", "Noto Serif SC", serif;
+  letter-spacing: 0.03em;
 }
 
 .article-card--horizontal .article-title {
@@ -277,25 +301,29 @@ const handleClick = () => {
 }
 
 .article-card:hover .article-title {
-  color: var(--primary-color);
+  color: var(--primary-color, #2d5a4a);
 }
 
 .article-title :deep(mark) {
-  background: var(--danger-bg);
-  color: var(--danger-color);
+  background: var(--vermilion-light, #fce4e4);
+  color: var(--vermilion-color, #c53d43);
   padding: 0 2px;
+  border-radius: 1px;
 }
 
+/* ====== 摘要 (楷体中墨) ====== */
 .article-summary {
   font-size: 14px;
-  color: var(--text-secondary);
-  line-height: 1.7;
-  height: 48px;
+  color: var(--ink-medium, #595959);
+  line-height: 1.9;
+  height: 52px;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
+  font-family: "KaiTi", "STKaiti", "楷体", "Noto Serif SC", serif;
+  letter-spacing: 0.02em;
 }
 
 .article-card--horizontal .article-summary {
@@ -306,17 +334,20 @@ const handleClick = () => {
 }
 
 .article-summary :deep(mark) {
-  background: var(--danger-bg);
-  color: var(--danger-color);
+  background: var(--vermilion-light, #fce4e4);
+  color: var(--vermilion-color, #c53d43);
   padding: 0 2px;
+  border-radius: 1px;
 }
 
+/* ====== 底部信息栏 (淡墨风格) ====== */
 .article-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding-top: 12px;
-  border-top: 1px solid var(--border-light);
+  border-top: 1px solid var(--paper-aged, #ddd6c8);
+  margin-top: auto;
 }
 
 .article-card--horizontal .article-footer {
@@ -327,21 +358,26 @@ const handleClick = () => {
 .article-author {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   font-size: 13px;
-  color: var(--text-secondary);
+  color: var(--ink-medium, #595959);
+  font-family: "KaiTi", "STKaiti", "楷体", serif;
 }
 
 .article-author .el-avatar {
-  border-radius: var(--radius-sm) !important;
-  border: 2px solid var(--border-light);
+  border-radius: var(--radius-xs) !important;
+  border: 1px solid var(--paper-aged, #ddd6c8) !important;
+  font-family: 'SimSun', serif;
+  background: var(--bg-secondary, #ede8dc) !important;
+  color: var(--text-primary) !important;
 }
 
 .article-stats {
   display: flex;
-  gap: 14px;
-  font-size: 12px;
-  color: var(--text-tertiary);
+  gap: 12px;
+  font-size: 11px;
+  color: var(--ink-light, #8c8c8c);
+  font-family: "KaiTi", "STKaiti", "楷体", serif;
 }
 
 .article-stats span {
@@ -350,20 +386,61 @@ const handleClick = () => {
   gap: 4px;
 }
 
+.article-stats .el-icon {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
 .article-card--horizontal .article-stats span {
-  padding: 4px 10px;
-  background: var(--bg-secondary);
-  border-radius: var(--radius-sm);
+  padding: 3px 8px;
+  background: var(--bg-primary, #f5f2eb);
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--paper-aged, #ddd6c8);
   transition: all var(--transition-fast);
 }
 
 .article-card--horizontal .article-stats span:hover {
-  background: var(--primary-bg);
-  color: var(--primary-color);
+  background: var(--primary-light, #e8f0ec);
+  color: var(--primary-color, #2d5a4a);
+  border-color: var(--primary-color, #2d5a4a);
+}
+
+[data-theme='dark'] .article-card {
+  background: var(--card-bg, #1a1814);
+  border-color: var(--border-color, #3d3830);
+}
+
+[data-theme='dark'] .article-card:hover {
+  border-color: #5c5649;
+}
+
+[data-theme='dark'] .article-cover {
+  border-bottom-color: var(--border-color, #3d3830);
+}
+
+[data-theme='dark'] .article-title {
+  color: var(--text-primary, #e8e4d9);
+}
+
+[data-theme='dark'] .article-summary {
+  color: var(--text-secondary, #c4beb0);
+}
+
+[data-theme='dark'] .article-author {
+  color: var(--text-secondary, #c4beb0);
+}
+
+[data-theme='dark'] .article-stats {
+  color: var(--text-tertiary, #8c8578);
+}
+
+[data-theme='dark'] .article-footer {
+  border-top-color: var(--border-color, #3d3830);
 }
 
 [data-theme='dark'] .article-card--horizontal .article-stats span {
-  background: var(--bg-tertiary);
+  background: var(--bg-tertiary, #252219);
+  border-color: var(--border-color, #3d3830);
 }
 
 @media (max-width: 768px) {
@@ -430,12 +507,12 @@ const handleClick = () => {
   }
 
   .top-tag {
-    font-size: 11px;
-    padding: 2px 6px !important;
+    font-size: 10px;
+    padding: 2px 8px;
   }
 
   .article-category {
-    font-size: 11px;
+    font-size: 10px;
     padding: 2px 8px;
   }
 }

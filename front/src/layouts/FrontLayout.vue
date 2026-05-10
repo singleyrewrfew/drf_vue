@@ -72,15 +72,33 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   background: var(--bg-color);
+  position: relative;
+}
+
+/* 宣纸纹理叠加层 */
+.front-layout::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    radial-gradient(circle at 20% 50%, rgba(45, 90, 74, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(197, 61, 67, 0.02) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .main {
   flex: 1;
+  position: relative;
+  z-index: 1;
 }
 
 .fade-slide-enter-active,
 .fade-slide-leave-active {
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
 }
 
 .fade-slide-enter-from {

@@ -180,19 +180,35 @@ export const useUserStore = defineStore('user', () => {
    * @returns {Promise<Object>} 登录响应数据
    */
   const login = async credentials => {
-    const response = await userApi.login(credentials)
+    try {
+      const response = await userApi.login(credentials)
 
-    // axios 响应拦截器已经将 responseData.data 赋值给 response.data
-    const data = response.data
+      let data = response.data
 
-    token.value = data.access
-    refreshToken.value = data.refresh
-    // 使用 Object.assign 确保响应式更新
-    if (data.user) {
-      user.value = { ...data.user } // 创建新对象触发响应式
+      if (!data || typeof data !== 'object') {
+        throw new Error('登录响应数据格式错误')
+      }
+
+      if (!data.access || !data.refresh) {
+        console.error('Login response missing tokens:', data)
+        throw new Error('登录响应缺少令牌信息')
+      }
+
+      token.value = data.access
+      refreshToken.value = data.refresh
+
+      if (data.user) {
+        user.value = { ...data.user }
+      }
+
+      saveToStorage()
+
+      return data
+    } catch (error) {
+      console.error('Login failed:', error)
+      clearStorage()
+      throw error
     }
-    saveToStorage()
-    return data
   }
 
   /**

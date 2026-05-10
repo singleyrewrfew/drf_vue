@@ -49,9 +49,9 @@ defineProps({
 .page-header {
   margin-bottom: 32px;
   padding: 24px 28px;
-  background: var(--card-bg);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-light);
+  background: var(--paper-cream, #ede8dc);
+  border-radius: var(--radius-sm, 4px);
+  border: 1.5px solid var(--paper-aged, #ddd6c8);
 }
 
 .page-header h1 {
@@ -59,24 +59,29 @@ defineProps({
   align-items: center;
   gap: 12px;
   font-size: 26px;
-  color: var(--text-primary);
-  margin-bottom: 8px;
+  color: var(--ink-dark, #1a1a1a);
+  margin-bottom: 10px;
   font-weight: 700;
+  font-family: "Noto Serif SC", "SimSun", serif;
+  letter-spacing: 0.05em;
 }
 
 .page-header h1 .el-icon {
-  color: var(--primary-color);
+  color: var(--vermilion-color, #c53d43);
   font-size: 28px;
 }
 
 .page-header p {
-  color: var(--text-secondary);
+  color: var(--ink-medium, #595959);
   font-size: 14px;
+  font-family: "KaiTi", "STKaiti", serif;
+  letter-spacing: 0.03em;
 }
 
 .page-header .count {
-  color: var(--primary-color);
+  color: var(--vermilion-color, #c53d43);
   font-weight: 600;
+  font-size: 16px;
 }
 
 @media (max-width: 768px) {
@@ -98,5 +103,28 @@ defineProps({
   .page-header h1 {
     font-size: 20px;
   }
+}
+
+/* ====== 暗色模式适配 ====== */
+
+[data-theme='dark'] .page-header {
+  background: #27272a;
+  border-color: #3f3f46;
+}
+
+[data-theme='dark'] .page-header h1 {
+  color: #e4e4e7;
+}
+
+[data-theme='dark'] .page-header h1 .el-icon {
+  color: #ef4444;
+}
+
+[data-theme='dark'] .page-header p {
+  color: #a1a1aa;
+}
+
+[data-theme='dark'] .page-header .count {
+  color: #ef4444;
 }
 </style>

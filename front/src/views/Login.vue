@@ -37,7 +37,7 @@
 
     <template #footer>
       <span>还没有账号？</span>
-      <el-button type="primary" link @click="$router.push('/register')">立即注册</el-button>
+      <span class="auth-link" @click="$router.push('/register')">立即注册</span>
     </template>
   </AuthCard>
 </template>
@@ -70,15 +70,29 @@ const rules = {
 }
 
 const handleLogin = async () => {
-  await formRef.value.validate()
+  try {
+    await formRef.value.validate()
+  } catch (error) {
+    return
+  }
+
   loading.value = true
   try {
     await userStore.login(form)
     ElMessage.success('登录成功')
+
     const redirect = route.query.redirect || '/'
-    router.push(redirect)
+
+    await router.push(redirect)
   } catch (error) {
-    ElMessage.error(error.response?.data?.detail || '登录失败')
+    const errorMsg =
+      error.response?.data?.detail ||
+      error.response?.data?.message ||
+      error.message ||
+      '登录失败'
+
+    console.error('Login error:', error)
+    ElMessage.error(errorMsg)
   } finally {
     loading.value = false
   }
@@ -106,5 +120,36 @@ const handleLogin = async () => {
 
 .forgot-link:hover {
   color: var(--primary-dark);
+}
+
+.auth-link {
+  color: var(--vermilion-color, #c53d43);
+  font-weight: 600;
+  margin-left: 3px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: "KaiTi", "STKaiti", "楷体", serif;
+  letter-spacing: 0.05em;
+  position: relative;
+}
+
+.auth-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--vermilion-color, #c53d43);
+  transition: width 0.25s ease;
+}
+
+.auth-link:hover {
+  color: var(--vermilion-hover, #a02f33);
+}
+
+.auth-link:hover::after {
+  width: 100%;
 }
 </style>

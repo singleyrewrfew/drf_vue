@@ -2,7 +2,7 @@
 
 /* ===================================
    GLOBAL RESET & BASE STYLES
-   Premium Typography & Spacing
+   《剑来》书卷排版系统
    =================================== */
 
 * {
@@ -18,13 +18,19 @@ html {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar {
+  display: none;
 }
 
 body {
   font-family: var(--font-sans);
   color: var(--text-primary);
   background-color: var(--bg-color);
-  min-height: 100dvh; /* 使用 dvh 替代 vh，防止移动端布局跳动 */
+  min-height: 100dvh;
   overflow-x: hidden;
 }
 
@@ -33,45 +39,50 @@ body {
 }
 
 /* ===================================
-   CUSTOM SCROLLBAR (Premium Style)
+   CUSTOM SCROLLBAR (水墨风格)
    =================================== */
 
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--bg-secondary);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border-dark);
-  border-radius: var(--radius-full);
-  border: none;
+  background: var(--text-tertiary);
+  border-radius: 2px;
+  border: 2px solid var(--bg-secondary);
   transition: background var(--transition-fast);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-tertiary);
+  background: var(--text-secondary);
+}
+
+[data-theme='dark'] ::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
 }
 
 [data-theme='dark'] ::-webkit-scrollbar-thumb {
-  background: #3f3f46;
+  background: #5c5649;
+  border-color: var(--bg-tertiary);
 }
 
 [data-theme='dark'] ::-webkit-scrollbar-thumb:hover {
-  background: #52525b;
+  background: #8c8578;
 }
 
 /* ===================================
-   TYPOGRAPHY ENHANCEMENTS
+   TYPOGRAPHY ENHANCEMENTS (书卷风格)
    =================================== */
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
   font-weight: 700;
-  letter-spacing: var(--tracking-tight);
+  letter-spacing: var(--tracking-wide);
   line-height: var(--line-height-tight);
   color: var(--text-primary);
 }
@@ -86,7 +97,8 @@ h6 { font-size: var(--font-size-base); }
 p {
   color: var(--text-secondary);
   line-height: var(--line-height-relaxed);
-  max-width: 65ch; /* 最佳阅读宽度 */
+  max-width: 65ch;
+  text-align: justify;
 }
 
 a {
@@ -116,16 +128,16 @@ a:hover::after {
 }
 
 /* ===================================
-   BUTTON SYSTEM (Premium Interactions)
+   BUTTON SYSTEM (印章/书卷风格)
    =================================== */
 
 button {
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-family: var(--font-sans);
   font-weight: 500;
-  transition: all var(--transition-fast);
+  transition: all var(--transition-normal);
   position: relative;
   overflow: hidden;
 }
@@ -140,26 +152,26 @@ button:active {
 }
 
 .el-button--primary {
-  background: var(--primary-gradient);
+  background: var(--vermilion-color);
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   color: #ffffff;
   font-weight: 600;
   letter-spacing: var(--tracking-wide);
   padding: 10px 24px;
-  box-shadow: var(--shadow-primary);
+  box-shadow: var(--shadow-vermilion);
   transition: all var(--transition-normal);
 }
 
 .el-button--primary:hover {
+  background: var(--vermilion-hover);
   transform: translateY(-1px);
-  box-shadow: var(--shadow-primary-lg);
-  filter: brightness(1.05);
+  box-shadow: 0 4px 16px rgba(197, 61, 67, 0.25);
 }
 
 .el-button--primary:active {
   transform: translateY(0) scale(0.97);
-  box-shadow: var(--shadow-primary);
+  box-shadow: var(--shadow-vermilion);
 }
 
 .el-button--default {
@@ -231,12 +243,12 @@ button:active {
 }
 
 /* ===================================
-   CARD SYSTEM (Premium Elevation)
+   CARD SYSTEM (宣纸/书卷风格)
    =================================== */
 
 .el-card {
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
   background: var(--card-bg);
   box-shadow: var(--shadow-xs);
   transition: all var(--transition-slow);
@@ -244,9 +256,8 @@ button:active {
 }
 
 .el-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-diffusion);
-  border-color: rgba(var(--primary-rgb), 0.15);
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-dark);
 }
 
 /* ===================================
@@ -395,50 +406,62 @@ button:active {
 }
 
 /* ===================================
-   MESSAGE / TOAST (Premium Notifications)
+   MESSAGE / TOAST (《剑来》古风配色)
    =================================== */
 
 .el-message {
-  border: none;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  backdrop-filter: blur(12px);
+  font-family: "KaiTi", "STKaiti", "楷体", serif;
+  border-radius: var(--radius-sm, 4px);
   padding: 12px 20px;
-  max-width: 420px;
+  border: 1.5px solid;
 }
 
-.el-message--info {
-  background: linear-gradient(135deg, #ecfeff 0%, #cffafe 100%);
-  border-left: 4px solid var(--primary-color);
+.el-message .el-message__content {
+  letter-spacing: 0.05em;
 }
 
+/* 成功 - 竹青色 */
 .el-message--success {
-  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
-  border-left: 4px solid var(--success-color);
+  background: #f0fdf4;
+  border-color: #166534;
+  color: #14532d;
 }
 
-.el-message--warning {
-  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
-  border-left: 4px solid var(--warning-color);
+.el-message--success .el-message__icon {
+  color: #166534;
 }
 
+/* 错误 - 朱红色 */
 .el-message--error {
-  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-  border-left: 4px solid var(--error-color);
+  background: #fef2f2;
+  border-color: #991b1b;
+  color: #7f1d1d;
 }
 
-/* Dark Mode Messages */
-[data-theme='dark'] .el-message--info {
-  background: linear-gradient(135deg, #083344 0%, #164e63 100%);
+.el-message--error .el-message__icon {
+  color: #991b1b;
 }
-[data-theme='dark'] .el-message--success {
-  background: linear-gradient(135deg, #052e16 0%, #064e3b 100%);
+
+/* 警告 - 琥珀色 */
+.el-message--warning {
+  background: #fffbeb;
+  border-color: #92400e;
+  color: #78350f;
 }
-[data-theme='dark'] .el-message--warning {
-  background: linear-gradient(135deg, #451a03 0%, #451a03 100%);
+
+.el-message--warning .el-message__icon {
+  color: #92400e;
 }
-[data-theme='dark'] .el-message--error {
-  background: linear-gradient(135deg, #450a0a 0%, #450a0a 100%);
+
+/* 信息 - 墨色 */
+.el-message--info {
+  background: #f8fafc;
+  border-color: #334155;
+  color: #1e293b;
+}
+
+.el-message--info .el-message__icon {
+  color: #334155;
 }
 
 /* ===================================

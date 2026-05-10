@@ -80,13 +80,13 @@ const isDynamicIcon = computed(() => {
   height: 42px;
   padding: 0;
   margin: 0;
-  border-radius: 10px;
-  background: var(--card-bg, #fff);
-  border: 1px solid var(--border-light, #e5e7eb);
-  color: var(--text-secondary, #6b7280);
+  border-radius: var(--radius-xs, 2px);
+  background: var(--paper-cream, #ede8dc);
+  border: 1.5px solid var(--paper-aged, #ddd6c8);
+  color: var(--ink-medium, #595959);
   box-shadow:
-    0 2px 8px rgba(0, 0, 0, 0.08),
-    0 1px 2px rgba(0, 0, 0, 0.04);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.5),
+    1px 1px 4px rgba(26, 26, 26, 0.08);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
@@ -101,38 +101,21 @@ const isDynamicIcon = computed(() => {
   cursor: not-allowed;
 }
 
-.action-btn::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  background: radial-gradient(circle, currentColor 0%, transparent 70%);
-  transform: translate(-50%, -50%);
-  transition: width 0.4s ease, height 0.4s ease;
-  border-radius: 50%;
-  opacity: 0;
-}
-
 .action-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.08), rgba(var(--primary-rgb), 0.04));
-  color: var(--primary-color);
+  background: var(--vermilion-color, #c53d43);
+  color: #fff;
+  border-color: var(--vermilion-color, #c53d43);
   box-shadow:
-    0 6px 20px rgba(var(--primary-rgb), 0.15),
-    0 2px 8px rgba(var(--primary-rgb), 0.08);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.2),
+    0 4px 12px rgba(197, 61, 67, 0.3);
   transform: translateY(-2px);
 }
 
-.action-btn:hover:not(:disabled)::before {
-  width: 60px;
-  height: 60px;
-  opacity: 0.15;
-}
-
 .action-btn:active:not(:disabled) {
-  transform: scale(0.94) translateY(0);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  transform: scale(0.96) translateY(0);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.15),
+    1px 1px 4px rgba(197, 61, 67, 0.25);
 }
 
 .action-btn svg {
@@ -157,24 +140,21 @@ const isDynamicIcon = computed(() => {
 
 /* 沉浸式按钮 - 统一透明风格 */
 .immersive-btn {
-  background: var(--card-bg, #fff);
-  color: var(--text-secondary, #6b7280);
-  border: none;
+  background: var(--paper-cream, #ede8dc);
+  color: var(--ink-medium, #595959);
+  border: 1.5px solid var(--paper-aged, #ddd6c8);
   box-shadow:
-    0 2px 8px rgba(0, 0, 0, 0.08),
-    0 1px 2px rgba(0, 0, 0, 0.04);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.5),
+    1px 1px 4px rgba(26, 26, 26, 0.08);
 }
 
 .immersive-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.12), rgba(var(--primary-rgb), 0.06));
-  color: var(--primary-color);
+  background: var(--vermilion-color, #c53d43);
+  color: #fff;
+  border-color: var(--vermilion-color, #c53d43);
   box-shadow:
-    0 8px 24px rgba(var(--primary-rgb), 0.2),
-    0 4px 12px rgba(var(--primary-rgb), 0.1);
-}
-
-.immersive-btn::before {
-  background: radial-gradient(circle, currentColor 0%, transparent 70%);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.2),
+    0 4px 12px rgba(197, 61, 67, 0.3);
 }
 
 /* 目录按钮 - 图标微调居中 */
@@ -190,14 +170,16 @@ const isDynamicIcon = computed(() => {
   font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
-  background: var(--card-bg);
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: var(--paper-cream, #ede8dc);
+  border: 1.5px solid var(--paper-aged, #ddd6c8);
+  border-radius: var(--radius-xs, 2px);
+  box-shadow: 1px 1px 6px rgba(26, 26, 26, 0.1);
   opacity: 0;
   visibility: hidden;
   transform: translateX(10px);
   transition: all 0.25s ease;
   pointer-events: none;
+  color: var(--ink-dark, #1a1a1a);
 }
 
 .action-btn:hover:not(:disabled) .btn-label {
@@ -206,27 +188,40 @@ const isDynamicIcon = computed(() => {
   transform: translateX(0);
 }
 
-/* ====== 深色模式适配 ====== */
-[data-theme='dark'] .action-btn:not(.immersive-btn) {
-  background: rgba(39, 39, 42, 0.95);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.7);
+/* ====== 暗色模式适配 ====== */
+[data-theme='dark'] .action-btn {
+  background: #27272a;
+  border-color: #3f3f46;
+  color: #a1a1aa;
   box-shadow:
-    0 2px 12px rgba(0, 0, 0, 0.4),
-    0 1px 4px rgba(0, 0, 0, 0.2);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    1px 1px 4px rgba(0, 0, 0, 0.3);
 }
 
-[data-theme='dark'] .action-btn:not(.immersive-btn):hover:not(:disabled) {
-  background: rgba(var(--primary-rgb), 0.15);
-  border-color: rgba(var(--primary-rgb), 0.4);
+[data-theme='dark'] .action-btn:hover:not(:disabled) {
+  background: #dc2626;
+  color: #fff;
+  border-color: #dc2626;
   box-shadow:
-    0 8px 24px rgba(var(--primary-rgb), 0.2),
-    0 2px 8px rgba(var(--primary-rgb), 0.1);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.15),
+    0 4px 12px rgba(220, 38, 38, 0.4);
+}
+
+[data-theme='dark'] .immersive-btn {
+  background: #27272a;
+  border-color: #3f3f46;
+  color: #a1a1aa;
+}
+
+[data-theme='dark'] .immersive-btn:hover:not(:disabled) {
+  background: #dc2626;
+  border-color: #dc2626;
 }
 
 [data-theme='dark'] .btn-label {
-  background: rgba(39, 39, 42, 0.98);
-  color: rgba(255, 255, 255, 0.9);
+  background: #27272a;
+  border-color: #3f3f46;
+  color: #e4e4e7;
 }
 
 /* ====== 响应式设计 ====== */
@@ -234,7 +229,7 @@ const isDynamicIcon = computed(() => {
   .action-btn {
     width: 38px;
     height: 38px;
-    border-radius: 9px;
+    border-radius: var(--radius-xs, 2px);
   }
 
   .action-btn svg {

@@ -1,5 +1,5 @@
 <template>
-  <SidebarContainer title="热门文章" :icon="TrendCharts">
+  <SidebarContainer title="热门文章">
     <div class="hot-list">
       <div
         v-for="(article, index) in displayArticles"
@@ -7,14 +7,13 @@
         class="hot-item"
         @click="handleClick(article)"
       >
-        <span class="hot-rank" :class="{ top: index < 3 }">{{ index + 1 }}</span>
         <div class="hot-info">
-          <h4>{{ article.title }}</h4>
-          <div class="hot-meta">
-            <span
-              ><el-icon><View /></el-icon> {{ article.view_count }}</span
-            >
-          </div>
+          <el-tooltip :content="article.title" placement="top" :show-after="300">
+            <div class="scrolling-wrapper">
+              <h4 class="scrolling-title">{{ article.title }}</h4>
+              <h4 class="scrolling-title" aria-hidden="true">{{ article.title }}</h4>
+            </div>
+          </el-tooltip>
         </div>
       </div>
     </div>
@@ -24,7 +23,6 @@
 <script setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { TrendCharts, View } from '@element-plus/icons-vue'
 import SidebarContainer from './SidebarContainer.vue'
 import { getArticleUrl } from '@/utils'
 
@@ -58,77 +56,75 @@ const handleClick = article => {
 
 .hot-item {
   display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 14px 0;
-  border-bottom: 1px solid var(--border-light);
+  align-items: center;
+  gap: 12px;
+  padding: 10px 10px;
+  border-bottom: 1px solid var(--paper-aged, #ddd6c8);
   cursor: pointer;
   transition: all var(--transition-fast);
 }
 
 .hot-item:last-child {
   border-bottom: none;
-  padding-bottom: 0;
-}
-
-.hot-item:first-child {
-  padding-top: 0;
 }
 
 .hot-item:hover {
-  transform: translateX(4px);
-}
-
-.hot-rank {
-  width: 26px;
-  height: 26px;
-  border-radius: var(--radius-sm);
-  background: var(--bg-tertiary);
-  color: var(--text-tertiary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 700;
-  flex-shrink: 0;
-  transition: all var(--transition-fast);
-}
-
-.hot-rank.top {
-  background: var(--primary-color);
-  color: #fff;
-}
-
-.hot-item:hover .hot-rank {
-  transform: scale(1.1);
+  background: rgba(45, 90, 74, 0.06);
+  color: var(--primary-color, #2d5a4a);
+  border-radius: var(--radius-xs);
 }
 
 .hot-info {
   flex: 1;
   min-width: 0;
-}
-
-.hot-info h4 {
-  font-size: 14px;
-  color: var(--text-primary);
-  line-height: 1.5;
-  margin-bottom: 6px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
   overflow: hidden;
-  transition: color var(--transition-fast);
 }
 
-.hot-item:hover .hot-info h4 {
-  color: var(--primary-color);
-}
-
-.hot-meta {
-  font-size: 12px;
-  color: var(--text-tertiary);
+.scrolling-wrapper {
   display: flex;
-  align-items: center;
-  gap: 4px;
+  width: max-content;
+  animation: scroll-left 15s linear infinite;
+}
+
+.scrolling-wrapper:hover {
+  animation-play-state: paused;
+}
+
+.scrolling-title {
+  font-size: 13px;
+  color: var(--ink-medium, #595959);
+  line-height: 1.6;
+  margin: 0;
+  white-space: nowrap;
+  padding-right: 50px;
+  transition: color var(--transition-fast);
+  font-family: "KaiTi", "STKaiti", "楷体", "Noto Serif SC", serif;
+  letter-spacing: var(--tracking-normal, 0.03em);
+}
+
+.hot-item:hover .scrolling-title {
+  color: var(--primary-color, #2d5a4a);
+}
+
+@keyframes scroll-left {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+[data-theme='dark'] .hot-item {
+  border-bottom-color: var(--border-color, #3d3830);
+}
+
+[data-theme='dark'] .hot-item:hover {
+  background: rgba(74, 157, 130, 0.08);
+  color: var(--primary-color, #4a9d82);
+}
+
+[data-theme='dark'] .scrolling-title {
+  color: var(--text-secondary, #c4beb0);
 }
 </style>

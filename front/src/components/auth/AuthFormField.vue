@@ -9,6 +9,7 @@
       size="default"
       @update:model-value="$emit('update:modelValue', $event)"
     />
+    <slot></slot>
   </el-form-item>
 </template>
 

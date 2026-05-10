@@ -25,17 +25,17 @@
           icon="message"
         />
 
-        <el-form-item label="密码" prop="password" class="password-field">
-          <el-input
-            v-model="form.password"
-            type="password"
-            placeholder="请输入密码"
-            :prefix-icon="Lock"
-            show-password
-            size="default"
-          />
+        <AuthFormField
+          v-model="form.password"
+          label="密码"
+          prop="password"
+          type="password"
+          placeholder="请输入密码"
+          icon="lock"
+          show-password
+        >
           <PasswordStrength :password="form.password" />
-        </el-form-item>
+        </AuthFormField>
 
         <AuthFormField
           v-model="form.password_confirm"
@@ -68,7 +68,7 @@
 
     <template #footer>
       <span>已有账号？</span>
-      <el-button type="primary" link @click="$router.push('/login')">立即登录</el-button>
+      <span class="auth-link" @click="$router.push('/login')">立即登录</span>
     </template>
   </AuthCard>
 </template>
@@ -77,7 +77,6 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Lock } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import AuthCard from '@/components/auth/AuthCard.vue'
 import AuthFormField from '@/components/auth/AuthFormField.vue'
@@ -143,17 +142,6 @@ const handleRegister = async () => {
 </script>
 
 <style scoped>
-.password-field {
-  margin-bottom: 16px;
-}
-
-.password-field :deep(.el-form-item__label) {
-  font-weight: 500;
-  color: var(--text-primary);
-  padding-bottom: 6px;
-  font-size: 13px;
-}
-
 .terms-row {
   margin-bottom: 20px;
 }
@@ -170,5 +158,36 @@ const handleRegister = async () => {
 
 .terms-link:hover {
   color: var(--primary-dark);
+}
+
+.auth-link {
+  color: var(--vermilion-color, #c53d43);
+  font-weight: 600;
+  margin-left: 3px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: "KaiTi", "STKaiti", "楷体", serif;
+  letter-spacing: 0.05em;
+  position: relative;
+}
+
+.auth-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--vermilion-color, #c53d43);
+  transition: width 0.25s ease;
+}
+
+.auth-link:hover {
+  color: var(--vermilion-hover, #a02f33);
+}
+
+.auth-link:hover::after {
+  width: 100%;
 }
 </style>

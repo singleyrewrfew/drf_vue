@@ -10,10 +10,9 @@
       </button>
 
       <div class="logo" @click="$router.push('/')">
-        <span class="logo-icon">C</span>
+        <span class="logo-icon">Y</span>
         <div class="logo-text">
-          <span class="logo-title">CMS</span>
-          <span class="logo-subtitle">内容管理系统</span>
+          <span class="logo-title">YNCAQY</span>
         </div>
       </div>
 
@@ -49,7 +48,7 @@
       <div class="search-box">
         <el-input
           v-model="searchKeyword"
-          placeholder="搜索文章..."
+          placeholder="搜章寻句..."
           @keyup.enter="handleSearch"
           @clear="handleSearchClear"
           clearable
@@ -220,10 +219,10 @@ watch(searchKeyword, (newVal, oldVal) => {
 
 <style scoped>
 .app-header {
-  background: var(--bg-primary);
+  background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid var(--border-light);
+  border-bottom: 2px solid var(--border-color);
   position: sticky;
   top: 0;
   z-index: var(--z-sticky);
@@ -255,7 +254,7 @@ watch(searchKeyword, (newVal, oldVal) => {
 }
 
 .mobile-menu-btn:hover {
-  background: var(--bg-secondary);
+  background: var(--bg-tertiary);
 }
 
 .mobile-menu-btn svg {
@@ -277,21 +276,29 @@ watch(searchKeyword, (newVal, oldVal) => {
 }
 
 .logo-icon {
-  width: 44px;
-  height: 44px;
-  background: var(--primary-color);
-  border-radius: var(--radius-sm);
+  width: 42px;
+  height: 42px;
+  background: var(--vermilion-color);
+  border-radius: var(--radius-xs);
+  border: 2px solid var(--ink-dark);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
   font-size: 22px;
   font-weight: bold;
+  font-family: 'SimSun', serif;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.2),
+    2px 2px 8px rgba(197, 61, 67, 0.3);
   transition: all var(--transition-fast);
 }
 
 .logo:hover .logo-icon {
-  transform: scale(1.02);
+  transform: scale(1.05) rotate(-3deg);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.25),
+    3px 3px 12px rgba(197, 61, 67, 0.4);
 }
 
 .logo-text {
@@ -300,16 +307,12 @@ watch(searchKeyword, (newVal, oldVal) => {
 }
 
 .logo-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--primary-color);
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-primary);
   line-height: 1.2;
-}
-
-.logo-subtitle {
-  font-size: 11px;
-  color: var(--text-secondary);
-  letter-spacing: 0.5px;
+  letter-spacing: var(--tracking-wide);
+  font-family: var(--font-display);
 }
 
 .nav {
@@ -321,14 +324,16 @@ watch(searchKeyword, (newVal, oldVal) => {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 12px;
+  padding: 8px 14px;
   color: var(--text-secondary);
   text-decoration: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-xs);
   transition: all var(--transition-fast);
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
+  font-family: var(--font-sans);
+  letter-spacing: var(--tracking-normal);
 }
 
 .nav-item .arrow {
@@ -354,6 +359,19 @@ watch(searchKeyword, (newVal, oldVal) => {
   color: var(--primary-color);
   background: var(--primary-bg);
   font-weight: 600;
+  position: relative;
+}
+
+.nav-item.router-link-exact-active::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 16px;
+  height: 2px;
+  background: var(--primary-color);
+  border-radius: 1px;
 }
 
 .search-box {
@@ -362,11 +380,11 @@ watch(searchKeyword, (newVal, oldVal) => {
 }
 
 .search-box :deep(.el-input__wrapper) {
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-xs);
   background: var(--bg-secondary);
   box-shadow: none;
   padding: 4px 12px;
-  border: 1px solid transparent;
+  border: 1px solid var(--border-light);
   transition: all var(--transition-fast);
 }
 
@@ -383,10 +401,12 @@ watch(searchKeyword, (newVal, oldVal) => {
 
 .search-box :deep(.el-input__inner) {
   font-size: 14px;
+  font-family: var(--font-sans);
 }
 
 .search-box :deep(.el-input__inner::placeholder) {
   color: var(--text-placeholder);
+  font-style: italic;
 }
 
 .user-area {
@@ -399,7 +419,7 @@ watch(searchKeyword, (newVal, oldVal) => {
 .theme-toggle {
   width: 40px;
   height: 40px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-xs);
   background: var(--bg-secondary);
   border: 1px solid transparent;
   display: flex;
@@ -413,6 +433,7 @@ watch(searchKeyword, (newVal, oldVal) => {
 .theme-toggle:hover {
   background: var(--primary-bg);
   color: var(--primary-color);
+  border-color: var(--border-color);
 }
 
 .theme-icon {
@@ -430,14 +451,14 @@ watch(searchKeyword, (newVal, oldVal) => {
   gap: 10px;
   cursor: pointer;
   padding: 6px 12px 6px 6px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-xs);
   transition: all var(--transition-fast);
   background: transparent;
 }
 
 .user-info .el-avatar {
-  border-radius: var(--radius-sm) !important;
-  border: none;
+  border-radius: var(--radius-xs) !important;
+  border: 1px solid var(--border-color);
   transition: all var(--transition-fast);
 }
 
@@ -446,13 +467,14 @@ watch(searchKeyword, (newVal, oldVal) => {
 }
 
 .user-info:hover .el-avatar {
-  box-shadow: 0 0 0 2px var(--primary-light);
+  box-shadow: 0 0 0 2px var(--primary-color);
 }
 
 .username {
   color: var(--text-primary);
   font-weight: 500;
   font-size: 14px;
+  font-family: var(--font-sans);
 }
 
 .dropdown-arrow {
@@ -472,7 +494,7 @@ watch(searchKeyword, (newVal, oldVal) => {
   gap: 8px;
   cursor: pointer;
   padding: 4px 8px 4px 4px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-xs);
   transition: all var(--transition-fast);
   background: transparent;
 }
@@ -482,17 +504,20 @@ watch(searchKeyword, (newVal, oldVal) => {
 }
 
 .guest-avatar-icon {
-  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark, #1e40af)) !important;
+  background: var(--vermilion-color) !important;
   color: #fff !important;
   font-size: 16px !important;
   font-weight: 600 !important;
-  border-radius: var(--radius-sm) !important;
-  border: none !important;
+  border-radius: var(--radius-xs) !important;
+  border: 2px solid var(--ink-dark) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.2),
+    1px 1px 4px rgba(197, 61, 67, 0.3) !important;
   transition: all var(--transition-fast);
 }
 
 .guest-avatar:hover .guest-avatar-icon {
-  box-shadow: 0 0 0 2px var(--primary-light);
+  box-shadow: 0 0 0 2px var(--vermilion-color), 2px 2px 8px rgba(197, 61, 67, 0.4);
   transform: scale(1.05);
 }
 

@@ -157,18 +157,19 @@ onUnmounted(() => {
   align-items: center;
   gap: 6px;
   padding: 8px 12px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
+  background: var(--paper-cream, #ede8dc);
+  border: 1.5px solid var(--paper-aged, #ddd6c8);
+  border-radius: var(--radius-xs, 2px);
   font-size: 14px;
-  color: var(--text-primary);
-  transition: all var(--transition-fast);
+  color: var(--ink-medium, #595959);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: "KaiTi", "STKaiti", serif;
 }
 
 .win-dropdown-default-trigger:hover {
-  background: var(--primary-bg);
-  border-color: var(--primary-color);
-  color: var(--primary-color);
+  background: var(--vermilion-color, #c53d43);
+  border-color: var(--vermilion-color, #c53d43);
+  color: #fff;
 }
 
 .win-dropdown-arrow {
@@ -180,41 +181,50 @@ onUnmounted(() => {
 }
 
 .win-dropdown-menu {
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-md);
-  padding: 4px;
+  background: var(--paper-cream, #ede8dc);
+  border: 1.5px solid var(--paper-aged, #ddd6c8);
+  border-radius: var(--radius-xs, 2px);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.4),
+    1px 1px 6px rgba(26, 26, 26, 0.08);
+  padding: 6px;
   max-height: 280px;
   overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.win-dropdown-menu::-webkit-scrollbar {
+  display: none;
 }
 
 .win-dropdown-item {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
-  border-radius: var(--radius-xs);
+  padding: 10px 12px;
+  border-radius: var(--radius-xs, 2px);
   font-size: 14px;
-  color: var(--text-primary);
+  color: var(--ink-dark, #1a1a1a);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  font-family: "KaiTi", "STKaiti", serif;
+  letter-spacing: 0.03em;
 }
 
 .win-dropdown-item:hover {
-  background: var(--primary-bg);
-  color: var(--primary-color);
+  background: rgba(197, 61, 67, 0.08);
+  color: var(--vermilion-color, #c53d43);
 }
 
 .win-dropdown-item.is-disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
 .win-dropdown-item.is-disabled:hover {
   background: transparent;
-  color: var(--text-primary);
+  color: var(--ink-dark, #1a1a1a);
 }
 
 .win-dropdown-item-icon {
@@ -230,63 +240,112 @@ onUnmounted(() => {
 }
 
 .win-dropdown-empty {
-  padding: 16px;
+  padding: 20px;
   text-align: center;
-  color: var(--text-tertiary);
+  color: var(--ink-light, #8c8c8c);
   font-size: 14px;
+  font-family: "KaiTi", "STKaiti", serif;
 }
 
 .win-dropdown-fade-enter-active,
 .win-dropdown-fade-leave-active {
-  transition: all 0.15s ease;
+  transition: all 0.18s ease;
 }
 
 .win-dropdown-fade-enter-from,
 .win-dropdown-fade-leave-to {
   opacity: 0;
-  transform: translateY(-8px);
+  transform: translateY(-6px) scale(0.97);
+}
+
+/* ====== 暗色模式适配 ====== */
+
+[data-theme='dark'] .win-dropdown-default-trigger {
+  background: #27272a;
+  border-color: #3f3f46;
+  color: #a1a1aa;
+}
+
+[data-theme='dark'] .win-dropdown-default-trigger:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #fff;
+}
+
+[data-theme='dark'] .win-dropdown-menu {
+  background: #27272a;
+  border-color: #3f3f46;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    1px 1px 8px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme='dark'] .win-dropdown-item {
+  color: #e4e4e7;
+}
+
+[data-theme='dark'] .win-dropdown-item:hover {
+  background: rgba(220, 38, 38, 0.12);
+  color: #ef4444;
+}
+
+[data-theme='dark'] .win-dropdown-item.is-disabled:hover {
+  color: #e4e4e7;
+}
+
+[data-theme='dark'] .win-dropdown-empty {
+  color: #71717a;
 }
 </style>
 
 <style>
 .win-dropdown-menu {
   position: fixed;
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-md);
-  padding: 4px;
+  background: var(--paper-cream, #ede8dc);
+  border: 1.5px solid var(--paper-aged, #ddd6c8);
+  border-radius: var(--radius-xs, 2px);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.4),
+    1px 1px 6px rgba(26, 26, 26, 0.08);
+  padding: 6px;
   max-height: 280px;
   overflow-y: auto;
   z-index: 2000;
+  scrollbar-width: none;
+}
+
+.win-dropdown-menu::-webkit-scrollbar {
+  display: none;
 }
 
 .win-dropdown-menu .win-dropdown-item {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
-  border-radius: var(--radius-xs);
+  padding: 10px 12px;
+  border-radius: var(--radius-xs, 2px);
   font-size: 14px;
-  color: var(--text-primary);
+  color: var(--ink-dark, #1a1a1a);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  font-family: "KaiTi", "STKaiti", serif;
+  letter-spacing: 0.03em;
 }
 
 .win-dropdown-menu .win-dropdown-item:hover {
-  background: var(--primary-bg);
-  color: var(--primary-color);
+  background: rgba(197, 61, 67, 0.08);
+  color: var(--vermilion-color, #c53d43);
 }
 
 .win-dropdown-menu .win-dropdown-item.is-disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
 .win-dropdown-menu .win-dropdown-item.is-disabled:hover {
   background: transparent;
-  color: var(--text-primary);
+  color: var(--ink-dark, #1a1a1a);
 }
 
 .win-dropdown-menu .win-dropdown-item-icon {
@@ -302,9 +361,37 @@ onUnmounted(() => {
 }
 
 .win-dropdown-menu .win-dropdown-empty {
-  padding: 16px;
+  padding: 20px;
   text-align: center;
-  color: var(--text-tertiary);
+  color: var(--ink-light, #8c8c8c);
   font-size: 14px;
+  font-family: "KaiTi", "STKaiti", serif;
+}
+
+/* ====== 暗色模式适配（Teleport 到 body 的菜单） ====== */
+
+[data-theme='dark'] .win-dropdown-menu {
+  background: #27272a;
+  border-color: #3f3f46;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    1px 1px 8px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme='dark'] .win-dropdown-menu .win-dropdown-item {
+  color: #e4e4e7;
+}
+
+[data-theme='dark'] .win-dropdown-menu .win-dropdown-item:hover {
+  background: rgba(220, 38, 38, 0.12);
+  color: #ef4444;
+}
+
+[data-theme='dark'] .win-dropdown-menu .win-dropdown-item.is-disabled:hover {
+  color: #e4e4e7;
+}
+
+[data-theme='dark'] .win-dropdown-menu .win-dropdown-empty {
+  color: #71717a;
 }
 </style>

@@ -15,7 +15,7 @@
       <div class="auth-card">
         <div class="auth-header">
           <div class="auth-logo">
-            <span class="logo-icon">C</span>
+            <span class="logo-icon">Y</span>
           </div>
           <h2>{{ title }}</h2>
           <p>{{ subtitle }}</p>
@@ -80,7 +80,7 @@ defineProps({
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, #0078d4 0%, #106ebe 50%, #005a9e 100%);
+  background: linear-gradient(135deg, #2d5a4a 0%, #1a3529 50%, #3d7a5f 100%);
   background-size: 400% 400%;
   animation: gradient 15s ease infinite;
 }
@@ -175,16 +175,17 @@ defineProps({
 }
 
 .auth-card {
-  background: var(--card-bg);
+  background: var(--paper-cream, #ede8dc);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   padding: 24px 20px;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--paper-aged, #ddd6c8);
   box-shadow:
-    0 20px 40px -12px rgba(0, 0, 0, 0.15),
-    0 8px 16px -8px rgba(0, 0, 0, 0.08);
-  animation: fadeInUp 0.2s ease-out;
+    0 2px 4px rgba(26, 26, 26, 0.04),
+    0 4px 8px rgba(26, 26, 26, 0.02),
+    0 8px 16px rgba(26, 26, 26, 0.04);
+  animation: fadeInUp 0.3s ease-out;
   max-height: calc(100vh - 32px);
   max-height: calc(100dvh - 32px);
   overflow-y: auto;
@@ -223,15 +224,19 @@ defineProps({
 .logo-icon {
   width: 42px;
   height: 42px;
-  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark, #1e40af));
-  border-radius: var(--radius-sm);
+  background: var(--vermilion-color, #c53d43);
+  border-radius: var(--radius-xs);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
   font-size: 22px;
   font-weight: bold;
-  box-shadow: 0 3px 10px rgba(var(--primary-rgb), 0.25);
+  font-family: 'SimSun', serif;
+  border: 2px solid var(--ink-dark, #1a1a1a);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.2),
+    2px 2px 8px rgba(197, 61, 67, 0.3);
 }
 
 .auth-header h2 {
@@ -239,13 +244,15 @@ defineProps({
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 5px;
-  letter-spacing: -0.01em;
+  letter-spacing: var(--tracking-wide, 0.1em);
+  font-family: "Noto Serif SC", "Source Han Serif SC", "SimSun", "Georgia", serif;
 }
 
 .auth-header p {
   color: var(--text-secondary);
   font-size: 12px;
   line-height: 1.4;
+  font-family: "KaiTi", "STKaiti", "楷体", "Noto Serif SC", serif;
 }
 
 .auth-form {
@@ -268,23 +275,23 @@ defineProps({
 }
 
 .auth-form :deep(.el-input__wrapper) {
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-xs);
   padding: 2px 9px;
   box-shadow: none;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--paper-aged, #ddd6c8);
   transition: all var(--transition-fast);
-  background: var(--bg-primary);
+  background: var(--bg-primary, #f5f2eb);
 }
 
 .auth-form :deep(.el-input__wrapper:hover) {
-  border-color: var(--border-dark);
-  background: var(--bg-secondary);
+  border-color: var(--ink-medium, #595959);
+  background: var(--paper-cream, #ede8dc);
 }
 
 .auth-form :deep(.el-input__wrapper.is-focus) {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.15);
-  background: var(--card-bg);
+  border-color: var(--primary-color, #2d5a4a);
+  box-shadow: 0 0 0 1px rgba(45, 90, 74, 0.15);
+  background: var(--card-bg, #faf7f2);
 }
 
 .auth-form :deep(.el-input__inner) {
@@ -310,24 +317,26 @@ defineProps({
   content: '';
   flex: 1;
   height: 1px;
-  background: var(--border-light);
+  background: var(--paper-aged, #ddd6c8);
 }
 
 .auth-divider span {
   padding: 0 12px;
-  color: var(--text-tertiary);
+  color: var(--ink-light, #8c8c8c);
   font-size: 12px;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--tracking-wide, 0.1em);
+  font-family: "KaiTi", "STKaiti", "楷体", serif;
 }
 
 .auth-footer {
   text-align: center;
-  color: var(--text-secondary);
+  color: var(--ink-medium, #595959);
   font-size: 12px;
   padding-top: 16px;
-  border-top: 1px solid var(--border-light);
+  border-top: 1px solid var(--paper-aged, #ddd6c8);
   line-height: 1.4;
+  font-family: "KaiTi", "STKaiti", "楷体", serif;
 }
 
 .auth-footer .el-button {
@@ -336,24 +345,7 @@ defineProps({
   font-size: 12px;
 }
 
-.submit-btn {
-  width: 100%;
-  height: 38px;
-  font-size: 13px;
-  font-weight: 600;
-  border-radius: var(--radius-sm);
-  letter-spacing: 0.8px;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
 
-.submit-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(var(--primary-rgb), 0.3);
-}
-
-.submit-btn:active:not(:disabled) {
-  transform: translateY(0) scale(0.98);
-}
 
 @media (max-width: 480px) {
   .auth-page {
@@ -383,11 +375,6 @@ defineProps({
     font-size: 20px;
   }
 
-  .submit-btn {
-    height: 36px;
-    font-size: 13px;
-  }
-
   .auth-form :deep(.el-form-item) {
     margin-bottom: 14px;
   }
@@ -414,12 +401,6 @@ defineProps({
     width: 38px;
     height: 38px;
     font-size: 19px;
-  }
-
-  .submit-btn {
-    height: 36px;
-    font-size: 12px;
-    letter-spacing: 0.5px;
   }
 
   .auth-form :deep(.el-input__inner) {
