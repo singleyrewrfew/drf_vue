@@ -126,4 +126,19 @@ const hasNav = computed(() => {
     padding: 16px;
   }
 }
+
+/* 暗色模式适配 */
+[data-theme='dark'] .article-nav {
+  background: #27272a;
+  border-color: #3f3f46;
+}
+
+[data-theme='dark'] .nav-item {
+  color: #a1a1aa;
+}
+
+[data-theme='dark'] .nav-item:hover,
+[data-theme='dark'] .nav-item.is-active {
+  color: var(--dark-vermilion-light, #ef4444);
+}
 </style>

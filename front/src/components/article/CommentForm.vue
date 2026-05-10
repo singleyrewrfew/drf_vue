@@ -386,44 +386,68 @@ onBeforeUnmount(() => {
   pointer-events: none;
 }
 
-[data-theme='dark'] .editor-wrapper {
-  border-color: var(--border-color);
+[data-theme='dark'] .comment-form-wrapper {
+  background: #27272a;
 }
 
-[data-theme='dark'] .comment-editor :deep(.tiptap pre) {
-  background: var(--bg-tertiary);
-  border-color: var(--border-dark);
+[data-theme='dark'] .user-avatar {
+  border-color: #3f3f46;
 }
 
 [data-theme='dark'] .rich-toolbar {
-  background: var(--bg-tertiary);
+  background: #3f3f46;
+}
+
+[data-theme='dark'] .tool-btn {
+  color: #a1a1aa;
 }
 
 [data-theme='dark'] .tool-btn:hover,
 [data-theme='dark'] .tool-btn.is-active {
-  background: var(--bg-secondary);
+  color: var(--dark-vermilion-light, #ef4444);
+  background: rgba(220, 38, 38, 0.12);
+}
+
+[data-theme='dark'] .toolbar-divider {
+  background: #52525b;
+}
+
+[data-theme='dark'] .editor-wrapper {
+  border-color: #3f3f46;
+  background: #27272a;
+}
+
+[data-theme='dark'] .comment-editor :deep(.tiptap) {
+  color: var(--dark-text, #e4e4e7);
+}
+
+[data-theme='dark'] .comment-editor :deep(.tiptap p) {
+  color: var(--dark-text, #e4e4e7);
+}
+
+[data-theme='dark'] .comment-editor :deep(.tiptap p.is-editor-empty:first-child::before) {
+  color: #71717a;
+}
+
+[data-theme='dark'] .comment-editor :deep(.tiptap a) {
+  color: var(--dark-vermilion-light, #ef4444);
+}
+
+[data-theme='dark'] .comment-editor :deep(.tiptap pre) {
+  background: #18181b;
+  border-color: #3f3f46;
+}
+
+[data-theme='dark'] .format-hint {
+  color: #71717a;
+}
+
+[data-theme='dark'] .char-count {
+  color: #71717a;
 }
 
 [data-theme='dark'] .emoji-item:hover {
-  background: var(--bg-secondary);
-}
-
-[data-theme='dark'] .el-dialog {
-  --el-dialog-bg-color: var(--card-bg);
-  --el-dialog-title-font-size: 16px;
-}
-
-[data-theme='dark'] .el-dialog .el-input__wrapper {
-  background: var(--bg-secondary);
-  box-shadow: 0 0 0 1px var(--border-color) inset;
-}
-
-[data-theme='dark'] .el-dialog .el-input__inner {
-  color: var(--text-primary);
-}
-
-[data-theme='dark'] .el-dialog .el-form-item__label {
-  color: var(--text-secondary);
+  background: rgba(220, 38, 38, 0.12);
 }
 
 .comment-form-footer {

@@ -115,6 +115,29 @@
     'SimSun', '宋体',
     Georgia, "Palatino Linotype", "Times New Roman", serif;
 
+  /* 《剑来》专用字体变量 */
+  --font-kai: "KaiTi", "STKaiti", "楷体", "Noto Serif SC", serif;
+  --font-kai-simple: "KaiTi", "STKaiti", serif;
+  --font-song: "Noto Serif SC", "Source Han Serif SC", "SimSun", "Georgia", serif;
+  --font-song-simple: 'SimSun', serif;
+
+  /* 《剑来》古风配色令牌 (统一使用) */
+  --paper-cream: #ede8dc;
+  --paper-aged: #ddd6c8;
+  --ink-dark: #1a1a1a;
+  --ink-medium: #595959;
+  --ink-light: #8c8c8c;
+
+  /* 暗色模式专用变量 */
+  --dark-bg: #27272a;
+  --dark-bg-deep: #18181b;
+  --dark-border: #3f3f46;
+  --dark-border-light: #52525b;
+  --dark-text: #e4e4e7;
+  --dark-text-muted: #a1a1aa;
+  --dark-vermilion: #dc2626;
+  --dark-vermilion-light: #ef4444;
+
   /* Type Scale (古籍字号) */
   --font-size-xs: 0.75rem;     /* 12px */
   --font-size-sm: 0.875rem;    /* 14px */
@@ -242,6 +265,13 @@
   --shadow-primary: 0 2px 12px rgba(74, 157, 130, 0.25);
   --shadow-primary-md: 0 4px 16px rgba(74, 157, 130, 0.3);
   --shadow-primary-lg: 0 8px 24px rgba(74, 157, 130, 0.35);
+
+  /* 《剑来》暗色配色令牌 */
+  --paper-cream: #27272a;
+  --paper-aged: #3f3f46;
+  --ink-dark: #e4e4e7;
+  --ink-medium: #a1a1aa;
+  --ink-light: #71717a;
 }
 
 /* ===================================

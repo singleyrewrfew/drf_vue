@@ -75,4 +75,20 @@ defineEmits(['click'])
 .auth-submit-btn.is-loading {
   cursor: wait;
 }
+
+/* 暗色模式适配 */
+[data-theme='dark'] .auth-submit-btn {
+  background: var(--dark-vermilion, #dc2626);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1),
+    1px 1px 6px rgba(220, 38, 38, 0.3);
+}
+
+[data-theme='dark'] .auth-submit-btn:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+[data-theme='dark'] .auth-submit-btn.is-disabled {
+  background: #3f3f46 !important;
+}
 </style>

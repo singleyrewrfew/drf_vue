@@ -464,6 +464,54 @@ const handleReplyToReply = reply => {
   margin-top: 8px;
 }
 
+/* 暗色模式适配 */
+[data-theme='dark'] .comment-item {
+  border-bottom-color: #3f3f46;
+}
+
+[data-theme='dark'] .comment-author,
+[data-theme='dark'] .reply-author {
+  color: var(--dark-text, #e4e4e7);
+}
+
+[data-theme='dark'] .comment-time,
+[data-theme='dark'] .reply-time {
+  color: #71717a;
+}
+
+[data-theme='dark'] .comment-text,
+[data-theme='dark'] .reply-text {
+  color: var(--dark-text, #e4e4e7);
+}
+
+[data-theme='dark'] .comment-text :deep(pre),
+[data-theme='dark'] .reply-text :deep(pre) {
+  background: #18181b;
+  border-color: #3f3f46;
+}
+
+[data-theme='dark'] .comment-text :deep(a),
+[data-theme='dark'] .reply-text :deep(a) {
+  color: var(--dark-vermilion-light, #ef4444);
+}
+
+[data-theme='dark'] .action-btn {
+  color: #a1a1aa;
+}
+
+[data-theme='dark'] .action-btn:hover {
+  color: var(--dark-vermilion-light, #ef4444);
+}
+
+[data-theme='dark'] .action-btn.is-liked {
+  color: var(--dark-vermilion-light, #ef4444);
+}
+
+[data-theme='dark'] .reply-section {
+  background: rgba(39, 39, 42, 0.5);
+  border-color: #3f3f46;
+}
+</style>
 @media (max-width: 768px) {
   .comment-item {
     padding: 16px 0;

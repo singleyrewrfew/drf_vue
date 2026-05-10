@@ -121,4 +121,24 @@ const iconComponent = computed(() => iconMap[props.icon] || null)
   height: 15px;
   font-size: 15px;
 }
+
+/* 暗色模式适配 */
+[data-theme='dark'] .auth-field :deep(.el-form-item__label) {
+  color: var(--dark-text, #e4e4e7);
+}
+
+[data-theme='dark'] .auth-field :deep(.el-input__wrapper) {
+  background: #27272a;
+  border-color: var(--dark-border, #3f3f46);
+}
+
+[data-theme='dark'] .auth-field :deep(.el-input__wrapper:hover) {
+  border-color: var(--dark-border-light, #52525b);
+}
+
+[data-theme='dark'] .auth-field :deep(.el-input__wrapper.is-focus) {
+  border-color: var(--dark-vermilion, #dc2626);
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.15);
+  background: #3f3f46;
+}
 </style>

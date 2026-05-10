@@ -133,4 +133,9 @@ const handleClick = article => {
     gap: 16px;
   }
 }
+
+/* 暗色模式适配 */
+[data-theme='dark'] .article-list {
+  background: #27272a;
+}
 </style>

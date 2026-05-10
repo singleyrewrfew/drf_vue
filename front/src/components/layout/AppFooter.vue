@@ -229,4 +229,34 @@
     margin-top: 20px;
   }
 }
+
+/* 暗色模式适配 */
+[data-theme='dark'] .app-footer {
+  background: #18181b;
+  border-top-color: #3f3f46;
+}
+
+[data-theme='dark'] .footer-brand .brand-title {
+  color: var(--dark-text, #e4e4e7);
+}
+
+[data-theme='dark'] .footer-brand .brand-description {
+  color: var(--dark-text-muted, #a1a1aa);
+}
+
+[data-theme='dark'] .footer-links h4 {
+  color: var(--dark-text, #e4e4e7);
+}
+
+[data-theme='dark'] .footer-links a {
+  color: #a1a1aa;
+}
+
+[data-theme='dark'] .footer-links a:hover {
+  color: var(--dark-vermilion-light, #ef4444);
+}
+
+[data-theme='dark'] .ink-divider {
+  background: linear-gradient(90deg, transparent, #3f3f46, transparent);
+}
 </style>

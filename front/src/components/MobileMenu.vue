@@ -409,4 +409,31 @@ const handleLogout = () => {
 .drawer-leave-to .mobile-menu {
   transform: translateX(100%);
 }
+
+/* 暗色模式适配 */
+[data-theme='dark'] .mobile-drawer {
+  background: #18181b;
+}
+
+[data-theme='dark'] .mobile-menu {
+  background: #27272a;
+  border-left-color: #3f3f46;
+}
+
+[data-theme='dark'] .mobile-header {
+  border-bottom-color: #3f3f46;
+}
+
+[data-theme='dark'] .mobile-header h3 {
+  color: var(--dark-text, #e4e4e7);
+}
+
+[data-theme='dark'] .close-btn {
+  color: #a1a1aa;
+}
+
+[data-theme='dark'] .close-btn:hover {
+  color: var(--dark-text, #e4e4e7);
+  background: rgba(255, 255, 255, 0.05);
+}
 </style>

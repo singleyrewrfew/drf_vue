@@ -140,4 +140,21 @@ const handleScrollBottom = () => {
   opacity: 0;
   transform: translateX(30px) scale(0.9);
 }
+
+/* 暗色模式适配 */
+[data-theme='dark'] .fab-container {
+  background: #27272a;
+  border-color: #3f3f46;
+}
+
+[data-theme='dark'] .fab-btn {
+  background: #3f3f46;
+  border-color: #52525b;
+  color: #a1a1aa;
+}
+
+[data-theme='dark'] .fab-btn:hover {
+  background: var(--dark-vermilion, #dc2626);
+  border-color: var(--dark-vermilion, #dc2626);
+}
 </style>

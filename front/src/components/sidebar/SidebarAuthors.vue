@@ -108,4 +108,10 @@ const handleClick = author => {
   font-size: 12px;
   color: var(--text-tertiary);
 }
+
+/* 暗色模式适配 */
+[data-theme='dark'] .sidebar-authors .author-item:hover {
+  background: rgba(220, 38, 38, 0.08);
+  border-color: #3f3f46;
+}
 </style>

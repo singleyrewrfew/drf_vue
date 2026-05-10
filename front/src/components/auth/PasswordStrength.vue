@@ -101,4 +101,13 @@ const strengthClass = computed(() => {
 .strength-text.very-strong {
   color: var(--success-color);
 }
+
+/* 暗色模式适配 */
+[data-theme='dark'] .strength-bar span {
+  background: #3f3f46;
+}
+
+[data-theme='dark'] .strength-text {
+  color: #a1a1aa;
+}
 </style>

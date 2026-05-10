@@ -195,4 +195,42 @@ const handleTagClick = tag => {
     width: 100%;
   }
 }
+
+/* 暗色模式适配 */
+[data-theme='dark'] .article-title {
+  color: var(--dark-text, #e4e4e7);
+}
+
+[data-theme='dark'] .article-meta {
+  border-top-color: #3f3f46;
+  border-bottom-color: #3f3f46;
+}
+
+[data-theme='dark'] .author-avatar {
+  border-color: #3f3f46;
+}
+
+[data-theme='dark'] .author-avatar:hover {
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+}
+
+[data-theme='dark'] .author-name {
+  color: var(--dark-text, #e4e4e7);
+}
+
+[data-theme='dark'] .publish-time,
+[data-theme='dark'] .stat-item {
+  color: var(--dark-text-muted, #a1a1aa);
+}
+
+[data-theme='dark'] .category-tag,
+[data-theme='dark'] .tag-item {
+  color: var(--dark-vermilion-light, #ef4444);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+[data-theme='dark'] .category-tag:hover,
+[data-theme='dark'] .tag-item:hover {
+  background: rgba(220, 38, 38, 0.12);
+}
 </style>

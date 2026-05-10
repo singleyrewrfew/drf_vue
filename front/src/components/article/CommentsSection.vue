@@ -220,4 +220,47 @@ defineExpose({
     width: calc(100% - 32px) !important;
   }
 }
+
+/* 暗色模式适配 */
+[data-theme='dark'] .comments-section {
+  border-color: #3f3f46;
+}
+
+[data-theme='dark'] .section-title {
+  color: var(--dark-text, #e4e4e7);
+}
+
+[data-theme='dark'] .section-title .el-icon {
+  color: var(--dark-vermilion-light, #ef4444);
+}
+
+[data-theme='dark'] .login-tip {
+  background: #27272a;
+}
+
+[data-theme='dark'] .login-tip p {
+  color: var(--dark-text-muted, #a1a1aa);
+}
+
+[data-theme='dark'] .show-more {
+  border-top-color: #3f3f46;
+}
+
+/* el-empty 空状态暗色适配 */
+[data-theme='dark'] :deep(.el-empty) {
+  --el-empty-fill-color-0: #3f3f46;
+  --el-empty-fill-color-1: #3f3f46;
+  --el-empty-fill-color-2: #52525b;
+  --el-empty-fill-color-3: #3f3f46;
+  --el-empty-fill-color-4: #52525b;
+  --el-empty-fill-color-5: #71717a;
+  --el-empty-fill-color-6: #52525b;
+  --el-empty-fill-color-7: #71717a;
+  --el-empty-fill-color-8: #52525b;
+  --el-empty-fill-color-9: #71717a;
+}
+
+[data-theme='dark'] :deep(.el-empty__description p) {
+  color: #71717a;
+}
 </style>

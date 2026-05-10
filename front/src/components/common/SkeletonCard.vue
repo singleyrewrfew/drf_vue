@@ -152,4 +152,14 @@ const props = defineProps({
     padding: 12px;
   }
 }
+
+/* 暗色模式适配 */
+[data-theme='dark'] .skeleton-card {
+  background: #27272a;
+  border-color: #3f3f46;
+}
+
+[data-theme='dark'] .skeleton-cover {
+  background: linear-gradient(90deg, #3f3f46 25%, #52525b 50%, #3f3f46 75%);
+}
 </style>

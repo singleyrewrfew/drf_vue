@@ -513,4 +513,18 @@ onUnmounted(() => {
 .toc-drawer-leave-to .toc-drawer {
   transform: translateX(100%);
 }
+
+/* 暗色模式适配 */
+[data-theme='dark'] .toc-container {
+  background: #27272a;
+  border-color: #3f3f46;
+}
+
+[data-theme='dark'] .toc-header {
+  border-bottom-color: #3f3f46;
+}
+
+[data-theme='dark'] .toc-title {
+  color: var(--dark-text, #e4e4e7);
+}
 </style>

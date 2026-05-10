@@ -139,4 +139,18 @@ defineProps({
   font-size: 12px;
   color: var(--text-tertiary);
 }
+
+/* 暗色模式适配 */
+[data-theme='dark'] .related-articles {
+  background: #27272a;
+  border-color: #3f3f46;
+}
+
+[data-theme='dark'] .related-item:hover .related-title {
+  color: var(--dark-vermilion-light, #ef4444);
+}
+
+[data-theme='dark'] .related-views {
+  color: #71717a;
+}
 </style>

@@ -216,4 +216,20 @@ watch(
 .win-pagination-sizes {
   margin-left: 8px;
 }
+
+/* 暗色模式适配 */
+[data-theme='dark'] .win-pagination-btn:not(:disabled) {
+  background: #27272a;
+  border-color: #3f3f46;
+  color: #a1a1aa;
+}
+
+[data-theme='dark'] .win-pagination-btn:hover:not(:disabled) {
+  border-color: var(--dark-vermilion-light, #ef4444);
+}
+
+[data-theme='dark'] .win-pagination-btn.is-active {
+  background: var(--dark-vermilion, #dc2626);
+  border-color: var(--dark-vermilion, #dc2626);
+}
 </style>

@@ -321,4 +321,28 @@ onUnmounted(() => {
   color: var(--text-tertiary);
   font-size: 14px;
 }
+
+/* 暗色模式适配 */
+[data-theme='dark'] .win-select-trigger {
+  background: #27272a;
+  border-color: #3f3f46;
+  color: #a1a1aa;
+}
+
+[data-theme='dark'] .win-select-trigger:hover {
+  border-color: #52525b;
+}
+
+[data-theme='dark'] .win-select-dropdown {
+  background: #27272a;
+  border-color: #3f3f46;
+}
+
+[data-theme='dark'] .win-select-dropdown .win-select-option {
+  color: #e4e4e7;
+}
+
+[data-theme='dark'] .win-select-dropdown .win-select-option:hover {
+  background: rgba(220, 38, 38, 0.12);
+}
 </style>

@@ -101,4 +101,16 @@
     height: 16px;
   }
 }
+
+/* 暗色模式适配 */
+[data-theme='dark'] .social-btn {
+  background: #27272a;
+  border-color: #3f3f46;
+  color: #a1a1aa;
+}
+
+[data-theme='dark'] .social-btn:hover {
+  border-color: #52525b;
+  background: #3f3f46;
+}
 </style>

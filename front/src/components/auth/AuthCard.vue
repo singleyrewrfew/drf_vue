@@ -409,4 +409,43 @@ defineProps({
     line-height: 32px;
   }
 }
+
+/* 暗色模式适配 */
+[data-theme='dark'] .auth-page {
+  background: linear-gradient(135deg, #0d0d0a 0%, #1a1814 50%, #0d0d0a 100%);
+}
+
+[data-theme='dark'] .auth-card {
+  background: #27272a;
+  border-color: #3f3f46;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+    4px 16px 40px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme='dark'] .logo-icon {
+  background: var(--dark-vermilion, #dc2626);
+  border-color: #18181b;
+}
+
+[data-theme='dark'] .auth-header h2 {
+  color: var(--dark-text, #e4e4e7);
+}
+
+[data-theme='dark'] .auth-header p {
+  color: var(--dark-text-muted, #a1a1aa);
+}
+
+[data-theme='dark'] .auth-divider {
+  background: #3f3f46;
+}
+
+[data-theme='dark'] .auth-divider span {
+  color: #71717a;
+}
+
+[data-theme='dark'] .auth-footer {
+  color: var(--dark-text-muted, #a1a1aa);
+  border-top-color: #3f3f46;
+}
 </style>

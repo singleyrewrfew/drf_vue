@@ -142,6 +142,7 @@ import TableOfContents from '@/components/article/TableOfContents.vue'
 import FloatingTOC from '@/components/article/FloatingTOC.vue'
 import { getCoverUrl, extractHeadings } from '@/utils'
 import { useFloatingActions } from '@/composables/useFloatingActions'
+import { CONFIG } from '@/constants/config'
 
 // 导入提取的样式文件
 import '@/components/article/styles/article-markdown.css'
@@ -483,6 +484,11 @@ watch(
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* 暗色模式 */
+[data-theme='dark'] .article-page {
+  background: var(--bg-color);
+}
+
 /* 沉浸式阅读模式 */
 .article-page.immersive-mode {
   padding: 0;
@@ -523,6 +529,12 @@ watch(
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* 暗色模式 - 文章主内容区 */
+[data-theme='dark'] .article-main {
+  background: var(--card-bg);
+  border-color: var(--border-light);
+}
+
 .immersive-mode .article-main {
   background: transparent;
   border: none;
@@ -533,6 +545,11 @@ watch(
 
 [data-theme='dark'] .immersive-mode .article-main {
   background: transparent;
+}
+
+/* 沉浸模式 - 隐藏评论区 */
+.immersive-mode :deep(.comments-section) {
+  display: none;
 }
 
 /* 沉浸模式下的排版优化 */

@@ -86,4 +86,18 @@ const iconComponent = computed(() => {
     font-size: 14px;
   }
 }
+
+/* 暗色模式适配 */
+[data-theme='dark'] .empty-state {
+  background: #27272a;
+  border-color: #3f3f46;
+}
+
+[data-theme='dark'] .empty-state h3 {
+  color: var(--dark-text, #e4e4e7);
+}
+
+[data-theme='dark'] .empty-state p {
+  color: var(--dark-text-muted, #a1a1aa);
+}
 </style>

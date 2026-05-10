@@ -547,4 +547,64 @@ watch(searchKeyword, (newVal, oldVal) => {
     display: none;
   }
 }
+
+/* 暗色模式适配 */
+[data-theme='dark'] .app-header {
+  background: linear-gradient(180deg, #18181b 0%, #27272a 100%);
+  border-bottom-color: #3f3f46;
+}
+
+[data-theme='dark'] .logo-title {
+  color: var(--dark-text, #e4e4e7);
+}
+
+[data-theme='dark'] .nav-item {
+  color: #a1a1aa;
+}
+
+[data-theme='dark'] .nav-item:hover {
+  color: var(--dark-vermilion-light, #ef4444);
+  background: rgba(220, 38, 38, 0.08);
+}
+
+[data-theme='dark'] .nav-item.router-link-exact-active {
+  color: var(--dark-vermilion-light, #ef4444);
+  background: rgba(220, 38, 38, 0.12);
+}
+
+[data-theme='dark'] .search-box :deep(.el-input__wrapper) {
+  background: #27272a;
+  border-color: #3f3f46;
+}
+
+[data-theme='dark'] .search-box :deep(.el-input__wrapper.is-focus) {
+  border-color: var(--dark-vermilion-light, #ef4444);
+}
+
+[data-theme='dark'] .search-box :deep(.el-input__inner) {
+  color: var(--dark-text, #e4e4e7);
+}
+
+[data-theme='dark'] .search-box :deep(.el-input__inner::placeholder) {
+  color: #71717a;
+}
+
+[data-theme='dark'] .theme-toggle {
+  background: #27272a;
+  border-color: #3f3f46;
+  color: #a1a1aa;
+}
+
+[data-theme='dark'] .theme-toggle:hover {
+  background: #3f3f46;
+  color: var(--dark-vermilion-light, #ef4444);
+}
+
+[data-theme='dark'] .user-info .username {
+  color: var(--dark-text, #e4e4e7);
+}
+
+[data-theme='dark'] .user-info:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
 </style>
