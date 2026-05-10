@@ -134,8 +134,8 @@ const handleClick = article => {
   }
 }
 
-/* 暗色模式适配 */
+/* 暗色模式适配 - 背景透明以融入整体 */
 [data-theme='dark'] .article-list {
-  background: #27272a;
+  background: transparent;
 }
 </style>
