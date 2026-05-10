@@ -81,11 +81,19 @@
           </WinDropdown>
         </template>
         <template v-else>
-          <el-button type="default" @click="$router.push('/login')">登录</el-button>
-          <el-button type="primary" @click="$router.push('/register')">注册</el-button>
+          <WinDropdown :items="guestMenuItems" @select="handleGuestMenuSelect">
+            <template #trigger>
+              <div class="guest-avatar">
+                <el-avatar :size="36" class="guest-avatar-icon">游</el-avatar>
+              </div>
+            </template>
+          </WinDropdown>
         </template>
       </div>
     </div>
+
+    <!-- 嵌入式阅读进度条 -->
+    <ReadingProgress v-if="showProgress" />
   </header>
 </template>
 
@@ -104,6 +112,7 @@ import {
 import { useUserStore } from '@/stores/user'
 import { useThemeStore } from '@/stores/theme'
 import WinDropdown from '@/components/WinDropdown.vue'
+import ReadingProgress from '@/components/article/ReadingProgress.vue'
 import { getAvatarUrl } from '@/utils'
 
 const props = defineProps({
@@ -122,6 +131,11 @@ const themeStore = useThemeStore()
 
 const searchKeyword = ref('')
 const previousPath = ref('')
+
+// 只在文章详情页显示进度条
+const showProgress = computed(() => {
+  return route.path.startsWith('/article/')
+})
 
 // 强制触发头像更新
 const userAvatar = computed(() => getAvatarUrl(userStore.user?.avatar))
@@ -149,6 +163,11 @@ const userMenuItems = [
   { label: '退出登录', value: 'logout' }
 ]
 
+const guestMenuItems = [
+  { label: '登录', value: 'login' },
+  { label: '注册', value: 'register' }
+]
+
 const handleCategorySelect = item => {
   router.push(`/category/${item.value}`)
 }
@@ -158,6 +177,14 @@ const handleUserMenuSelect = item => {
     router.push('/profile')
   } else if (item.value === 'logout') {
     emit('logout')
+  }
+}
+
+const handleGuestMenuSelect = item => {
+  if (item.value === 'login') {
+    router.push('/login')
+  } else if (item.value === 'register') {
+    router.push('/register')
   }
 }
 
@@ -319,6 +346,10 @@ watch(searchKeyword, (newVal, oldVal) => {
   background: var(--primary-bg);
 }
 
+.nav-item::after {
+  display: none;
+}
+
 .nav-item.router-link-exact-active {
   color: var(--primary-color);
   background: var(--primary-bg);
@@ -381,7 +412,6 @@ watch(searchKeyword, (newVal, oldVal) => {
 
 .theme-toggle:hover {
   background: var(--primary-bg);
-  border-color: var(--primary-color);
   color: var(--primary-color);
 }
 
@@ -434,6 +464,36 @@ watch(searchKeyword, (newVal, oldVal) => {
 .user-info:hover .dropdown-arrow {
   transform: rotate(180deg);
   color: var(--primary-color);
+}
+
+.guest-avatar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 4px 8px 4px 4px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  background: transparent;
+}
+
+.guest-avatar:hover {
+  background: var(--primary-bg);
+}
+
+.guest-avatar-icon {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark, #1e40af)) !important;
+  color: #fff !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  border-radius: var(--radius-sm) !important;
+  border: none !important;
+  transition: all var(--transition-fast);
+}
+
+.guest-avatar:hover .guest-avatar-icon {
+  box-shadow: 0 0 0 2px var(--primary-light);
+  transform: scale(1.05);
 }
 
 @media (max-width: 768px) {

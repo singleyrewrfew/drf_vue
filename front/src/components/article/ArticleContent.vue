@@ -1,14 +1,11 @@
 <template>
   <div class="article-content-wrapper">
-    <!-- 封面图 -->
     <div v-if="coverImage" class="article-cover">
       <img :src="coverImage" :alt="title" loading="lazy" />
     </div>
 
-    <!-- Markdown 内容 -->
-    <div class="article-body markdown-body" v-html="renderedContent"></div>
+    <div ref="contentRef" class="article-body markdown-body" v-html="renderedContent"></div>
 
-    <!-- 加载占位符 -->
     <div v-if="isLoading" class="content-loading">
       <el-skeleton :rows="10" animated />
     </div>
@@ -16,9 +13,8 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { marked } from 'marked'
-import hljs from 'highlight.js'
+import { computed, ref, onMounted, nextTick } from 'vue'
+import { renderMarkdown } from '@/utils/markdown'
 
 const props = defineProps({
   content: {
@@ -39,56 +35,57 @@ const props = defineProps({
   }
 })
 
-// 配置 marked
-marked.setOptions({
-  gfm: true,
-  breaks: true,
-  highlight: function (code, lang) {
-    if (lang && hljs.getLanguage(lang)) {
-      try {
-        return hljs.highlight(code, { language: lang }).value
-      } catch (e) {
-        console.error('Highlight error:', e)
-      }
-    }
-    return code
-  }
-})
+const contentRef = ref(null)
 
 const renderedContent = computed(() => {
   if (!props.content) return ''
-
-  const html = marked.parse(props.content)
-
-  const tempDiv = document.createElement('div')
-  tempDiv.innerHTML = html
-
-  // 给标题添加 ID（与 extractHeadings 保持一致的逻辑）
-  const idCounters = {}
-  const headingElements = tempDiv.querySelectorAll('h1, h2, h3, h4, h5, h6')
-
-  headingElements.forEach(el => {
-    const text = el.textContent.trim()
-
-    // 基于标题文本生成 ID
-    const baseId = text
-      .toLowerCase()
-      .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-') // 非字母数字中文替换为 -
-      .replace(/^-+|-+$/g, '') // 移除首尾的 -
-
-    // 处理重复标题
-    if (idCounters[baseId] === undefined) {
-      idCounters[baseId] = 0
-    } else {
-      idCounters[baseId]++
-    }
-
-    const id = idCounters[baseId] === 0 ? baseId : `${baseId}-${idCounters[baseId]}`
-    el.id = id
-  })
-
-  return tempDiv.innerHTML
+  return renderMarkdown(props.content)
 })
+
+onMounted(() => {
+  nextTick(() => {
+    addCopyButtons()
+  })
+})
+
+function addCopyButtons() {
+  if (!contentRef.value) return
+
+  const codeBlocks = contentRef.value.querySelectorAll('pre code')
+
+  codeBlocks.forEach(codeBlock => {
+    const pre = codeBlock.parentElement
+    if (pre && !pre.querySelector('.copy-button')) {
+      const button = document.createElement('button')
+      button.className = 'copy-button'
+      button.textContent = '复制'
+      button.addEventListener('click', () => handleCopy(codeBlock, button))
+      pre.style.position = 'relative'
+      pre.appendChild(button)
+    }
+  })
+}
+
+async function handleCopy(codeElement, button) {
+  try {
+    const code = codeElement.textContent
+    await navigator.clipboard.writeText(code)
+
+    button.textContent = '已复制!'
+    button.classList.add('copied')
+
+    setTimeout(() => {
+      button.textContent = '复制'
+      button.classList.remove('copied')
+    }, 2000)
+  } catch (err) {
+    console.error('复制失败:', err)
+    button.textContent = '复制失败'
+    setTimeout(() => {
+      button.textContent = '复制'
+    }, 2000)
+  }
+}
 </script>
 
 <style scoped>
@@ -128,9 +125,7 @@ const renderedContent = computed(() => {
   color: var(--text-primary);
 }
 
-/* Markdown 样式 */
 .markdown-body {
-  /* 标题 */
 }
 
 .markdown-body :deep(h1),
@@ -162,13 +157,11 @@ const renderedContent = computed(() => {
   font-size: 20px;
 }
 
-/* 段落 */
 .markdown-body :deep(p) {
   margin-bottom: 16px;
   line-height: 1.8;
 }
 
-/* 链接 */
 .markdown-body :deep(a) {
   color: var(--primary-color);
   text-decoration: none;
@@ -179,21 +172,41 @@ const renderedContent = computed(() => {
   text-decoration: underline;
 }
 
-/* 代码块 */
 .markdown-body :deep(pre) {
-  margin: 16px 0;
-  padding: 16px;
-  background: var(--bg-secondary);
-  border-radius: var(--radius-md);
-  overflow: auto;
+  margin: 24px 0;
+  padding: 28px 32px 20px 32px;
+  background: var(--bg-secondary, #f8f9fa);
+  border-radius: var(--radius-md, 8px);
+  overflow-x: auto;
+  position: relative;
+  border: 1px solid var(--border-light, #e5e7eb);
+  box-shadow:
+    inset 0 1px 3px rgba(0, 0, 0, 0.04),
+    0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme='dark'] .markdown-body :deep(pre) {
+  background: rgba(30, 31, 35, 0.8);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 .markdown-body :deep(pre code) {
-  color: var(--text-primary);
+  display: block;
+  padding: 0;
+  margin: 0;
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--text-primary, #1f2328);
+  tab-size: 2;
+  word-break: normal;
+  white-space: pre;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
 [data-theme='dark'] .markdown-body :deep(pre code) {
-  color: #abb2bf;
+  color: #e6edf3;
 }
 
 .markdown-body :deep(code) {
@@ -207,7 +220,6 @@ const renderedContent = computed(() => {
   border-radius: var(--radius-xs);
 }
 
-/* 引用 */
 .markdown-body :deep(blockquote) {
   margin: 16px 0;
   padding: 12px 16px;
@@ -216,7 +228,6 @@ const renderedContent = computed(() => {
   color: var(--text-secondary);
 }
 
-/* 列表 */
 .markdown-body :deep(ul),
 .markdown-body :deep(ol) {
   margin: 16px 0;
@@ -227,11 +238,14 @@ const renderedContent = computed(() => {
   margin-bottom: 8px;
 }
 
-/* 表格 */
 .markdown-body :deep(table) {
   width: 100%;
   margin: 16px 0;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: var(--radius-md, 8px);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
 }
 
 .markdown-body :deep(th),
@@ -244,13 +258,13 @@ const renderedContent = computed(() => {
 .markdown-body :deep(th) {
   background: var(--bg-secondary);
   font-weight: 600;
+  color: var(--text-primary);
 }
 
 .markdown-body :deep(tr:nth-child(even)) {
   background: var(--bg-secondary);
 }
 
-/* 图片 */
 .markdown-body :deep(img) {
   max-width: 100%;
   height: auto;
@@ -258,11 +272,66 @@ const renderedContent = computed(() => {
   border-radius: var(--radius-md);
 }
 
-/* 分割线 */
 .markdown-body :deep(hr) {
   margin: 32px 0;
   border: none;
   border-top: 2px solid var(--border-light);
+}
+
+.markdown-body :deep(.copy-button) {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: var(--text-secondary, #6b7280);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--border-light, #e5e7eb);
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 10;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme='dark'] .markdown-body :deep(.copy-button) {
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(39, 42, 48, 0.9);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.markdown-body :deep(pre:hover .copy-button) {
+  opacity: 1;
+}
+
+.markdown-body :deep(.copy-button:hover) {
+  color: var(--primary-color);
+  background: white;
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow:
+    0 4px 12px rgba(var(--primary-rgb), 0.15),
+    0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.markdown-body :deep(.copy-button.copied) {
+  color: #16a34a;
+  border-color: #16a34a;
+  background: #f0fdf4;
+}
+
+[data-theme='dark'] .markdown-body :deep(.copy-button.copied) {
+  color: #4ade80;
+  border-color: #4ade80;
+  background: rgba(22, 163, 74, 0.15);
+}
+
+.markdown-body :deep(.copy-button.copied) {
+  background: #67c23a;
 }
 
 .content-loading {

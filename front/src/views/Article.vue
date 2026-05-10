@@ -1,10 +1,50 @@
 <template>
-  <div class="article-page">
+  <div class="article-page" :class="{ 'immersive-mode': isImmersive }">
     <div class="container">
-      <el-row :gutter="24">
+      <el-row :gutter="24" class="article-row">
         <!-- 左侧主内容区 -->
-        <el-col :span="17">
+        <el-col
+          :xs="24"
+          :sm="24"
+          :md="isImmersive ? 24 : 17"
+          class="main-col"
+        >
           <div class="article-main">
+            <!-- 沉浸式阅读工具栏 -->
+            <Transition name="toolbar-fade">
+              <div v-if="isImmersive" class="immersive-toolbar">
+                <button
+                  class="toolbar-btn"
+                  @click="toggleImmersive"
+                  title="退出沉浸模式"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 14h6v6M20 10h-6V4"/>
+                    <line x1="14" y1="10" x2="21" y2="3"/>
+                    <line x1="3" y1="21" x2="10" y2="14"/>
+                  </svg>
+                  <span>退出沉浸</span>
+                </button>
+
+                <button
+                  v-if="headings.length > 0"
+                  class="toolbar-btn"
+                  @click="showFloatingTOC = true"
+                  title="显示目录"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="8" y1="6" x2="21" y2="6"/>
+                    <line x1="8" y1="12" x2="21" y2="12"/>
+                    <line x1="8" y1="18" x2="21" y2="18"/>
+                    <line x1="3" y1="6" x2="3.01" y2="6"/>
+                    <line x1="3" y1="12" x2="3.01" y2="12"/>
+                    <line x1="3" y1="18" x2="3.01" y2="18"/>
+                  </svg>
+                  <span>目录</span>
+                </button>
+              </div>
+            </Transition>
+
             <template v-if="loading">
               <div class="article-skeleton">
                 <el-skeleton animated>
@@ -61,20 +101,37 @@
           </div>
         </el-col>
 
-        <!-- 右侧侧边栏 -->
-        <el-col :span="7">
-          <div class="sidebar">
-            <RelatedArticles :articles="relatedArticles" />
-            <TableOfContents :headings="headings" />
-          </div>
-        </el-col>
+        <!-- 右侧侧边栏 (非沉浸模式下显示) -->
+        <Transition name="sidebar-slide">
+          <el-col
+            v-if="!isImmersive"
+            :xs="24"
+            :sm="24"
+            :md="7"
+            class="sidebar-col"
+          >
+            <div class="sidebar">
+              <TableOfContents :headings="headings" :active-id="activeHeadingId" />
+              <RelatedArticles :articles="relatedArticles" />
+            </div>
+          </el-col>
+        </Transition>
       </el-row>
     </div>
+
+    <!-- 悬浮目录组件 -->
+    <FloatingTOC
+      :is-visible="showFloatingTOC"
+      :headings="headings"
+      :active-id="activeHeadingId"
+      @close="showFloatingTOC = false"
+      @select="handleTOCSelect"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
@@ -82,8 +139,9 @@ import { getContent, getContents, getComments, createComment, likeComment } from
 import { ArticleHeader, ArticleContent, ArticleNav, CommentsSection } from '@/components/article'
 import RelatedArticles from '@/components/article/RelatedArticles.vue'
 import TableOfContents from '@/components/article/TableOfContents.vue'
+import FloatingTOC from '@/components/article/FloatingTOC.vue'
 import { getCoverUrl, extractHeadings } from '@/utils'
-import { CONFIG, MESSAGES } from '@/constants'
+import { useFloatingActions } from '@/composables/useFloatingActions'
 
 // 导入提取的样式文件
 import '@/components/article/styles/article-markdown.css'
@@ -104,9 +162,135 @@ const prevArticle = ref(null)
 const nextArticle = ref(null)
 const relatedArticles = ref([])
 const headings = ref([])
+const activeHeadingId = ref('')
+
+// 沉浸式阅读状态
+const isImmersive = ref(false)
+const showFloatingTOC = ref(false)
+
+// 悬浮按钮管理
+const { registerButton, removeButton } = useFloatingActions()
+let unregisterImmersiveBtn = null
+let unregisterTocBtn = null
 
 // 评论区组件引用
 const commentsSectionRef = ref(null)
+
+let scrollObserver = null
+
+// 切换沉浸模式
+function toggleImmersive() {
+  isImmersive.value = !isImmersive.value
+
+  if (isImmersive.value) {
+    document.body.style.overflow = 'auto'
+    nextTick(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    })
+  }
+}
+
+// 处理悬浮目录选择
+function handleTOCSelect(headingId) {
+  showFloatingTOC.value = false
+  const element = document.getElementById(headingId)
+  if (element) {
+    const headerHeight = isImmersive.value ? 0 : 72
+    const elementPosition = element.getBoundingClientRect().top + window.pageYOffset
+    window.scrollTo({
+      top: elementPosition - headerHeight - 20,
+      behavior: 'smooth'
+    })
+  }
+}
+
+// 注册悬浮按钮到全局按钮组
+function registerFloatingButtons() {
+  // 注册沉浸式阅读按钮（仅非沉浸模式且内容加载完成后显示）
+  unregisterImmersiveBtn = registerButton({
+    id: 'immersive',
+    title: isImmersive.value ? '退出沉浸模式' : '沉浸式阅读',
+    label: isImmersive.value ? '退出' : '沉浸',
+    icon: isImmersive.value
+      ? '<path d="M4 14h6v6M20 10h-6V4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/>'
+      : '<path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/>',
+    onClick: toggleImmersive,
+    visible: () => fullContentLoaded.value
+  })
+
+  // 注册目录按钮（仅沉浸模式且有目录时显示）
+  unregisterTocBtn = registerButton({
+    id: 'toc',
+    title: '显示目录',
+    label: '目录',
+    icon: '<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>',
+    onClick: () => { showFloatingTOC.value = true },
+    visible: () => isImmersive.value && headings.value.length > 0 && !showFloatingTOC.value
+  })
+}
+
+// 注销悬浮按钮
+function unregisterFloatingButtons() {
+  if (unregisterImmersiveBtn) {
+    unregisterImmersiveBtn()
+    unregisterImmersiveBtn = null
+  }
+  if (unregisterTocBtn) {
+    unregisterTocBtn()
+    unregisterTocBtn = null
+  }
+}
+
+// 设置滚动监听
+function setupScrollSpy() {
+  scrollObserver = new IntersectionObserver(
+    entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          activeHeadingId.value = entry.target.id
+        }
+      })
+    },
+    {
+      rootMargin: '-80px 0px -70% 0px',
+      threshold: 0
+    }
+  )
+
+  setTimeout(() => {
+    const headingElements = document.querySelectorAll('.markdown-body h1, .markdown-body h2, .markdown-body h3')
+    headingElements.forEach(el => scrollObserver.observe(el))
+  }, 100)
+}
+
+function cleanupScrollSpy() {
+  if (scrollObserver) {
+    scrollObserver.disconnect()
+    scrollObserver = null
+  }
+}
+
+onMounted(() => {
+  setupScrollSpy()
+  registerFloatingButtons()
+})
+
+onUnmounted(() => {
+  cleanupScrollSpy()
+  unregisterFloatingButtons()
+})
+
+watch(
+  () => article.value.content,
+  () => {
+    if (article.value.content) {
+      setTimeout(() => {
+        cleanupScrollSpy()
+        setupScrollSpy()
+      }, 150)
+    }
+  }
+)
 
 // 处理分类标签点击事件
 const handleCategoryClick = () => {
@@ -188,15 +372,9 @@ const fetchArticle = async () => {
     const articleId = route.params.slug || route.params.id
     const response = await getContent(articleId)
 
-    // 兼容多种响应格式：
-    // 格式1: { data: 文章对象 } (axios 拦截器处理后)
-    // 格式2: { data: { data: 文章对象 } } (原始 DRF 响应)
-    // 格式3: 直接是文章对象
     let articleData = response.data || response
 
-    // 如果还有嵌套的 data 字段（DRF Response 格式）
     if (articleData && typeof articleData === 'object' && 'data' in articleData && !Array.isArray(articleData.data)) {
-      // 检查是否真的是文章对象（有 id 或 title）
       if (articleData.data?.id || articleData.data?.title) {
         articleData = articleData.data
       }
@@ -209,8 +387,8 @@ const fetchArticle = async () => {
       article.value.content = articleData.content_preview
     }
 
-    // 提取目录标题
-    headings.value = extractHeadingsFromMarkdown(article.value.content)
+    // 使用统一的工具函数提取目录标题
+    headings.value = extractHeadings(article.value.content)
 
     // 设置完整内容已加载标记
     if (!articleData.content_preview || articleData.content === articleData.content_preview) {
@@ -227,7 +405,6 @@ const fetchArticle = async () => {
     if (e.response?.status === 404) {
       router.replace({ name: 'NotFound' })
     } else if (e.response?.status === 401) {
-      // 未授权，跳转登录
       router.push('/login')
     } else {
       ElMessage.error(MESSAGES.ERROR.ARTICLE_NOT_FOUND)
@@ -244,7 +421,6 @@ const fetchComments = async () => {
     const response = await getComments({ article: articleId })
     let data = response.data || response
 
-    // 处理评论响应格式
     if (data && Array.isArray(data.results)) {
       comments.value = data.results
     } else if (Array.isArray(data)) {
@@ -271,7 +447,6 @@ const fetchRelatedArticles = async () => {
     const response = await getContents(params)
     let data = response.data || response
 
-    // 处理列表响应格式
     let results = []
     if (data && Array.isArray(data.results)) {
       results = data.results
@@ -279,68 +454,10 @@ const fetchRelatedArticles = async () => {
       results = data
     }
 
-    // 过滤掉当前文章，最多取 5 篇
     relatedArticles.value = results.filter(item => item.id !== article.value.id).slice(0, 5)
   } catch (e) {
     console.error('Failed to fetch related articles:', e)
   }
-}
-
-// 从 Markdown 内容中提取标题（简化版）
-const extractHeadingsFromMarkdown = content => {
-  if (!content) return []
-
-  const result = []
-  const idCounters = {}
-
-  // 移除代码块
-  const contentWithoutCodeBlocks = content
-    .replace(/```[\s\S]*?```/g, '')
-    .replace(/~~~[\s\S]*?~~~/g, '')
-
-  // 匹配 Markdown 标题
-  const headingRegex = /^(#{1,6})\s+(.+)$/gm
-  let match
-
-  while ((match = headingRegex.exec(contentWithoutCodeBlocks)) !== null) {
-    const level = match[1].length
-    let text = match[2].trim()
-
-    // 清理 Markdown 格式符号
-    text = text
-      .replace(/\*\*(.+?)\*\*/g, '$1')
-      .replace(/\*(.+?)\*/g, '$1')
-      .replace(/__(.+?)__/g, '$1')
-      .replace(/_(.+?)_/g, '$1')
-      .replace(/`(.+?)`/g, '$1')
-      .replace(/\[(.+?)\]\(.+?\)/g, '$1')
-      .replace(/!\[(.+?)\]\(.+?\)/g, '$1')
-      .trim()
-
-    // 过滤空标题和过长标题
-    if (text && text.length < 200) {
-      const baseId = text
-        .toLowerCase()
-        .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
-        .replace(/^-+|-+$/g, '')
-
-      if (idCounters[baseId] === undefined) {
-        idCounters[baseId] = 0
-      } else {
-        idCounters[baseId]++
-      }
-
-      const id = idCounters[baseId] === 0 ? baseId : `${baseId}-${idCounters[baseId]}`
-
-      result.push({
-        id: id,
-        level: level,
-        text: text
-      })
-    }
-  }
-
-  return result
 }
 
 // 监听路由参数变化
@@ -348,6 +465,9 @@ watch(
   () => route.params.id,
   () => {
     if (route.params.id) {
+      // 退出沉浸模式
+      isImmersive.value = false
+      showFloatingTOC.value = false
       fetchArticle()
     }
   },
@@ -360,12 +480,38 @@ watch(
   padding: 32px 0;
   background: var(--bg-color);
   min-height: calc(100vh - var(--header-height));
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 沉浸式阅读模式 */
+.article-page.immersive-mode {
+  padding: 0;
+  background: #fafaf9;
+}
+
+[data-theme='dark'] .article-page.immersive-mode {
+  background: #1a1a1a;
 }
 
 .container {
   max-width: var(--container-max);
   margin: 0 auto;
   padding: 0 24px;
+  transition: max-width 0.4s ease;
+}
+
+.immersive-mode .container {
+  max-width: 900px;
+  padding: 0 32px;
+}
+
+.article-row {
+  transition: all 0.4s ease;
+}
+
+.main-col,
+.sidebar-col {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .article-main {
@@ -374,6 +520,63 @@ watch(
   padding: 40px;
   border: 1px solid var(--border-light);
   animation: fadeInUp 0.15s ease-out;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.immersive-mode .article-main {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 48px 0;
+  box-shadow: none;
+}
+
+[data-theme='dark'] .immersive-mode .article-main {
+  background: transparent;
+}
+
+/* 沉浸模式下的排版优化 */
+.immersive-mode .article-main :deep(.markdown-body) {
+  font-size: 18px;
+  line-height: 1.9;
+  letter-spacing: 0.02em;
+}
+
+.immersive-mode .article-main :deep(.markdown-body p) {
+  margin-bottom: 28px;
+  text-align: justify;
+}
+
+.immersive-mode .article-main :deep(.markdown-body h1),
+.immersive-mode .article-main :deep(.markdown-body h2),
+.immersive-mode .article-main :deep(.markdown-body h3) {
+  margin-top: 48px;
+  margin-bottom: 24px;
+}
+
+.immersive-mode .article-main :deep(.markdown-body code) {
+  font-size: 15px;
+}
+
+.immersive-mode .article-main :deep(.markdown-body pre) {
+  margin: 32px 0;
+  padding: 24px;
+  border-radius: 12px;
+}
+
+@media (max-width: 768px) {
+  .immersive-mode .article-main {
+    padding: 24px 0;
+  }
+
+  .immersive-mode .article-main :deep(.markdown-body) {
+    font-size: 16px;
+    line-height: 1.8;
+  }
+
+  .immersive-mode .container {
+    padding: 0 16px;
+  }
 }
 
 .article-skeleton {
@@ -395,5 +598,108 @@ watch(
 
 .sidebar::-webkit-scrollbar {
   display: none;
+}
+
+/* ====== 沉浸模式工具栏 ====== */
+.immersive-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 0 24px 0;
+  border-bottom: 1px solid var(--border-light);
+  margin-bottom: 32px;
+  animation: slideDown 0.35s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: rgba(var(--primary-rgb), 0.06);
+  border: 1px solid rgba(var(--primary-rgb), 0.15);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.toolbar-btn:hover {
+  color: var(--primary-color);
+  background: rgba(var(--primary-rgb), 0.12);
+  border-color: rgba(var(--primary-rgb), 0.25);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.15);
+}
+
+.toolbar-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+@media (max-width: 768px) {
+  .immersive-toolbar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .toolbar-btn {
+    padding: 7px 12px;
+    font-size: 12px;
+  }
+}
+
+/* ====== 过渡动画 ====== */
+
+/* 侧边栏滑出动画 */
+.sidebar-slide-enter-active,
+.sidebar-slide-leave-active {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-slide-enter-from,
+.sidebar-slide-leave-to {
+  opacity: 0;
+  transform: translateX(30px);
+  max-height: 0;
+  overflow: hidden;
+}
+
+/* 工具栏淡入淡出 */
+.toolbar-fade-enter-active,
+.toolbar-fade-leave-active {
+  transition: all 0.3s ease;
+}
+
+.toolbar-fade-enter-from,
+.toolbar-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+/* 按钮淡入淡出 */
+.btn-fade-enter-active,
+.btn-fade-leave-active {
+  transition: all 0.3s ease;
+}
+
+.btn-fade-enter-from,
+.btn-fade-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
 }
 </style>

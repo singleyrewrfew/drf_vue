@@ -82,20 +82,34 @@ const updatePosition = () => {
   if (!triggerRef.value || !isOpen.value) return
 
   const rect = triggerRef.value.getBoundingClientRect()
+  const viewportWidth = window.innerWidth
   const viewportHeight = window.innerHeight
   const menuHeight = 200
+  const menuWidth = Math.max(rect.width, 160)
 
   let top = rect.bottom + 4
+  let left = rect.left
 
+  // 垂直方向：如果下方空间不足，向上弹出
   if (rect.bottom + menuHeight > viewportHeight) {
     top = rect.top - menuHeight - 4
   }
 
+  // 水平方向：如果右侧空间不足，向左调整
+  if (left + menuWidth > viewportWidth) {
+    left = viewportWidth - menuWidth - 8
+  }
+
+  // 确保不超出左边界
+  if (left < 8) {
+    left = 8
+  }
+
   menuStyle.value = {
     position: 'fixed',
-    left: `${rect.left}px`,
+    left: `${left}px`,
     top: `${top}px`,
-    minWidth: `${Math.max(rect.width, 160)}px`,
+    minWidth: `${menuWidth}px`,
     zIndex: 2000
   }
 }
