@@ -96,7 +96,7 @@
               :article-id="article.id"
               @submit="handleCommentSubmit"
               @like="handleLikeComment"
-              @reply="handleReply"
+              @reply="handleCommentSubmitReply"
             />
           </div>
         </el-col>
@@ -143,6 +143,7 @@ import FloatingTOC from '@/components/article/FloatingTOC.vue'
 import { getCoverUrl, extractHeadings } from '@/utils'
 import { useFloatingActions } from '@/composables/useFloatingActions'
 import { CONFIG } from '@/constants/config'
+import { MESSAGES } from '@/constants/messages'
 
 // 导入提取的样式文件
 import '@/components/article/styles/article-markdown.css'
@@ -362,6 +363,26 @@ const handleLikeComment = async comment => {
 const handleReply = (commentId, userName, userId) => {
   if (commentsSectionRef.value) {
     commentsSectionRef.value.openReplyForm(commentId, userName, userId)
+  }
+}
+
+// 处理提交回复评论
+const handleCommentSubmitReply = async ({ content, parentId, replyToUser }) => {
+  if (!content.trim()) return
+
+  try {
+    await createComment({
+      article: route.params.id,
+      content: content,
+      parent: parentId,
+      reply_to_id: replyToUser || null
+    })
+
+    await loadComments()
+    ElMessage.success(MESSAGES.SUCCESS.REPLY_SUBMITTED)
+  } catch (error) {
+    console.error('Failed to submit reply:', error)
+    ElMessage.error(MESSAGES.ERROR.REPLY_FAILED)
   }
 }
 

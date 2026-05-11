@@ -4,7 +4,7 @@ const MEDIA_BASE_URL = import.meta.env.VITE_MEDIA_BASE_URL || ''
 import DOMPurify from 'dompurify'
 import { TIME_FORMATS } from '@/constants'
 
-const ALLOWED_TAGS = ['p', 'br', 'strong', 'em', 'b', 'i', 'u', 'a', 'pre', 'code']
+const ALLOWED_TAGS = ['p', 'br', 'strong', 'em', 'b', 'i', 'u', 'a', 'pre', 'code', 'div']
 const ALLOWED_ATTR = ['href', 'title', 'class']
 
 export const sanitizeHtml = html => {

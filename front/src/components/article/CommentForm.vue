@@ -1,135 +1,82 @@
 <template>
   <div class="comment-form">
     <div class="comment-form-wrapper">
-      <el-avatar :size="36" :src="user?.avatar" class="user-avatar">
+      <el-avatar :size="32" :src="user?.avatar" class="user-avatar">
         {{ userInitial }}
       </el-avatar>
 
       <div class="comment-form-content">
-        <div v-if="editor" class="rich-toolbar">
+        <div class="rich-toolbar">
           <el-tooltip content="加粗 (Ctrl+B)" placement="top">
-            <el-button
-              link
+            <button
+              type="button"
               class="tool-btn"
-              :class="{ 'is-active': editor.isActive('bold') }"
-              @click="editor.chain().focus().toggleBold().run()"
+              :class="{ 'is-active': isBold }"
+              @click="execCommand('bold')"
             >
-              <svg width="1.1em" height="1.1em" viewBox="0 0 24 24" fill="currentColor">
-                <path
-                  d="M15.6 10.79c.97-.67 1.65-1.77 1.65-2.79 0-2.26-1.75-4-4-4H7v14h7.04c2.09 0 3.71-1.7 3.71-3.79 0-1.52-.86-2.82-2.15-3.42zM10 6.5h3c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5h-3v-3zm3.5 9H10v-3h3.5c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5z"
-                />
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/>
+                <path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/>
               </svg>
-            </el-button>
+            </button>
           </el-tooltip>
 
           <el-tooltip content="斜体 (Ctrl+I)" placement="top">
-            <el-button
-              link
+            <button
+              type="button"
               class="tool-btn"
-              :class="{ 'is-active': editor.isActive('italic') }"
-              @click="editor.chain().focus().toggleItalic().run()"
+              :class="{ 'is-active': isItalic }"
+              @click="execCommand('italic')"
             >
-              <svg width="1.1em" height="1.1em" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M10 4v3h2.21l-3.42 8H6v3h8v-3h-2.21l3.42-8H18V4z" />
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="4" x2="10" y2="4"/>
+                <line x1="14" y1="20" x2="5" y2="20"/>
+                <line x1="15" y1="4" x2="9" y2="20"/>
               </svg>
-            </el-button>
+            </button>
           </el-tooltip>
 
-          <div class="toolbar-divider"></div>
+          <span class="toolbar-divider"></span>
 
           <el-tooltip content="代码块" placement="top">
-            <el-button
-              link
-              class="tool-btn"
-              :class="{ 'is-active': editor.isActive('codeBlock') }"
-              @click="editor.chain().focus().toggleCodeBlock().run()"
-            >
-              <svg width="1.1em" height="1.1em" viewBox="0 0 24 24" fill="currentColor">
-                <path
-                  d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"
-                />
+            <button type="button" class="tool-btn" @click="insertCodeBlock">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="16 18 22 12 16 6"/>
+                <polyline points="8 6 2 12 8 18"/>
               </svg>
-            </el-button>
+            </button>
           </el-tooltip>
 
           <el-tooltip content="链接" placement="top">
-            <el-button
-              link
-              class="tool-btn"
-              :class="{ 'is-active': editor.isActive('link') }"
-              @click="showLinkDialog"
-            >
-              <svg width="1.1em" height="1.1em" viewBox="0 0 24 24" fill="currentColor">
-                <path
-                  d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"
-                />
+            <button type="button" class="tool-btn" @click="showLinkDialog">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
               </svg>
-            </el-button>
+            </button>
           </el-tooltip>
 
-          <el-tooltip content="移除链接" placement="top" v-if="editor.isActive('link')">
-            <el-button link class="tool-btn" @click="editor.chain().focus().unsetLink().run()">
-              <svg width="1.1em" height="1.1em" viewBox="0 0 24 24" fill="currentColor">
-                <path
-                  d="M17 7h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1 0 1.43-.98 2.63-2.31 3l1.46 1.44C20.88 15.61 22 13.95 22 12c0-2.76-2.24-5-5-5zm-1 4h-2.19l2 2H16zM2 4.27l3.11 3.11C3.29 8.12 2 9.91 2 12c0 2.76 2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1 0-1.59 1.21-2.9 2.76-3.07L8.73 11H8v2h2.73L13 15.27V17h1.73l4.01 4L20 19.74 3.27 3 2 4.27z"
-                />
-              </svg>
-            </el-button>
-          </el-tooltip>
+          <span class="toolbar-divider"></span>
 
-          <div class="toolbar-divider"></div>
-
-          <el-popover placement="top-start" :width="300" trigger="click">
-            <template #reference>
-              <el-button link class="tool-btn" title="选择表情">
-                <svg width="1.1em" height="1.1em" viewBox="0 0 24 24" fill="currentColor">
-                  <path
-                    d="M14.413 14.223a.785.785 0 0 1 1.45.601A4.174 4.174 0 0 1 12 17.4a4.19 4.19 0 0 1-2.957-1.221 4.174 4.174 0 0 1-.906-1.355.785.785 0 1 1 1.449-.601 2.604 2.604 0 0 0 1.413 1.41 2.621 2.621 0 0 0 2.849-.566c.242-.242.434-.529.565-.844ZM8.6 8.77a1.308 1.308 0 1 1 0 2.615 1.308 1.308 0 0 1 0-2.615ZM15.4 8.77a1.308 1.308 0 1 1 0 2.615 1.308 1.308 0 0 1 0-2.615Z"
-                  />
-                  <path
-                    fill-rule="evenodd"
-                    d="M12 1.573c5.758 0 10.427 4.669 10.427 10.427S17.758 22.427 12 22.427 1.573 17.758 1.573 12 6.242 1.573 12 1.573Zm0 1.746a8.681 8.681 0 1 0 .001 17.362A8.681 8.681 0 0 0 12 3.32Z"
-                    clip-rule="evenodd"
-                  />
-                </svg>
-              </el-button>
-            </template>
-
-            <div class="emoji-picker">
-              <div class="emoji-list">
-                <span
-                  v-for="emoji in emojis"
-                  :key="emoji"
-                  class="emoji-item"
-                  @click="insertEmoji(emoji)"
-                >
-                  {{ emoji }}
-                </span>
-              </div>
-            </div>
-          </el-popover>
+          <EmojiPicker :emojis="emojis" @select="insertEmoji" />
         </div>
 
         <div class="editor-wrapper">
-          <editor-content :editor="editor" class="comment-editor" />
+          <CustomEditor ref="editorRef" v-model="contentValue" placeholder="写下你的想法..." @update:cursor="updateCursorState" />
         </div>
 
         <div class="comment-form-footer">
-          <div class="format-hint">支持 <strong>加粗</strong>、<em>斜体</em>、代码块、链接</div>
-
-          <div class="comment-form-actions">
-            <span class="char-count" :class="{ 'is-exceed': contentLength > 2000 }"
-              >{{ contentLength }}/2000</span
-            >
-            <el-button
-              type="primary"
-              @click="handleSubmit"
-              :loading="loading"
-              :disabled="!canSubmit"
-            >
-              发布
-            </el-button>
-          </div>
+          <span class="char-count" :class="{ 'is-exceed': contentLength > 2000 }">{{ contentLength }}/2000</span>
+          <button
+            type="button"
+            class="submit-btn"
+            :class="{ disabled: !canSubmit, loading: loading }"
+            :disabled="!canSubmit || loading"
+            @click="handleSubmit"
+          >
+            <span v-if="!loading">发布</span>
+            <span v-else>发送中...</span>
+          </button>
         </div>
       </div>
     </div>
@@ -145,14 +92,29 @@
         <el-button type="primary" @click="insertLink">插入</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="codeDialogVisible" title="插入代码块" width="500px">
+      <div class="code-dialog-content">
+        <el-input
+          v-model="codeContent"
+          type="textarea"
+          :rows="6"
+          placeholder="请输入代码内容..."
+          class="code-textarea"
+        />
+      </div>
+      <template #footer>
+        <el-button @click="codeDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="confirmCodeBlock">插入</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { computed, ref, watch, onBeforeUnmount } from 'vue'
-import { useEditor, EditorContent } from '@tiptap/vue-3'
-import StarterKit from '@tiptap/starter-kit'
-import Link from '@tiptap/extension-link'
+import { computed, ref, watch } from 'vue'
+import EmojiPicker from './EmojiPicker.vue'
+import CustomEditor from './CustomEditor.vue'
 
 const props = defineProps({
   content: {
@@ -177,55 +139,89 @@ const emit = defineEmits(['update:content', 'submit'])
 
 const linkDialogVisible = ref(false)
 const linkUrl = ref('')
+const codeDialogVisible = ref(false)
+const codeContent = ref('')
+const contentValue = ref(props.content)
+const editorRef = ref(null)
+const isBold = ref(false)
+const isItalic = ref(false)
 
-const editor = useEditor({
-  content: props.content,
-  extensions: [
-    StarterKit.configure({
-      heading: false,
-      bulletList: false,
-      orderedList: false,
-      blockquote: false,
-      horizontalRule: false,
-      code: false
-    }),
-    Link.configure({
-      openOnClick: false,
-      HTMLAttributes: {
-        target: '_blank',
-        rel: 'noopener noreferrer'
-      }
-    })
-  ],
-  onUpdate: ({ editor }) => {
-    const html = editor.getHTML()
-    emit('update:content', html)
-  }
-})
+const updateCursorState = () => {
+  setTimeout(() => {
+    isBold.value = document.queryCommandState('bold')
+    isItalic.value = document.queryCommandState('italic')
+  }, 0)
+}
 
 watch(
   () => props.content,
-  newValue => {
-    if (editor.value && editor.value.getHTML() !== newValue) {
-      editor.value.commands.setContent(newValue, false)
+  val => {
+    if (val !== contentValue.value) {
+      contentValue.value = val
     }
   }
 )
+
+watch(contentValue, val => {
+  emit('update:content', val)
+})
 
 const userInitial = computed(() => {
   return props.user?.username?.charAt(0)?.toUpperCase() || 'U'
 })
 
 const contentLength = computed(() => {
-  if (!editor.value) return 0
-  return editor.value.getText().length
+  const html = contentValue.value || ''
+  const div = document.createElement('div')
+  div.innerHTML = html
+  return (div.textContent || '').length
 })
 
 const canSubmit = computed(() => {
-  if (!editor.value) return false
-  const text = editor.value.getText().trim()
+  const text = (contentValue.value || '').replace(/<[^>]*>/g, '').trim()
   return text.length > 0 && contentLength.value <= 2000
 })
+
+const execCommand = command => {
+  editorRef.value?.restoreSelection()
+
+  setTimeout(() => {
+    document.execCommand(command, false, null)
+
+    isBold.value = document.queryCommandState('bold')
+    isItalic.value = document.queryCommandState('italic')
+
+    syncContent()
+  }, 10)
+}
+
+const insertCodeBlock = () => {
+  const selection = window.getSelection()
+  const selectedText = selection ? selection.toString() : ''
+  codeContent.value = selectedText
+  codeDialogVisible.value = true
+}
+
+const confirmCodeBlock = () => {
+  if (!codeContent.value.trim()) return
+
+  editorRef.value?.restoreSelection()
+
+  setTimeout(() => {
+    const codeHtml = `<div class="code-block"><code>${escapeHtml(codeContent.value)}</code></div>`
+    document.execCommand('insertHTML', false, codeHtml)
+
+    codeDialogVisible.value = false
+    codeContent.value = ''
+    syncContent()
+  }, 10)
+}
+
+const escapeHtml = text => {
+  const div = document.createElement('div')
+  div.textContent = text
+  return div.innerHTML
+}
 
 const showLinkDialog = () => {
   linkUrl.value = ''
@@ -235,44 +231,61 @@ const showLinkDialog = () => {
 const insertLink = () => {
   if (!linkUrl.value.trim()) return
 
-  editor.value.chain().focus().extendMarkRange('link').setLink({ href: linkUrl.value }).run()
+  editorRef.value?.restoreSelection()
 
-  linkDialogVisible.value = false
-  linkUrl.value = ''
+  setTimeout(() => {
+    const selection = window.getSelection()
+    if (selection && selection.rangeCount) {
+      const selectedText = selection.toString() || linkUrl.value
+      const linkEl = `<a href="${linkUrl.value}" target="_blank" rel="noopener noreferrer">${selectedText}</a>`
+      document.execCommand('insertHTML', false, linkEl)
+    }
+
+    linkDialogVisible.value = false
+    linkUrl.value = ''
+    syncContent()
+  }, 10)
 }
 
 const insertEmoji = emoji => {
-  editor.value.chain().focus().insertContent(emoji).run()
+  editorRef.value?.restoreSelection()
+
+  setTimeout(() => {
+    document.execCommand('insertText', false, emoji)
+    syncContent()
+  }, 10)
+}
+
+const syncContent = () => {
+  if (editorRef.value) {
+    contentValue.value = editorRef.value.getHTML()
+  }
 }
 
 const handleSubmit = () => {
   if (!canSubmit.value) return
-  const html = editor.value.getHTML()
+  const html = editorRef.value?.getHTML() || ''
   emit('submit', html)
 }
-
-onBeforeUnmount(() => {
-  editor.value?.destroy()
-})
 </script>
 
 <style scoped>
 .comment-form {
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
 .comment-form-wrapper {
   display: flex;
-  gap: 12px;
-  padding: 20px;
+  gap: 10px;
+  padding: 16px;
   background: var(--bg-secondary);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light, transparent);
 }
 
 .user-avatar {
   flex-shrink: 0;
   border-radius: var(--radius-sm) !important;
-  border: 2px solid var(--border-light);
 }
 
 .comment-form-content {
@@ -283,34 +296,41 @@ onBeforeUnmount(() => {
 .rich-toolbar {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   margin-bottom: 8px;
-  padding: 6px 8px;
-  background: var(--bg-tertiary);
+  padding: 4px 6px;
+  background: transparent;
   border-radius: var(--radius-sm);
 }
 
 .tool-btn {
-  padding: 6px 8px;
-  color: var(--text-tertiary);
-  transition: all var(--transition-fast);
-  border-radius: var(--radius-xs);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 28px;
+  color: var(--text-placeholder);
+  cursor: pointer;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  transition: all 0.15s ease;
 }
 
 .tool-btn:hover {
   color: var(--primary-color);
-  background: var(--bg-secondary);
+  background: var(--primary-bg, rgba(45, 90, 74, 0.08));
 }
 
 .tool-btn.is-active {
   color: var(--primary-color);
-  background: var(--bg-secondary);
+  background: var(--primary-bg, rgba(45, 90, 74, 0.12));
 }
 
 .toolbar-divider {
   width: 1px;
   height: 16px;
-  background: var(--border-color);
+  background: var(--border-color, rgba(0,0,0,0.08));
   margin: 0 4px;
 }
 
@@ -318,207 +338,330 @@ onBeforeUnmount(() => {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   background: var(--card-bg);
-  margin-bottom: 12px;
+  margin-bottom: 10px;
+  transition: border-color 0.2s ease;
 }
 
-.comment-editor {
-  padding: 12px;
-  min-height: 80px;
-  max-height: 240px;
-  overflow-y: auto;
-}
-
-.comment-editor :deep(.tiptap) {
-  outline: none;
-  min-height: 56px;
-  color: var(--text-primary);
-}
-
-.comment-editor :deep(.tiptap p) {
-  margin: 0 0 8px 0;
-  color: var(--text-primary);
-}
-
-.comment-editor :deep(.tiptap p:last-child) {
-  margin-bottom: 0;
-}
-
-.comment-editor :deep(.tiptap strong) {
-  font-weight: 600;
-}
-
-.comment-editor :deep(.tiptap em) {
-  font-style: italic;
-}
-
-.comment-editor :deep(.tiptap a) {
-  color: var(--primary-color);
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.comment-editor :deep(.tiptap a:hover) {
-  text-decoration: none;
-}
-
-.comment-editor :deep(.tiptap pre) {
-  background: var(--bg-tertiary);
-  border-radius: var(--radius-sm);
-  padding: 12px 16px;
-  overflow-x: auto;
-  margin: 8px 0;
-  border: 1px solid var(--border-color);
-}
-
-.comment-editor :deep(.tiptap pre code) {
-  font-family: 'Fira Code', 'Consolas', monospace;
-  font-size: 13px;
-  background: transparent;
-  padding: 0;
-  color: var(--text-primary);
-}
-
-.comment-editor :deep(.tiptap p.is-editor-empty:first-child::before) {
-  color: var(--text-placeholder);
-  content: attr(data-placeholder);
-  float: left;
-  height: 0;
-  pointer-events: none;
-}
-
-[data-theme='dark'] .comment-form-wrapper {
-  background: #27272a;
-}
-
-[data-theme='dark'] .user-avatar {
-  border-color: #3f3f46;
-}
-
-[data-theme='dark'] .rich-toolbar {
-  background: #3f3f46;
-}
-
-[data-theme='dark'] .tool-btn {
-  color: #a1a1aa;
-}
-
-[data-theme='dark'] .tool-btn:hover,
-[data-theme='dark'] .tool-btn.is-active {
-  color: var(--dark-vermilion-light, #ef4444);
-  background: rgba(220, 38, 38, 0.12);
-}
-
-[data-theme='dark'] .toolbar-divider {
-  background: #52525b;
-}
-
-[data-theme='dark'] .editor-wrapper {
-  border-color: #3f3f46;
-  background: #27272a;
-}
-
-[data-theme='dark'] .comment-editor :deep(.tiptap) {
-  color: var(--dark-text, #e4e4e7);
-}
-
-[data-theme='dark'] .comment-editor :deep(.tiptap p) {
-  color: var(--dark-text, #e4e4e7);
-}
-
-[data-theme='dark'] .comment-editor :deep(.tiptap p.is-editor-empty:first-child::before) {
-  color: #71717a;
-}
-
-[data-theme='dark'] .comment-editor :deep(.tiptap a) {
-  color: var(--dark-vermilion-light, #ef4444);
-}
-
-[data-theme='dark'] .comment-editor :deep(.tiptap pre) {
-  background: #18181b;
-  border-color: #3f3f46;
-}
-
-[data-theme='dark'] .format-hint {
-  color: #71717a;
-}
-
-[data-theme='dark'] .char-count {
-  color: #71717a;
-}
-
-[data-theme='dark'] .emoji-item:hover {
-  background: rgba(220, 38, 38, 0.12);
+.editor-wrapper:focus-within {
+  border-color: var(--primary-color);
 }
 
 .comment-form-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.format-hint {
-  font-size: 12px;
-  color: var(--text-tertiary);
-}
-
-.format-hint strong {
-  font-weight: 600;
-}
-
-.comment-form-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  padding-top: 2px;
 }
 
 .char-count {
-  font-size: 13px;
-  color: var(--text-tertiary);
+  font-size: 12px;
+  color: var(--text-placeholder);
+  letter-spacing: -0.02em;
 }
 
 .char-count.is-exceed {
-  color: var(--danger-color);
+  color: var(--vermilion-color);
 }
 
-.emoji-picker {
-  padding: 12px;
-}
-
-.emoji-list {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 8px;
-}
-
-.emoji-item {
-  font-size: 20px;
-  cursor: pointer;
-  padding: 6px;
-  border-radius: var(--radius-xs);
-  transition: all var(--transition-fast);
-  display: flex;
+.submit-btn {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  padding: 7px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+  cursor: pointer;
+  border: none;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--vermilion-color) 0%, #d43d47 100%);
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.emoji-item:hover {
-  background: var(--bg-tertiary);
-  transform: scale(1.2);
+.submit-btn:hover:not(.disabled):not(.loading) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(197, 61, 67, 0.25);
+}
+
+.submit-btn:active:not(.disabled):not(.loading) {
+  transform: scale(0.97);
+}
+
+.submit-btn.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.submit-btn.loading {
+  opacity: 0.75;
+  cursor: wait;
+}
+
+/* 暗色模式适配 */
+[data-theme='dark'] .comment-form-wrapper {
+  background: var(--bg-tertiary, #252219);
+  border-color: var(--border-dark, #3d3830);
+}
+
+[data-theme='dark'] .rich-toolbar {
+  background: transparent;
+}
+
+[data-theme='dark'] .tool-btn {
+  color: #71717a;
+}
+
+[data-theme='dark'] .tool-btn:hover,
+[data-theme='dark'] .tool-btn.is-active {
+  color: #5db396;
+  background: rgba(93, 179, 150, 0.1);
+}
+
+[data-theme='dark'] .toolbar-divider {
+  background: #3f3f46;
+}
+
+[data-theme='dark'] .editor-wrapper {
+  border-color: #3f3f46;
+  background: var(--bg-primary, #0d0d0a);
+}
+
+[data-theme='dark'] .editor-wrapper:focus-within {
+  border-color: #5db396;
+}
+
+[data-theme='dark'] .char-count {
+  color: #52525b;
+}
+
+[data-theme='dark'] .char-count.is-exceed {
+  color: var(--dark-vermilion-light, #ef4444);
+}
+
+[data-theme='dark'] .submit-btn {
+  background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+}
+
+[data-theme='dark'] .submit-btn:hover:not(.disabled):not(.loading) {
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
 }
 
 @media (max-width: 768px) {
   .comment-form-wrapper {
-    padding: 16px;
+    padding: 12px;
     gap: 8px;
   }
 
-  .comment-form-footer {
-    flex-wrap: wrap;
-    gap: 8px;
+  .submit-btn {
+    padding: 6px 16px;
+    font-size: 12px;
   }
+}
 
-  .format-hint {
-    display: none;
-  }
+.code-dialog-content {
+  padding: 0 4px;
+}
+
+.code-textarea :deep(textarea) {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  background: var(--bg-primary, #fafafa);
+  border: 1px solid var(--border-color, #e5e5e5);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+}
+
+.code-textarea :deep(textarea:focus) {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(45, 90, 74, 0.1);
+}
+
+.code-textarea :deep(textarea::placeholder) {
+  color: var(--text-placeholder);
+}
+
+/* 弹窗统一样式 */
+.comment-form :deep(.el-dialog) {
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--card-bg, #fff);
+}
+
+.comment-form :deep(.el-dialog__header) {
+  padding: 16px 20px;
+  margin: 0;
+  border-bottom: 1px solid var(--border-light, rgba(0,0,0,0.06));
+  background: var(--card-bg, #fff);
+}
+
+.comment-form :deep(.el-dialog__title) {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+}
+
+.comment-form :deep(.el-dialog__body) {
+  padding: 20px;
+  background: var(--card-bg, #fff);
+}
+
+.comment-form :deep(.el-dialog__footer) {
+  padding: 12px 20px 16px;
+  border-top: 1px solid var(--border-light, rgba(0,0,0,0.06));
+  background: var(--card-bg, #fff);
+}
+
+/* 表单输入框 */
+.comment-form :deep(.el-input__wrapper),
+.comment-form :deep(.el-textarea__inner) {
+  background: var(--bg-secondary, #f7f7f7);
+  border-color: transparent;
+  box-shadow: none;
+  transition: all 0.2s ease;
+}
+
+.comment-form :deep(.el-input__wrapper:hover),
+.comment-form :deep(.el-textarea__inner:hover) {
+  background: var(--bg-tertiary, #f0f0f0);
+}
+
+.comment-form :deep(.el-input__wrapper.is-focus),
+.comment-form :deep(.el-textarea__inner:focus) {
+  background: var(--card-bg);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(197, 61, 67, 0.08);
+}
+
+.comment-form :deep(.el-form-item__label) {
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 13px;
+}
+
+/* 弹窗按钮 */
+.comment-form :deep(.el-dialog__footer .el-button) {
+  border-radius: var(--radius-full);
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.comment-form :deep(.el-dialog__footer .el-button--primary) {
+  background: linear-gradient(135deg, var(--vermilion-color) 0%, #d43d47 100%);
+  border: none;
+  color: #fff;
+}
+
+.comment-form :deep(.el-dialog__footer .el-button--primary:hover) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(197, 61, 67, 0.25);
+}
+
+.comment-form :deep(.el-dialog__close) {
+  color: var(--text-placeholder);
+  transition: all 0.2s ease;
+}
+
+.comment-form :deep(.el-dialog__close:hover) {
+  color: var(--vermilion-color);
+}
+
+/* 暗色模式 */
+[data-theme='dark'] .code-textarea :deep(textarea) {
+  background: #18181b;
+  border-color: #3f3f46;
+  color: #e4e4e7;
+}
+
+[data-theme='dark'] .code-textarea :deep(textarea:focus) {
+  border-color: #5db396;
+  box-shadow: 0 0 0 2px rgba(93, 179, 150, 0.15);
+}
+
+[data-theme='dark'] .code-textarea :deep(textarea::placeholder) {
+  color: #52525b;
+}
+
+[data-theme='dark'] .comment-form :deep(.el-dialog) {
+  background: #1a1917;
+}
+
+[data-theme='dark'] .comment-form :deep(.el-dialog__header) {
+  background: #1a1917;
+  border-color: #2d2c28;
+}
+
+[data-theme='dark'] .comment-form :deep(.el-dialog__body) {
+  background: #1a1917;
+}
+
+[data-theme='dark'] .comment-form :deep(.el-dialog__footer) {
+  background: #1a1917;
+  border-color: #2d2c28;
+}
+
+[data-theme='dark'] .comment-form :deep(.el-dialog__title) {
+  color: #e4e4e7;
+}
+
+[data-theme='dark'] .comment-form :deep(.el-dialog__close) {
+  color: #52525b;
+}
+
+[data-theme='dark'] .comment-form :deep(.el-dialog__close:hover) {
+  color: #ef4444;
+}
+
+[data-theme='dark'] .comment-form :deep(.el-input__wrapper),
+[data-theme='dark'] .comment-form :deep(.el-textarea__inner) {
+  background: #1e1e1c;
+  border-color: #3f3f46;
+  box-shadow: none;
+  color: #e4e4e7;
+}
+
+[data-theme='dark'] .comment-form :deep(.el-input__wrapper:hover),
+[data-theme='dark'] .comment-form :deep(.el-textarea__inner:hover) {
+  background: #262523;
+}
+
+[data-theme='dark'] .comment-form :deep(.el-input__wrapper.is-focus),
+[data-theme='dark'] .comment-form :deep(.el-textarea__inner:focus) {
+  background: #1a1917;
+  border-color: #5db396;
+  box-shadow: 0 0 0 2px rgba(93, 179, 150, 0.15);
+}
+
+[data-theme='dark'] .comment-form :deep(.el-form-item__label) {
+  color: #a1a1aa;
+}
+
+[data-theme='dark'] .comment-form :deep(.el-dialog__footer .el-button) {
+  background: transparent;
+  border-color: #3f3f46;
+  color: #a1a1aa;
+}
+
+[data-theme='dark'] .comment-form :deep(.el-dialog__footer .el-button:hover) {
+  border-color: #52525b;
+  color: #e4e4e7;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme='dark'] .comment-form :deep(.el-dialog__footer .el-button--primary) {
+  background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+  border: none;
+  color: #fff;
+}
+
+[data-theme='dark'] .comment-form :deep(.el-dialog__footer .el-button--primary:hover) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(220, 38, 38, 0.35);
 }
 </style>

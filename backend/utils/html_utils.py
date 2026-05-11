@@ -27,8 +27,8 @@ ALLOWED_TAGS = [
 COMMENT_ALLOWED_TAGS = [
     'p', 'br',
     'strong', 'em', 'b', 'i', 'u',
-    'a',  # 链接
-    'code',  # 行内代码（不包含 pre，避免复杂嵌套）
+    'a',
+    'code', 'pre', 'div',
 ]
 
 # 严格限制的允许属性（最小化原则）
@@ -38,7 +38,8 @@ ALLOWED_ATTRIBUTES = {
 
 # 评论场景的允许属性
 COMMENT_ALLOWED_ATTRIBUTES = {
-    'a': ['href'],  # 评论中链接也只允许 href
+    'a': ['href'],
+    'div': ['class'],
 }
 
 # 严格的协议白名单（仅允许 http/https，禁止所有其他协议）
