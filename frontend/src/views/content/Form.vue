@@ -41,9 +41,12 @@
                             :on-change="handleFileChange"
                             accept=".md,.txt,.markdown"
                         >
-                            <el-button type="primary" size="small" :icon="Upload">
-                                从文件导入
-                            </el-button>
+                            <ActionButton
+                                type="primary"
+                                text="从文件导入"
+                                icon="upload"
+                                size="small"
+                            />
                         </el-upload>
                     </div>
                     <div class="editor-wrapper" :class="editorThemeClass">
@@ -122,19 +125,19 @@
                                         <span>点击上传封面</span>
                                     </div>
                                 </div>
-                                <div v-if="coverPreviewUrl" class="cover-actions">
-                                    <button
-                                        v-if="pendingCoverFile"
-                                        type="button"
-                                        class="cover-btn cover-btn-warning"
-                                        @click.stop="triggerCoverSelect"
-                                    >
+                                <div class="cover-toolbar">
+                                    <button type="button" class="cover-tool-btn" @click.stop="triggerCoverSelect">
                                         <el-icon><Upload /></el-icon>
-                                        <span>更换</span>
+                                        <span>上传文件</span>
+                                    </button>
+                                    <button type="button" class="cover-tool-btn" @click.stop="showMediaDialog = true">
+                                        <el-icon><FolderOpened /></el-icon>
+                                        <span>媒体库</span>
                                     </button>
                                     <button
+                                        v-if="coverPreviewUrl"
                                         type="button"
-                                        class="cover-btn cover-btn-danger"
+                                        class="cover-tool-btn cover-tool-btn-danger"
                                         @click.stop="clearCover"
                                     >
                                         <el-icon><Delete /></el-icon>
@@ -153,7 +156,7 @@
                                 style="display: none"
                                 @change="handleCoverSelect"
                             />
-                            <div class="cover-tip">建议尺寸：1920x1080，支持 jpg/png 格式</div>
+                            <div class="cover-tip">支持 JPG/PNG/GIF/WEBP，建议尺寸 1920x1080</div>
                         </el-form-item>
                     </el-col>
                     <el-col :span="12">
@@ -185,36 +188,107 @@
         </el-card>
 
         <!-- 创建分类对话框 -->
-        <el-dialog v-model="showCategoryDialog" title="创建分类" width="400px">
-            <el-form label-width="80px">
-                <el-form-item label="分类名称" required>
-                    <el-input v-model="newCategoryName" placeholder="请输入分类名称"/>
-                </el-form-item>
-                <el-form-item label="URL 别名">
-                    <el-input v-model="newCategorySlug" placeholder="留空自动生成"/>
-                </el-form-item>
-            </el-form>
-            <template #footer>
-                <el-button @click="showCategoryDialog = false">取消</el-button>
-                <el-button type="primary" @click="createCategory" :loading="creatingCategory">创建</el-button>
-            </template>
-        </el-dialog>
+        <FormDialog
+            v-model="categoryForm"
+            v-model:show="showCategoryDialog"
+            create-title="创建分类"
+            width="400px"
+            label-width="80px"
+            :rules="categoryRules"
+            :loading="creatingCategory"
+            @submit="handleCreateCategory"
+        >
+            <el-form-item label="分类名称" prop="name">
+                <el-input v-model="categoryForm.name" placeholder="请输入分类名称"/>
+            </el-form-item>
+            <el-form-item label="URL 别名">
+                <el-input v-model="categoryForm.slug" placeholder="留空自动生成"/>
+            </el-form-item>
+        </FormDialog>
 
         <!-- 创建标签对话框 -->
-        <el-dialog v-model="showTagDialog" title="创建标签" width="400px">
-            <el-form label-width="80px">
-                <el-form-item label="标签名称" required>
-                    <el-input v-model="newTagName" placeholder="请输入标签名称"/>
-                </el-form-item>
-                <el-form-item label="URL 别名">
-                    <el-input v-model="newTagSlug" placeholder="留空自动生成"/>
-                </el-form-item>
-            </el-form>
+        <FormDialog
+            v-model="tagForm"
+            v-model:show="showTagDialog"
+            create-title="创建标签"
+            width="400px"
+            label-width="80px"
+            :rules="tagRules"
+            :loading="creatingTag"
+            @submit="handleCreateTag"
+        >
+            <el-form-item label="标签名称" prop="name">
+                <el-input v-model="tagForm.name" placeholder="请输入标签名称"/>
+            </el-form-item>
+            <el-form-item label="URL 别名">
+                <el-input v-model="tagForm.slug" placeholder="留空自动生成"/>
+            </el-form-item>
+        </FormDialog>
+
+        <!-- 媒体库选择对话框 -->
+        <MediaDialog
+            v-model:visible="showMediaDialog"
+            title="从媒体库选择"
+            :width="800"
+        >
+            <div class="media-library">
+                <div class="media-toolbar">
+                    <el-input
+                        v-model="mediaSearch"
+                        placeholder="搜索文件名..."
+                        prefix-icon="Search"
+                        clearable
+                        size="default"
+                        @input="handleMediaSearch"
+                        style="width: 240px"
+                    />
+                </div>
+
+                <div v-if="mediaLoading" class="media-loading">
+                    <el-icon class="is-loading"><Loading /></el-icon>
+                    <span>加载中...</span>
+                </div>
+
+                <div v-else-if="mediaList.length === 0" class="media-empty">
+                    <el-icon><Picture /></el-icon>
+                    <span>暂无图片</span>
+                </div>
+
+                <div v-else class="media-grid">
+                    <div
+                        v-for="item in mediaList"
+                        :key="item.id"
+                        class="media-item"
+                        :class="{ 'is-selected': selectedMediaId === item.id }"
+                        @click="selectMedia(item)"
+                    >
+                        <img :src="getMediaFullUrl(item.url)" :alt="item.filename" class="media-thumb"/>
+                        <div class="media-info">
+                            <span class="media-filename">{{ item.filename }}</span>
+                            <span class="media-size">{{ formatFileSize(item.file_size) }}</span>
+                        </div>
+                        <div v-if="selectedMediaId === item.id" class="media-check">
+                            <el-icon><Check /></el-icon>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="mediaTotal > mediaPageSize" class="media-pagination">
+                    <el-pagination
+                        v-model:current-page="mediaPage"
+                        :page-size="mediaPageSize"
+                        :total="mediaTotal"
+                        layout="prev, pager, next"
+                        small
+                        @current-change="handleMediaPageChange"
+                    />
+                </div>
+            </div>
             <template #footer>
-                <el-button @click="showTagDialog = false">取消</el-button>
-                <el-button type="primary" @click="createTag" :loading="creatingTag">创建</el-button>
+                <ActionButton variant="outline" type="text" text="取消" icon="reset" size="normal" @click="showMediaDialog = false"/>
+                <ActionButton text="确认选择" icon="approve" size="normal" stop @click="confirmMediaSelect" :disabled="!selectedMediaId"/>
             </template>
-        </el-dialog>
+        </MediaDialog>
     </div>
 </template>
 
@@ -222,14 +296,18 @@
 import {ref, reactive, computed, onMounted, onUnmounted, watch} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {ElMessage, ElMessageBox} from 'element-plus'
-import {Plus, Loading, Upload, Delete, Clock} from '@element-plus/icons-vue'
+import {Plus, Loading, Upload, Delete, Clock, FolderOpened, Picture, Check, Search} from '@element-plus/icons-vue'
 import {MdEditor} from 'md-editor-v3'
 import 'md-editor-v3/lib/style.css'
 import {createContent, updateContent, getContent} from '@/api/content'
+import {getMedia} from '@/api/media'
 import api from '@/api'
 import {useUserStore} from '@/stores/user'
 import {useThemeStore} from '@/stores/theme'
 import StatusTag from '@/components/StatusTag.vue'
+import MediaDialog from '@/components/MediaDialog.vue'
+import FormDialog from '@/components/FormDialog.vue'
+import ActionButton from '@/components/ActionButton.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -257,16 +335,68 @@ const autoSaveTimer = ref(null)
 const lastSaveContent = ref('')
 const showCategoryDialog = ref(false)
 const showTagDialog = ref(false)
-const newCategoryName = ref('')
-const newCategorySlug = ref('')
-const newTagName = ref('')
-const newTagSlug = ref('')
 const creatingCategory = ref(false)
 const creatingTag = ref(false)
+
+const categoryForm = reactive({name: '', slug: ''})
+const tagForm = reactive({name: '', slug: ''})
+
+const categoryRules = {
+    name: [{required: true, message: '请输入分类名称', trigger: 'blur'}]
+}
+
+const tagRules = {
+    name: [{required: true, message: '请输入标签名称', trigger: 'blur'}]
+}
 
 const coverInputRef = ref(null)
 const pendingCoverFile = ref(null)
 const coverPreviewUrl = ref('')
+
+const showMediaDialog = ref(false)
+const mediaList = ref([])
+const allMediaItems = ref([])
+const mediaLoading = ref(false)
+const mediaPage = ref(1)
+const mediaPageSize = ref(12)
+const mediaTotal = ref(0)
+const mediaSearch = ref('')
+const selectedMediaId = ref(null)
+const selectedMediaItem = ref(null)
+
+const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg']
+
+const isImageFile = (item) => {
+    const filename = item.filename?.toLowerCase() || item.url?.toLowerCase() || ''
+    return imageExtensions.some(ext => filename.endsWith(`.${ext}`))
+}
+
+const filterMediaList = () => {
+    let items = allMediaItems.value
+
+    if (mediaSearch.value) {
+        const keyword = mediaSearch.value.toLowerCase()
+        items = items.filter(item => {
+            const filename = item.filename?.toLowerCase() || ''
+            return filename.includes(keyword)
+        })
+    }
+
+    mediaTotal.value = items.length
+    const start = (mediaPage.value - 1) * mediaPageSize.value
+    const end = start + mediaPageSize.value
+    mediaList.value = items.slice(start, end)
+}
+
+const handleMediaSearch = () => {
+    mediaPage.value = 1
+    filterMediaList()
+}
+
+const handleMediaPageChange = (page) => {
+    mediaPage.value = page
+    filterMediaList()
+}
 
 const updateEditorTheme = () => {
     const isDark = themeStore.theme === 'dark'
@@ -436,6 +566,63 @@ const clearCover = () => {
     form.value.cover_image = ''
 }
 
+const getMediaFullUrl = (url) => {
+    if (!url) return ''
+    if (url.startsWith('http')) return url
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
+    const mediaBaseUrl = apiBaseUrl.replace(/\/api\/?$/, '')
+    return `${mediaBaseUrl}${url}`
+}
+
+const fetchMediaList = async () => {
+    mediaLoading.value = true
+    try {
+        const params = {
+            page: 1,
+            page_size: 100,
+            type: 'image'
+        }
+
+        const {data} = await getMedia(params)
+        const allItems = data.results || data || []
+        allMediaItems.value = allItems.filter(isImageFile)
+        filterMediaList()
+    } catch (error) {
+        console.error('获取媒体列表失败:', error)
+        ElMessage.error('获取媒体列表失败')
+    } finally {
+        mediaLoading.value = false
+    }
+}
+
+const selectMedia = (item) => {
+    selectedMediaId.value = item.id
+    selectedMediaItem.value = item
+}
+
+const confirmMediaSelect = () => {
+    if (!selectedMediaItem.value) return
+
+    if (coverPreviewUrl.value && coverPreviewUrl.value.startsWith('blob:')) {
+        URL.revokeObjectURL(coverPreviewUrl.value)
+    }
+
+    pendingCoverFile.value = null
+    coverPreviewUrl.value = getMediaFullUrl(selectedMediaItem.value.url)
+    form.value.cover_image = coverPreviewUrl.value
+
+    showMediaDialog.value = false
+    ElMessage.success('已选择封面图')
+}
+
+const formatFileSize = (bytes) => {
+    if (!bytes) return '0 B'
+    const k = 1024
+    const sizes = ['B', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
+}
+
 const uploadCoverImage = async (file) => {
     const formData = new FormData()
     formData.append('file', file)
@@ -485,22 +672,22 @@ const fetchTags = async () => {
     }
 }
 
-const createCategory = async () => {
-    if (!newCategoryName.value.trim()) {
+const handleCreateCategory = async () => {
+    if (!categoryForm.name.trim()) {
         ElMessage.warning('请输入分类名称')
         return
     }
     creatingCategory.value = true
     try {
         const payload = {
-            name: newCategoryName.value.trim(),
-            slug: newCategorySlug.value.trim() || undefined,
+            name: categoryForm.name.trim(),
+            slug: categoryForm.slug.trim() || undefined,
         }
         const {data} = await api.post('/categories/', payload)
         ElMessage.success('分类创建成功')
         showCategoryDialog.value = false
-        newCategoryName.value = ''
-        newCategorySlug.value = ''
+        categoryForm.name = ''
+        categoryForm.slug = ''
         categories.value = [...categories.value, data]
         form.value.category = data.id
     } catch (error) {
@@ -511,22 +698,22 @@ const createCategory = async () => {
     }
 }
 
-const createTag = async () => {
-    if (!newTagName.value.trim()) {
+const handleCreateTag = async () => {
+    if (!tagForm.name.trim()) {
         ElMessage.warning('请输入标签名称')
         return
     }
     creatingTag.value = true
     try {
         const payload = {
-            name: newTagName.value.trim(),
-            slug: newTagSlug.value.trim() || undefined,
+            name: tagForm.name.trim(),
+            slug: tagForm.slug.trim() || undefined,
         }
         const {data} = await api.post('/tags/', payload)
         ElMessage.success('标签创建成功')
         showTagDialog.value = false
-        newTagName.value = ''
-        newTagSlug.value = ''
+        tagForm.name = ''
+        tagForm.slug = ''
         tags.value = [...tags.value, data]
         if (!form.value.tags) form.value.tags = []
         form.value.tags.push(data.id)
@@ -671,6 +858,16 @@ onMounted(async () => {
 
 watch(() => themeStore.theme, () => {
     updateEditorTheme()
+})
+
+watch(showMediaDialog, (val) => {
+    if (val) {
+        mediaPage.value = 1
+        mediaSearch.value = ''
+        selectedMediaId.value = null
+        selectedMediaItem.value = null
+        fetchMediaList()
+    }
 })
 
 onUnmounted(() => {
@@ -831,6 +1028,48 @@ onUnmounted(() => {
     background: var(--danger-hover);
 }
 
+.cover-toolbar {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.cover-tool-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xs);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    background: var(--bg-primary);
+    transition: all 0.15s ease;
+}
+
+.cover-tool-btn:hover {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+    background: var(--primary-bg);
+}
+
+.cover-tool-btn .el-icon {
+    font-size: 13px;
+}
+
+.cover-tool-btn-danger {
+    color: var(--danger-color);
+    border-color: transparent;
+    background: rgba(245, 108, 108, 0.08);
+}
+
+.cover-tool-btn-danger:hover {
+    background: var(--danger-color);
+    color: #fff;
+}
+
 .cover-status-bar {
     display: flex;
     align-items: center;
@@ -854,6 +1093,118 @@ onUnmounted(() => {
     font-size: 12px;
     color: var(--text-tertiary);
     margin-top: 8px;
+}
+
+/* 媒体库弹窗样式 */
+.media-library {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    height: 100%;
+    overflow: hidden;
+}
+
+.media-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.media-loading,
+.media-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 48px 24px;
+    color: var(--text-tertiary);
+}
+
+.media-loading .el-icon,
+.media-empty .el-icon {
+    font-size: 40px;
+}
+
+.media-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px;
+    min-height: 0;
+}
+
+.media-item {
+    position: relative;
+    border: 2px solid transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    overflow: hidden;
+    background: var(--bg-tertiary);
+    transition: all 0.2s ease;
+}
+
+.media-item:hover {
+    border-color: var(--border-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.media-item.is-selected {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.15);
+}
+
+.media-thumb {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    display: block;
+}
+
+.media-info {
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.media-filename {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.media-size {
+    font-size: 11px;
+    color: var(--text-tertiary);
+}
+
+.media-check {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 22px;
+    height: 22px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 13px;
+}
+
+.media-pagination {
+    display: flex;
+    justify-content: center;
+    padding-top: 8px;
+    flex-shrink: 0;
 }
 
 .form-tip {

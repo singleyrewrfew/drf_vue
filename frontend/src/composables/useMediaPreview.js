@@ -111,6 +111,11 @@ export function useMediaPreview(baseUrl) {
         ElMessage.error('视频加载失败，请检查视频格式或网络连接')
     }
 
+    const handlePreviewClosed = () => {
+        previewFile.value = null
+        videoPoster.value = ''
+    }
+
     return {
         previewVisible,
         previewFile,
@@ -126,5 +131,6 @@ export function useMediaPreview(baseUrl) {
         copyLink,
         downloadFile,
         onVideoError,
+        handlePreviewClosed,
     }
 }

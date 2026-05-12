@@ -1,5 +1,5 @@
-/**
- * MdEditor v3 样式覆盖 — 全局唯一来源
+/* ============================================================
+ *   MdEditor v3 样式覆盖 — 全局唯一来源
  *
  * 设计原则：
  * 1. 所有颜色通过 CSS 变量引用，支持亮/暗主题自动切换
@@ -9,6 +9,18 @@
  *
  * @module styles/md-editor-override
  */
+
+/* ---- 自定义滚动条：无内容时完全隐藏 ---- */
+/* 只隐藏 thumb 为空/隐藏的滚动条轨道 */
+.md-editor-custom-scrollbar__track:has(.md-editor-custom-scrollbar__thumb[style*="display: none"]) {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+/* 当预览区为空时也隐藏其滚动条 */
+.md-editor-custom-scrollbar[style*="flex"] .md-editor-custom-scrollbar__track {
+    display: none;
+}
 
 /* ============================================================
  *   第零部分：全局编辑器美化（亮暗通用）

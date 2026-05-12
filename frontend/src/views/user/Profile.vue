@@ -248,10 +248,10 @@
             </div>
         </div>
 
-        <el-dialog
-            v-model="showMediaDialog"
+        <MediaDialog
+            v-model:visible="showMediaDialog"
             title="从媒体库选择头像"
-            width="800px"
+            :width="800"
             :close-on-click-modal="false"
         >
             <SearchInput v-model="mediaSearch" placeholder="搜索媒体文件" style="margin-bottom: 16px"/>
@@ -276,7 +276,7 @@
                 <ActionButton variant="outline" type="text" text="取消" icon="reset" size="normal" @click="showMediaDialog = false"/>
                 <ActionButton text="确定" icon="approve" size="normal" stop @click="handleMediaSelect" :disabled="!selectedMedia"/>
             </template>
-        </el-dialog>
+        </MediaDialog>
     </div>
 </template>
 
@@ -296,6 +296,7 @@ import {getAvatarUrl} from '@/utils'
 import {extractErrorMessage, normalizeListResponse} from '@/api/index.js'
 import ActionButton from '@/components/ActionButton.vue'
 import SearchInput from '@/components/SearchInput.vue'
+import MediaDialog from '@/components/MediaDialog.vue'
 
 const userStore = useUserStore()
 const formRef = ref()

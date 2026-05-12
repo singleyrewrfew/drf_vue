@@ -92,13 +92,14 @@
               - 音频：使用原生 audio 标签
               - 其他：提示不支持预览，提供下载按钮
         -->
-        <el-dialog
-            v-model="previewVisible"
+        <BaseDialog
+            :visible="previewVisible"
             :title="previewFile?.filename || '预览'"
             :width="dialogWidth"
-            destroy-on-close
+            @update:visible="(val) => previewVisible = val"
+            @close="handlePreviewClosed"
         >
-            <div class="preview-container">
+            <div v-if="previewVisible" class="preview-container">
                 <!-- 图片预览 -->
                 <img v-if="isImage" :src="previewUrl" class="preview-image" alt="预览图片"/>
                 <!-- 视频预览（含缩略图导航） -->
@@ -117,10 +118,10 @@
                 <div v-else class="preview-unsupported">
                     <el-icon :size="64"><Document/></el-icon>
                     <p>该文件类型不支持预览</p>
-                    <el-button type="primary" @click="downloadFile">下载文件</el-button>
+                    <ActionButton text="下载文件" icon="download" size="normal" stop @click="downloadFile"/>
                 </div>
             </div>
-        </el-dialog>
+        </BaseDialog>
     </div>
 </template>
 
@@ -180,6 +181,7 @@ import {getMedia, deleteMedia, regenerateThumbnails} from '@/api/media'
 
 /** 业务组件 */
 import VideoPlayer from '@/components/VideoPlayer.vue'
+import BaseDialog from '@/components/BaseDialog.vue'
 import TablePage from '@/components/TablePage.vue'
 import ActionButton from '@/components/ActionButton.vue'
 import UploadButton from '@/components/UploadButton.vue'
@@ -338,6 +340,8 @@ const {
     downloadFile,
     /** @type {Function} 视频播放出错回调 */
     onVideoError,
+    /** @type {Function} 预览弹窗关闭回调 */
+    handlePreviewClosed,
 } = useMediaPreview(baseUrl)
 
 /**

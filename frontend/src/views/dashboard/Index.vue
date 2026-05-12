@@ -1,51 +1,6 @@
 <template>
     <div class="dashboard">
-        <!-- 管理员显示全部统计卡片 -->
-        <template v-if="isAdmin">
-            <el-row :gutter="20" class="stat-row">
-                <el-col :xs="12" :sm="6">
-                    <StatCard :value="stats.contents" label="内容总数" type="primary" icon="Document" clickable>
-                        <template #footer>已发布 {{ stats.published }} · 草稿 {{ stats.drafts }}</template>
-                    </StatCard>
-                </el-col>
-                <el-col :xs="12" :sm="6">
-                    <StatCard :value="stats.comments" label="评论总数" type="success" icon="ChatDotRound">
-                        <template #footer>用户互动数据</template>
-                    </StatCard>
-                </el-col>
-                <el-col :xs="12" :sm="6">
-                    <StatCard :value="stats.users" label="用户总数" type="warning" icon="User">
-                        <template #footer>注册用户</template>
-                    </StatCard>
-                </el-col>
-                <el-col :xs="12" :sm="6">
-                    <StatCard :value="formatNumber(stats.views)" label="总浏览量" type="danger" icon="View">
-                        <template #footer>累计访问</template>
-                    </StatCard>
-                </el-col>
-            </el-row>
-        </template>
-
-        <!-- 非管理员只显示个人统计 -->
-        <template v-else>
-            <el-row :gutter="20" class="stat-row">
-                <el-col :xs="12" :sm="8">
-                    <StatCard :value="stats.my_contents || 0" label="我的内容" type="primary" icon="Document" clickable>
-                        <template #footer>已发布 {{ stats.my_published || 0 }} · 草稿 {{ stats.my_drafts || 0 }}</template>
-                    </StatCard>
-                </el-col>
-                <el-col :xs="12" :sm="8">
-                    <StatCard :value="formatNumber(stats.my_views || 0)" label="我的浏览量" type="success" icon="View">
-                        <template #footer>累计访问</template>
-                    </StatCard>
-                </el-col>
-                <el-col :xs="12" :sm="8">
-                    <StatCard :value="stats.my_comments || 0" label="我的评论" type="warning" icon="ChatDotRound">
-                        <template #footer>互动数据</template>
-                    </StatCard>
-                </el-col>
-            </el-row>
-        </template>
+        <DashboardStats :stats="stats"/>
 
         <el-row :gutter="20" style="margin-top: 20px">
             <el-col :xs="24" :lg="16">
@@ -62,115 +17,24 @@
                         <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip/>
                         <el-table-column prop="author_name" label="作者" width="120" v-if="isAdmin"/>
                         <el-table-column prop="view_count" label="浏览量" width="100">
-                            <!--作用域插槽 自定义列内容显示-->
-                            <!-- #default:v-slot:default 的简写-->
                             <template #default="{ row }">
                                 <el-tag type="info" size="small">{{ row.view_count }}</el-tag>
                             </template>
                         </el-table-column>
                         <el-table-column prop="created_at" label="发布时间" width="180"/>
                     </el-table>
-                    <!--加载完了，且没数据 → 显示空提示。-->
                     <el-empty v-if="!loading && stats.recent_contents.length === 0" description="暂无内容"/>
                 </el-card>
             </el-col>
             <el-col :xs="24" :lg="8">
-                <el-card shadow="hover">
-                    <template #header>
-                        <span>快捷操作</span>
-                    </template>
-                    <div class="quick-actions">
-                        <QuickActionCard title="新建内容" type="primary" @click="$router.push('/contents/create')">
-                            <EditPen/>
-                        </QuickActionCard>
-                        <QuickActionCard title="上传媒体" type="success" @click="$router.push('/media')">
-                            <Upload/>
-                        </QuickActionCard>
-                        <QuickActionCard title="个人设置" type="warning" @click="$router.push('/profile')">
-                            <Setting/>
-                        </QuickActionCard>
-                        <template v-if="isAdmin">
-                            <QuickActionCard title="分类管理" type="info" @click="$router.push('/categories')">
-                                <Folder/>
-                            </QuickActionCard>
-                            <QuickActionCard title="标签管理" type="primary" @click="$router.push('/tags')">
-                                <PriceTag/>
-                            </QuickActionCard>
-                            <QuickActionCard title="评论管理" type="success" @click="$router.push('/comments')">
-                                <ChatDotRound/>
-                            </QuickActionCard>
-                        </template>
-                        <template v-else-if="isEditor">
-                            <QuickActionCard title="内容管理" type="info" @click="$router.push('/contents')">
-                                <Document/>
-                            </QuickActionCard>
-                        </template>
-                    </div>
-                </el-card>
-
-                <el-card shadow="hover" style="margin-top: 20px" v-if="isAdmin">
-                    <template #header>
-                        <div class="card-header">
-                            <span>系统信息</span>
-                            <el-button text size="small" @click="refreshHealth" :loading="healthLoading">
-                                刷新
-                            </el-button>
-                        </div>
-                    </template>
-                    <div class="system-info">
-                        <div class="info-item">
-                            <div class="info-content">
-                                <el-icon class="info-icon" color="#409EFF">
-                                    <Picture/>
-                                </el-icon>
-                                <span class="info-label">媒体文件</span>
-                            </div>
-                            <span class="info-value">{{ stats.media }} 个</span>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-content">
-                                <el-icon class="info-icon" color="#67C23A">
-                                    <InfoFilled/>
-                                </el-icon>
-                                <span class="info-label">系统版本</span>
-                            </div>
-                            <span class="info-value">v1.0.0</span>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-content">
-                                <el-icon class="info-icon" color="#E6A23C">
-                                    <Platform/>
-                                </el-icon>
-                                <span class="info-label">框架</span>
-                            </div>
-                            <span class="info-value">Django + Vue 3</span>
-                        </div>
-
-                        <div class="info-divider"></div>
-
-                        <div class="info-item">
-                            <div class="info-content">
-                                <span class="status-dot" :class="serviceStatusClass('database')"></span>
-                                <span class="info-label">数据库</span>
-                            </div>
-                            <span class="info-value">{{ serviceStatusText('database') }}</span>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-content">
-                                <span class="status-dot" :class="serviceStatusClass('redis')"></span>
-                                <span class="info-label">Redis</span>
-                            </div>
-                            <span class="info-value">{{ serviceStatusText('redis') }}</span>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-content">
-                                <span class="status-dot" :class="serviceStatusClass('celery')"></span>
-                                <span class="info-label">Celery</span>
-                            </div>
-                            <span class="info-value">{{ serviceStatusText('celery') }}</span>
-                        </div>
-                    </div>
-                </el-card>
+                <QuickActionsPanel/>
+                <SystemInfoCard
+                    v-if="isAdmin"
+                    :stats="stats"
+                    :health-data="healthData"
+                    :loading="healthLoading"
+                    @refresh="refreshHealth"
+                />
             </el-col>
         </el-row>
     </div>
@@ -178,32 +42,17 @@
 
 <script setup>
 import {ref, computed, onMounted} from 'vue'
-import {
-    Document,
-    ChatDotRound,
-    User,
-    View,
-    EditPen,
-    Upload,
-    Folder,
-    PriceTag,
-    Setting,
-    Picture,
-    InfoFilled,
-    Platform
-} from '@element-plus/icons-vue'
 import {useUserStore} from '@/stores/user'
 import ActionButton from '@/components/ActionButton.vue'
-import StatCard from '@/components/StatCard.vue'
-import QuickActionCard from '@/components/QuickActionCard.vue'
+import DashboardStats from './components/DashboardStats.vue'
+import QuickActionsPanel from './components/QuickActionsPanel.vue'
+import SystemInfoCard from './components/SystemInfoCard.vue'
 import {fetchStats} from "@/api/stats.js"
 import {fetchHealth} from "@/api/health.js"
 
 const userStore = useUserStore()
 
-// 加载状态
 const loading = ref(false)
-// 仪表盘渲染字段
 const stats = ref({
     contents: 0,
     published: 0,
@@ -220,77 +69,22 @@ const stats = ref({
     recent_contents: [],
 })
 
-// 计算属性
 const isAdmin = computed(() => userStore.isAdmin())
-const isEditor = computed(() => userStore.isEditor())
 
-// 格式化数字
-const formatNumber = (num) => {
-    if (num >= 10000) {
-        return (num / 10000).toFixed(1) + 'w'
-    }
-    if (num >= 1000) {
-        return (num / 1000).toFixed(1) + 'k'
-    }
-    return num
-}
-
-// 异步获取仪表盘统计数据
 const asyncFetchStats = async () => {
-    // 加载状态置为true
     loading.value = true
     try {
-        // 从后端获取统计数据
         const {data} = await fetchStats()
-        // 把新数据和旧数据合并，更新到响应式变量里
-        /*
-        ... 叫扩展运算符
-          作用：合并对象
-          保留原来 stats 里的所有字段
-          用新的 data 覆盖 / 新增字段
-          例如:
-          const oldStats = { name: "小明", age: 18 }
-          const newData = { age: 20, city: "北京" }
-
-          // 用 ... 展开合并
-          const result = {
-            ...oldStats,  // 把 oldStats 里的内容全部展开放进来
-            ...newData    // 把 newData 里的内容全部展开放进来
-          }
-
-          √结果：{ name:"小明", age:20, city:"北京" }
-        */
-        stats.value = {
-            ...stats.value,
-            ...data,
-        }
+        stats.value = {...stats.value, ...data}
     } catch (error) {
         console.error('获取统计数据失败', error)
     } finally {
-        // 状态改为非加载中
         loading.value = false
     }
 }
 
 const healthLoading = ref(false)
 const healthData = ref(null)
-
-const serviceStatusClass = (service) => {
-    const status = healthData.value?.services?.[service]?.status
-    return status === 'healthy' ? 'dot-healthy' : status === 'unhealthy' ? 'dot-unhealthy' : 'dot-unknown'
-}
-
-const serviceStatusText = (service) => {
-    const info = healthData.value?.services?.[service]
-    if (healthLoading.value) return '检测中...'
-    if (!info) return '未检测'
-    if (info.status === 'healthy') {
-        if (service === 'celery') return `${info.workers} Worker`
-        if (service === 'redis') return info.used_memory_human || '正常'
-        return `${info.response_time_ms}ms`
-    }
-    return '异常'
-}
 
 const refreshHealth = async () => {
     healthLoading.value = true
@@ -314,99 +108,9 @@ onMounted(() => {
     padding: 0;
 }
 
-.stat-row {
-    margin-bottom: 16px;
-}
-
 .card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-}
-
-.quick-actions {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-}
-
-.system-info {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.info-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 14px 16px;
-    border-radius: 8px;
-    background: var(--bg-secondary);
-    transition: all 0.2s ease;
-}
-
-.info-item:hover {
-    background: var(--bg-tertiary);
-    transform: translateX(4px);
-}
-
-.info-content {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.info-icon {
-    font-size: 18px;
-}
-
-.info-label {
-    color: var(--text-secondary);
-    font-size: 14px;
-    font-weight: 500;
-}
-
-.info-value {
-    color: var(--text-primary);
-    font-size: 14px;
-    font-weight: 600;
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.info-divider {
-    height: 1px;
-    background: var(--border-light);
-    margin: 8px 0;
-}
-
-.status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-}
-
-.dot-healthy {
-    background: var(--success-color, #67C23A);
-    box-shadow: 0 0 4px var(--success-color, #67C23A);
-}
-
-.dot-unhealthy {
-    background: var(--danger-color, #F56C6C);
-    box-shadow: 0 0 4px var(--danger-color, #F56C6C);
-}
-
-.dot-unknown {
-    background: var(--text-tertiary, #C0C4CC);
-}
-
-@media (max-width: 768px) {
-    .quick-actions {
-        grid-template-columns: repeat(2, 1fr);
-    }
 }
 </style>

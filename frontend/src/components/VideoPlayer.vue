@@ -102,6 +102,9 @@ const waitForContainer = (retries = 20, interval = 100) => new Promise((resolve)
     check()
 })
 
+/** 标记是否正在初始化（防止重复初始化） */
+let initializing = false
+
 /**
  * 创建 / 重建播放器实例
  *
@@ -112,8 +115,10 @@ const waitForContainer = (retries = 20, interval = 100) => new Promise((resolve)
  *   4. 创建新 Artplayer 实例并绑定事件
  */
 const initPlayer = async () => {
+    if (initializing || (art.value && !hasError.value)) return
+    initializing = true
     // 1. 销毁旧实例（false = 保留容器 div，不移除 DOM）
-    destroyPlayer()
+    destroyPlayerInternal()
 
     // 2. 重置状态
     ready.value = false
@@ -123,6 +128,7 @@ const initPlayer = async () => {
 
     if (!containerRef.value || !props.src) {
         console.warn('[VideoPlayer] 缺少容器或 src，跳过初始化')
+        initializing = false
         return
     }
 
@@ -133,6 +139,7 @@ const initPlayer = async () => {
             src: props.src,
             rect: containerRef.value?.getBoundingClientRect(),
         })
+        initializing = false
         // 不设 error 态，让 IntersectionObserver 后续重试
         return
     }
@@ -198,8 +205,12 @@ const initPlayer = async () => {
             emit('ready')
         })
 
-        // 错误事件
+        // 错误事件（过滤良性错误）
         art.value.on('error', (err) => {
+            const isAborted = err?.message?.includes('abort') ||
+                               err?.name === 'AbortError' ||
+                               err?.code === 20
+            if (isAborted) return
             clearTimeout(initTimer)
             hasError.value = true
             emit('error', err)
@@ -212,12 +223,28 @@ const initPlayer = async () => {
         console.error('[VideoPlayer] 创建实例异常:', err)
         clearTimeout(initTimer)
         hasError.value = true
+        initializing = false
         emit('error', err)
+    }
+    initializing = false
+}
+
+/**
+ * 销毁播放器实例（内部版本，不重置 initializing 标志）
+ */
+const destroyPlayerInternal = () => {
+    clearTimeout(initTimer)
+    if (art.value) {
+        try {
+            art.value.destroy(false)
+        } catch (_) {
+        }
+        art.value = null
     }
 }
 
 /**
- * 销毁播放器实例
+ * 销毁播放器实例（公开版本，重置 initializing 标志）
  *
  * 使用 destroy(false) 参数：
  *   - false = 仅解绑事件、释放内存，**保留容器 DOM 节点**
@@ -225,25 +252,22 @@ const initPlayer = async () => {
  *   - 如果用 destroy() 或 destroy(true)，容器会被移除，导致无法重建
  */
 const destroyPlayer = () => {
-    clearTimeout(initTimer)
-    if (art.value) {
-        try {
-            art.value.destroy(false)
-        } catch (_) {
-            // ignore: 容器可能已被外部移除
-        }
-        art.value = null
-    }
+    destroyPlayerInternal()
+    initializing = false
 }
 
 /** 手动重试 */
-const retry = () => initPlayer()
+const retry = () => {
+    initializing = false
+    initPlayer()
+}
 
 /* ---- Watchers ---- */
 
 // src 变化 → 重建播放器
 watch(() => props.src, async (newSrc, oldSrc) => {
     if (newSrc && newSrc !== oldSrc) {
+        initializing = false
         await initPlayer()
     }
 })
