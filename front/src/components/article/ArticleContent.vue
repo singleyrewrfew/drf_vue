@@ -69,7 +69,20 @@ function addCopyButtons() {
 async function handleCopy(codeElement, button) {
   try {
     const code = codeElement.textContent
-    await navigator.clipboard.writeText(code)
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(code)
+    } else {
+      const textarea = document.createElement('textarea')
+      textarea.value = code
+      textarea.style.position = 'fixed'
+      textarea.style.left = '-9999px'
+      textarea.style.top = '-9999px'
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
+    }
 
     button.textContent = '已复制!'
     button.classList.add('copied')
