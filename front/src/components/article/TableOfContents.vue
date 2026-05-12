@@ -191,15 +191,13 @@ onUnmounted(() => {
   font-weight: 400;
   color: var(--text-secondary);
   text-decoration: none;
-  padding: 8px 12px 8px 16px;
+  padding: 6px 10px 6px 14px;
   display: block;
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   border-left: 3px solid transparent;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.5;
   position: relative;
 }
 
@@ -401,15 +399,13 @@ onUnmounted(() => {
   font-style: italic;
   font-weight: 400;
   color: var(--text-secondary);
-  padding: 10px 14px 10px 18px;
+  padding: 8px 12px 8px 16px;
   margin-bottom: 4px;
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   border-left: 3px solid transparent;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.5;
   position: relative;
 }
 

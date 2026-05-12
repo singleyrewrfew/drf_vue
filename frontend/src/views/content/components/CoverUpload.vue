@@ -8,24 +8,15 @@
             </div>
         </div>
         <div class="cover-toolbar">
-            <button type="button" class="cover-tool-btn" @click.stop="triggerSelect">
-                <el-icon><Upload/></el-icon>
-                <span>上传文件</span>
-            </button>
-            <button type="button" class="cover-tool-btn" @click.stop="$emit('open-media')">
-                <el-icon><FolderOpened/></el-icon>
-                <span>媒体库</span>
-            </button>
-            <button v-if="previewUrl || modelValue" type="button" class="cover-tool-btn cover-tool-btn-danger" @click.stop="handleClear">
-                <el-icon><Delete/></el-icon>
-                <span>移除</span>
-            </button>
+            <ActionButton icon="upload" text="上传文件" size="small" stop @click="triggerSelect"/>
+            <ActionButton icon="preview" text="媒体库" size="small" stop @click="$emit('open-media')"/>
+            <ActionButton v-if="previewUrl || modelValue" variant="outline" type="text" icon="delete" text="移除" size="small" stop @click="handleClear"/>
         </div>
         <div v-if="pendingFile" class="cover-status-bar">
             <el-icon class="status-icon"><Clock/></el-icon>
             <span>封面图将在提交时上传</span>
         </div>
-        <input ref="inputRef" type="file" accept="image/jpeg,image/png,image/gif,image/webp" style="display: none"
+        <input ref="inputRef" :id="id" type="file" accept="image/jpeg,image/png,image/gif,image/webp" style="display: none"
                @change="handleFileChange"/>
         <div class="cover-tip">支持 JPG/PNG/GIF/WEBP，建议尺寸 1920x1080</div>
     </div>
@@ -34,10 +25,12 @@
 <script setup>
 import {ref, watch} from 'vue'
 import {ElMessage} from 'element-plus'
-import {Plus, Upload, Delete, Clock, FolderOpened} from '@element-plus/icons-vue'
+import {Plus, Clock} from '@element-plus/icons-vue'
+import ActionButton from '@/components/ActionButton.vue'
 
 const props = defineProps({
     modelValue: {type: String, default: ''},
+    id: {type: String, default: ''},
 })
 
 const emit = defineEmits(['update:modelValue', 'select-file', 'open-media', 'file-ready'])
@@ -98,10 +91,7 @@ defineExpose({setFromMedia, pendingFile, previewUrl})
 .cover-image {width: 100%; height: 100%; object-fit: cover; display: block}
 .cover-placeholder {width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--text-tertiary)}
 .cover-uploader-icon {font-size: 32px}
-.cover-toolbar {display: flex; gap: 4px; margin-top: 8px}
-.cover-tool-btn {display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border: none; background: var(--bg-tertiary); border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; color: var(--text-secondary); transition: all 0.2s ease}
-.cover-tool-btn:hover {background: var(--bg-hover); color: var(--text-primary)}
-.cover-tool-btn-danger:hover {color: var(--danger-color, #F56C6C); background: rgba(245, 108, 108, 0.1)}
+.cover-toolbar {display: flex; gap: 8px; margin-top: 8px; align-items: center}
 .cover-status-bar {margin-top: 8px; padding: 6px 10px; background: rgba(64, 158, 255, 0.1); border-radius: var(--radius-sm); display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--primary-color)}
 .status-icon {font-size: 14px}
 .cover-tip {margin-top: 4px; font-size: 12px; color: var(--text-tertiary)}

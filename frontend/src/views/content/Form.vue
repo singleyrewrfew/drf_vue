@@ -15,18 +15,18 @@
                 <el-row :gutter="20">
                     <el-col :span="16">
                         <el-form-item label="标题" prop="title">
-                            <el-input v-model="form.title" placeholder="请输入标题" maxlength="200" show-word-limit/>
+                            <el-input id="title" v-model="form.title" placeholder="请输入标题" maxlength="200" show-word-limit/>
                         </el-form-item>
                     </el-col>
                     <el-col :span="8">
                         <el-form-item label="URL别名" prop="slug">
-                            <el-input v-model="form.slug" placeholder="留空自动生成" maxlength="200"/>
+                            <el-input id="slug" v-model="form.slug" placeholder="留空自动生成" maxlength="200"/>
                         </el-form-item>
                     </el-col>
                 </el-row>
 
                 <el-form-item label="摘要" prop="summary">
-                    <el-input v-model="form.summary" type="textarea" :rows="3" placeholder="请输入摘要（可选）"
+                    <el-input id="summary" v-model="form.summary" type="textarea" :rows="3" placeholder="请输入摘要（可选）"
                               maxlength="500" show-word-limit/>
                 </el-form-item>
 
@@ -39,7 +39,7 @@
                         </el-upload>
                     </div>
                     <div class="editor-wrapper" :class="editorThemeClass()">
-                        <MdEditor v-if="editorLoaded" v-model="form.content" :toolbars="toolbars" :preview="showPreview"
+                        <MdEditor v-if="editorLoaded" id="content" v-model="form.content" :toolbars="toolbars" :preview="showPreview"
                                   :previewTheme="previewTheme" :codeTheme="codeTheme" :style="{ height: editorHeight }"
                                   placeholder="请输入正文内容，支持 Markdown 语法" @onChange="(val) => handleContentChange(val)"/>
                         <div v-else class="editor-loading">
@@ -55,7 +55,7 @@
                     <el-col :span="12">
                         <el-form-item label="分类" prop="category">
                             <div class="select-with-button">
-                                <el-select v-model="form.category" placeholder="请选择分类" clearable style="width: calc(100% - 60px)">
+                                <el-select id="category" v-model="form.category" placeholder="请选择分类" clearable style="width: calc(100% - 60px)">
                                     <el-option v-for="cat in categories" :key="cat.id" :label="cat.name" :value="cat.id"/>
                                 </el-select>
                                 <el-button type="primary" size="small" @click="showCategoryDialog = true">创建</el-button>
@@ -65,7 +65,7 @@
                     <el-col :span="12">
                         <el-form-item label="标签" prop="tags">
                             <div class="select-with-button">
-                                <el-select v-model="form.tags" multiple placeholder="请选择标签" style="width: calc(100% - 60px)" label="name">
+                                <el-select id="tags" v-model="form.tags" multiple placeholder="请选择标签" style="width: calc(100% - 60px)" label="name">
                                     <el-option v-for="tag in tags" :key="tag.id" :label="tag.name" :value="tag.id"/>
                                 </el-select>
                                 <el-button type="primary" size="small" @click="showTagDialog = true">创建</el-button>
@@ -77,7 +77,7 @@
                 <el-row :gutter="20" v-if="isAdmin">
                     <el-col :span="12">
                         <el-form-item label="作者" prop="author">
-                            <el-select v-model="form.author" placeholder="请选择作者" style="width: 100%">
+                            <el-select id="author" v-model="form.author" placeholder="请选择作者" style="width: 100%">
                                 <el-option v-for="user in users" :key="user.id" :label="user.username" :value="user.id"/>
                             </el-select>
                         </el-form-item>
@@ -88,20 +88,26 @@
 
                 <el-row :gutter="20">
                     <el-col :span="12">
-                        <el-form-item label="封面图">
-                            <CoverUpload ref="coverUploadRef" v-model="form.cover_image" @open-media="showMediaSelector = true"
+                        <el-form-item label="封面图" prop="cover_image">
+                            <CoverUpload ref="coverUploadRef" id="cover_image" v-model="form.cover_image" @open-media="showMediaSelector = true"
                                          @file-ready="(file) => pendingCoverFile = file"/>
                         </el-form-item>
                     </el-col>
                     <el-col :span="12">
-                        <el-form-item label="状态" prop="status">
-                            <el-radio-group v-model="form.status">
-                                <el-radio value="draft">草稿</el-radio>
-                                <el-radio value="published">发布</el-radio>
-                            </el-radio-group>
-                        </el-form-item>
-                        <el-form-item label="置顶">
-                            <el-switch v-model="form.is_top"/>
+                        <div class="form-item-custom">
+                            <label for="status" class="form-label">状态</label>
+                            <div style="position: relative; display: inline-flex;">
+                                <input type="radio" id="status" name="status" :checked="form.status === 'published'"
+                                       style="position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none;"
+                                       tabindex="-1" aria-hidden="true"/>
+                                <el-radio-group v-model="form.status" @change="(val) => form.status = val">
+                                    <el-radio value="draft">草稿</el-radio>
+                                    <el-radio value="published">发布</el-radio>
+                                </el-radio-group>
+                            </div>
+                        </div>
+                        <el-form-item label="置顶" prop="is_top">
+                            <el-switch id="is_top" v-model="form.is_top"/>
                             <span class="form-tip">置顶内容将优先显示在列表顶部</span>
                         </el-form-item>
                     </el-col>
@@ -109,7 +115,7 @@
 
                 <el-divider/>
 
-                <el-form-item>
+                <el-form-item class="form-actions">
                     <ActionButton icon="approve" :text="isEdit ? '保存修改' : '创建内容'" size="normal" stop
                                @click="handleSubmit" :loading="loading"/>
                     <ActionButton variant="outline" type="text" icon="save" text="保存草稿" size="normal" stop
@@ -123,16 +129,16 @@
         <FormDialog v-model="categoryForm" v-model:show="showCategoryDialog" create-title="创建分类" width="400px"
                    label-width="80px" :rules="categoryRules" :loading="creatingCategory"
                    @submit="() => handleCreateCategory(categories)">
-            <el-form-item label="分类名称" prop="name"><el-input v-model="categoryForm.name" placeholder="请输入分类名称"/></el-form-item>
-            <el-form-item label="URL 别名"><el-input v-model="categoryForm.slug" placeholder="留空自动生成"/></el-form-item>
+            <el-form-item label="分类名称" prop="name"><el-input id="name" v-model="categoryForm.name" placeholder="请输入分类名称"/></el-form-item>
+            <el-form-item label="URL 别名" prop="slug"><el-input id="slug" v-model="categoryForm.slug" placeholder="留空自动生成"/></el-form-item>
         </FormDialog>
 
         <!-- 创建标签对话框 -->
         <FormDialog v-model="tagForm" v-model:show="showTagDialog" create-title="创建标签" width="400px"
                    label-width="80px" :rules="tagRules" :loading="creatingTag"
                    @submit="() => handleCreateTag(tags)">
-            <el-form-item label="标签名称" prop="name"><el-input v-model="tagForm.name" placeholder="请输入标签名称"/></el-form-item>
-            <el-form-item label="URL 别名"><el-input v-model="tagForm.slug" placeholder="留空自动生成"/></el-form-item>
+            <el-form-item label="标签名称" prop="name"><el-input id="name" v-model="tagForm.name" placeholder="请输入标签名称"/></el-form-item>
+            <el-form-item label="URL 别名" prop="slug"><el-input id="slug" v-model="tagForm.slug" placeholder="留空自动生成"/></el-form-item>
         </FormDialog>
 
         <!-- 媒体库选择 -->
@@ -209,7 +215,7 @@ const {
     editorLoaded, showPreview, previewTheme, codeTheme, editorHeight,
     autoSaveStatus, toolbars, editorThemeClass, handleContentChange,
     initLastContent, hasDraft, draftData,
-    checkLocalDraft, restoreDraft, discardDraft,
+    checkLocalDraft, restoreDraft, discardDraft, clearDraftStorage,
 } = useContentEditor(form)
 
 const {
@@ -272,24 +278,62 @@ const handleSubmit = async () => {
     if (!formRef.value) return
     await formRef.value.validate()
     loading.value = true
+    
     try {
         const submitData = await buildSubmitData()
-        if (isEdit.value) { await updateContent(route.params.id, submitData); ElMessage.success('保存成功') }
-        else { await createContent(submitData); ElMessage.success('创建成功'); clearDraftStorage() }
+        
+        if (isEdit.value) {
+            await updateContent(route.params.id, submitData)
+            ElMessage.success('保存成功')
+        } else {
+            await createContent(submitData)
+            ElMessage.success('创建成功')
+        }
+        
+        try {
+            clearDraftStorage()
+        } catch (e) {
+            console.warn('清除草稿失败:', e)
+        }
+        
         router.push('/contents')
+        
     } catch (error) {
+        console.error('提交失败:', error)
         ElMessage.error(isEdit.value ? '保存失败' : '创建失败')
-    } finally { loading.value = false }
+    } finally {
+        loading.value = false
+    }
 }
 
 const handleSaveDraft = async () => {
     if (!form.value.title && !form.value.content) { ElMessage.warning('请至少填写标题或内容'); return }
     loading.value = true
+    
     try {
         const submitData = {...(await buildSubmitData()), status: 'draft'}
-        if (isEdit.value) { await updateContent(route.params.id, submitData); ElMessage.success('草稿保存成功') }
-        else { await createContent(submitData); ElMessage.success('草稿保存成功'); router.push('/contents'); clearDraftStorage() }
-    } catch { ElMessage.error('保存草稿失败') } finally { loading.value = false }
+        
+        if (isEdit.value) {
+            await updateContent(route.params.id, submitData)
+            ElMessage.success('草稿保存成功')
+        } else {
+            await createContent(submitData)
+            ElMessage.success('草稿保存成功')
+            router.push('/contents')
+        }
+        
+        try {
+            clearDraftStorage()
+        } catch (e) {
+            console.warn('清除草稿失败:', e)
+        }
+        
+    } catch (error) {
+        console.error('保存草稿失败:', error)
+        ElMessage.error('保存草稿失败') 
+    } finally { 
+        loading.value = false
+    }
 }
 
 const fetchCategories = async () => { try { const {data} = await api.get('/categories/'); categories.value = data.results || data } catch {} }
@@ -341,8 +385,11 @@ onMounted(async () => {
 .editor-wrapper {width: 100%}
 .editor-loading {height: 500px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: var(--text-tertiary); background: var(--bg-tertiary); border-radius: var(--radius-md)}
 .form-tip {font-size: 12px; color: var(--text-tertiary); margin-left: 8px}
+.form-item-custom {display: flex; align-items: center; margin-bottom: 18px}
+.form-label {width: 100px; text-align: right; font-size: 14px; color: var(--text-primary); padding-right: 12px; box-sizing: border-box; flex-shrink: 0}
 .draft-restore-hint p {margin: 0 0 12px; color: var(--text-secondary); font-size: 14px}
 .draft-preview {background: var(--bg-tertiary); border-radius: var(--radius-sm); padding: 12px}
 .draft-info {font-size: 13px; color: var(--text-secondary); padding: 4px 0}
 .draft-info strong {color: var(--text-primary)}
+.form-actions :deep(.el-form-item__content) {display: flex; gap: 12px; align-items: center}
 </style>

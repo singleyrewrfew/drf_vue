@@ -1,18 +1,25 @@
 <template>
     <button
         class="action-btn"
-        :class="[`action-btn--${type}`, `action-btn--${size}`, { 'action-btn--spin': spinIcon, 'action-btn--outline': variant === 'outline', 'action-btn--after': iconAfter }]"
-        :disabled="disabled"
+        :class="[`action-btn--${type}`, `action-btn--${size}`, { 'action-btn--spin': spinIcon, 'action-btn--outline': variant === 'outline', 'action-btn--after': iconAfter, 'action-btn--loading': loading }]"
+        :disabled="disabled || loading"
         :type="htmlType"
         @click="handleClick"
     >
+        <!-- Loading 状态图标 -->
+        <svg v-if="loading" class="action-icon action-icon--loading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10" stroke-opacity="0.3"/>
+            <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round">
+                <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/>
+            </path>
+        </svg>
         <!-- 图标在左侧（默认） -->
-        <svg v-if="iconSvg && !iconAfter" class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" v-html="iconSvg" />
+        <svg v-else-if="iconSvg && !iconAfter" class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" v-html="iconSvg" />
         <span class="action-text">
             <slot>{{ text }}</slot>
         </span>
         <!-- 图标在右侧 -->
-        <svg v-if="iconSvg && iconAfter" class="action-icon action-icon--after" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" v-html="iconSvg" />
+        <svg v-if="!loading && iconSvg && iconAfter" class="action-icon action-icon--after" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" v-html="iconSvg" />
     </button>
 </template>
 
@@ -88,13 +95,18 @@ const props = defineProps({
     htmlType: {
         type: String,
         default: 'button'
+    },
+    /** 是否显示加载状态 */
+    loading: {
+        type: Boolean,
+        default: false
     }
 })
 
 const iconSvg = icons[props.icon] || ''
 
 const handleClick = (e) => {
-    if (props.stop) e.stopPropagation()
+    if (props.stop && e) e.stopPropagation()
     emit('click')
 }
 </script>
@@ -113,6 +125,7 @@ const handleClick = (e) => {
     user-select: none;
     position: relative;
     z-index: 1;
+    white-space: nowrap;
 }
 
 /* ---- 尺寸变体 ---- */
@@ -290,5 +303,21 @@ const handleClick = (e) => {
 }
 .action-btn--after:hover .action-icon--after {
     transform: translateX(2px);
+}
+
+/* ---- Loading 状态 ---- */
+.action-btn--loading {
+    cursor: wait !important;
+    opacity: 0.85;
+}
+.action-btn--loading:hover {
+    transform: none !important;
+}
+.action-icon--loading {
+    animation: btn-spin 1s linear infinite;
+}
+@keyframes btn-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 </style>

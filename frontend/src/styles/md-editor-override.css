@@ -26,6 +26,35 @@
  *   第零部分：全局编辑器美化（亮暗通用）
  * ============================================================ */
 
+/* ---- 自定义滚动条美化 (md-editor-custom-scrollbar) ---- */
+.md-editor-custom-scrollbar__track {
+    background: transparent;
+    border-radius: 4px;
+    transition: background 0.25s ease;
+}
+
+.md-editor-custom-scrollbar__track:hover {
+    background: var(--bg-tertiary, #f0f2f5);
+}
+
+.md-editor-custom-scrollbar__thumb {
+    background: var(--border-color, #c0c4cc);
+    border-radius: 4px;
+    transition: background 0.2s ease, width 0.15s ease, opacity 0.15s ease;
+    cursor: pointer;
+    opacity: 0.6;
+}
+
+.md-editor-custom-scrollbar__thumb:hover {
+    background: var(--text-tertiary, #909399);
+    opacity: 1;
+}
+
+.md-editor-custom-scrollbar__thumb:active {
+    background: var(--primary-color, #409eff);
+    opacity: 1;
+}
+
 /* ---- 编辑器外容器：圆角 + 阴影 + 过渡 ---- */
 .md-editor {
     border-radius: var(--radius-sm, 6px) !important;
@@ -51,6 +80,19 @@
     padding-block: 0 !important;
     padding-inline: 0 !important;
     border-block-end: none !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+    cursor: grab;
+}
+
+.md-editor-toolbar-wrapper:active {
+    cursor: grabbing;
+}
+
+/* 工具栏滚动条隐藏 */
+.md-editor-toolbar-wrapper::-webkit-scrollbar {
+    height: 0;
+    display: none;
 }
 
 /* ---- 工具栏美化 ---- */
@@ -58,6 +100,9 @@
     background: linear-gradient(180deg, var(--bg-primary, #fff), var(--bg-secondary, #f5f7fa)) !important;
     border-bottom: none !important;
     padding: 6px 12px !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    min-width: min-content;
 }
 
 .md-editor-toolbar-item {
@@ -83,6 +128,13 @@
     height: 20px !important;
     margin: 2px 6px !important;
     opacity: 0.35;
+    flex-shrink: 0 !important;
+}
+
+/* 工具栏左右区域不收缩 */
+.md-editor-toolbar-left,
+.md-editor-toolbar-right {
+    flex-shrink: 0 !important;
 }
 
 /* ---- 编辑区域（CodeMirror）排版优化 ---- */
@@ -465,6 +517,30 @@
     color: var(--text-tertiary) !important;
 }
 
+/* ---- 暗色模式自定义滚动条 (md-editor-dark) ---- */
+.md-editor-dark .md-editor-custom-scrollbar__track {
+    background: transparent;
+}
+
+.md-editor-dark .md-editor-custom-scrollbar__track:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.md-editor-dark .md-editor-custom-scrollbar__thumb {
+    background: var(--border-dark, #4a4d52);
+    opacity: 0.5;
+}
+
+.md-editor-dark .md-editor-custom-scrollbar__thumb:hover {
+    background: var(--text-tertiary, #8b949e);
+    opacity: 1;
+}
+
+.md-editor-dark .md-editor-custom-scrollbar__thumb:active {
+    background: var(--primary-color, #409eff);
+    opacity: 1;
+}
+
 /* ============================================================
  *   第三部分：[data-theme="dark"] 全局深色覆盖
  *   用于 data-theme 属性驱动的主题系统
@@ -650,6 +726,29 @@
 }
 
 /* ---- 滚动条（暗色） ---- */
+[data-theme="dark"] .md-editor-custom-scrollbar__track {
+    background: transparent;
+}
+
+[data-theme="dark"] .md-editor-custom-scrollbar__track:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .md-editor-custom-scrollbar__thumb {
+    background: var(--border-dark, #4a4d52);
+    opacity: 0.5;
+}
+
+[data-theme="dark"] .md-editor-custom-scrollbar__thumb:hover {
+    background: var(--text-tertiary, #8b949e);
+    opacity: 1;
+}
+
+[data-theme="dark"] .md-editor-custom-scrollbar__thumb:active {
+    background: var(--primary-color, #409eff);
+    opacity: 1;
+}
+
 [data-theme="dark"] .md-editor-input-wrapper .cm-scroller::-webkit-scrollbar-thumb,
 [data-theme="dark"] .md-editor-preview-wrapper::-webkit-scrollbar-thumb {
     background: var(--border-dark);

@@ -9,7 +9,17 @@ function getDraftKey(route) {
 }
 
 function saveDraftToStorage(key, data) {
-    try { localStorage.setItem(key, JSON.stringify({...data, savedAt: Date.now()})) } catch {}
+    try { 
+        const jsonStr = JSON.stringify({...data, savedAt: Date.now()})
+        localStorage.setItem(key, jsonStr)
+        return true
+    } catch (e) {
+        console.warn('草稿保存失败:', e.message || e)
+        if (e.name === 'QuotaExceededError') {
+            console.error('本地存储空间已满，建议清理旧草稿或减少内容长度')
+        }
+        return false
+    }
 }
 
 function loadDraftFromStorage(key) {
@@ -106,7 +116,13 @@ export function useContentEditor(formRef) {
                 is_top: f.is_top || false,
             }
 
-            saveDraftToStorage(draftKey.value, draftDataToSave)
+            const saved = saveDraftToStorage(draftKey.value, draftDataToSave)
+            if (!saved) {
+                autoSaveStatus.value = ''
+                console.warn('草稿自动保存失败，内容可能过大')
+                return
+            }
+            
             lastSaveContent.value = content
             autoSaveStatus.value = 'local'
             

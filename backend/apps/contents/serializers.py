@@ -109,7 +109,37 @@ class ContentCreateUpdateSerializer(AutoSlugMixin, serializers.ModelSerializer):
         return value
 
     def validate_content(self, value):
-        return sanitize_html(value)
+        """
+        验证并清理正文内容
+        
+        内容可能是 Markdown 或 HTML 格式：
+        - 如果包含 HTML 标签（<p>, <div> 等）→ 使用 sanitize_html 过滤
+        - 否则视为纯 Markdown → 只移除 <script> 等危险标签，保留原文
+        """
+        if not value:
+            return value
+            
+        import re
+        
+        # 检测是否为富文本 HTML（包含常见 HTML 标签）
+        html_pattern = re.compile(r'<(p|div|span|strong|em|h[1-6]|ul|ol|li|table|img|br|blockquote|pre|code)\b', re.IGNORECASE)
+        
+        if html_pattern.search(value):
+            # 富文本 HTML → 完整的 HTML 安全过滤
+            return sanitize_html(value)
+        else:
+            # 纯 Markdown → 只移除危险的 script/iframe 标签，保留其他所有内容
+            # 移除 <script>, <iframe>, <object>, <embed> 及其内容
+            dangerous_tags = ['script', 'iframe', 'object', 'embed', 'form', 'style']
+            cleaned = value
+            for tag in dangerous_tags:
+                pattern = re.compile(
+                    rf'<{tag}[^>]*>.*?</{tag}>|<{tag}[^>]*/?>',
+                    re.IGNORECASE | re.DOTALL
+                )
+                cleaned = pattern.sub('', cleaned)
+            
+            return cleaned
 
     def validate_summary(self, value):
         return sanitize_html(value) if value else value

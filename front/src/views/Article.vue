@@ -404,18 +404,11 @@ const fetchArticle = async () => {
 
     article.value = articleData
 
-    // 使用预览内容优化首屏加载
-    if (articleData.content_preview && articleData.content && articleData.content.length > articleData.content_preview.length) {
-      article.value.content = articleData.content_preview
-    }
-
-    // 使用统一的工具函数提取目录标题
+    // 使用统一的工具函数提取目录标题（基于完整内容）
     headings.value = extractHeadings(article.value.content)
 
-    // 设置完整内容已加载标记
-    if (!articleData.content_preview || articleData.content === articleData.content_preview) {
-      fullContentLoaded.value = true
-    }
+    // 标记完整内容已加载
+    fullContentLoaded.value = true
 
     // 并行加载评论和相关文章
     Promise.all([fetchComments(), fetchRelatedArticles()]).catch(e => {
