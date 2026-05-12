@@ -163,6 +163,27 @@
   color: var(--text-tertiary);
 }
 
+.el-input__count {
+  background: var(--bg-primary) !important;
+  color: var(--text-tertiary) !important;
+  font-size: 12px !important;
+}
+
+.el-input__count-inner {
+  background: transparent !important;
+  color: var(--text-tertiary) !important;
+  font-size: 12px !important;
+}
+
+[data-theme="dark"] .el-input__count {
+  background: var(--bg-secondary) !important;
+  color: var(--text-disabled) !important;
+}
+
+[data-theme="dark"] .el-input__count-inner {
+  color: var(--text-disabled) !important;
+}
+
 [data-theme="dark"] .el-input__wrapper {
   background: var(--bg-secondary);
 }

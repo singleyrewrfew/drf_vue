@@ -5,10 +5,9 @@
                 <div class="card-header">
                     <span>{{ isEdit ? '编辑内容' : '新建内容' }}</span>
                     <div class="header-actions">
-                        <StatusTag v-if="autoSaveStatus"
-                                   :type="autoSaveStatus === 'saving' ? 'warning' : 'success'"
-                                   :text="autoSaveStatus === 'saving' ? '自动保存中...' : '已自动保存'"
-                        />
+                        <StatusTag v-if="autoSaveStatus === 'saving'" type="warning" text="⏳ 保存中..."/>
+                        <StatusTag v-else-if="autoSaveStatus === 'saved'" type="success" text="✓ 已保存"/>
+                        <StatusTag v-else-if="autoSaveStatus === 'local'" type="info" text="💾 本地缓存"/>
                     </div>
                 </div>
             </template>
@@ -34,37 +33,17 @@
                 <el-form-item label="内容" prop="content">
                     <div class="editor-header">
                         <span class="editor-label">正文内容</span>
-                        <el-upload
-                            ref="fileUploadRef"
-                            :show-file-list="false"
-                            :auto-upload="false"
-                            :on-change="handleFileChange"
-                            accept=".md,.txt,.markdown"
-                        >
-                            <ActionButton
-                                type="primary"
-                                text="从文件导入"
-                                icon="upload"
-                                size="small"
-                            />
+                        <el-upload ref="fileUploadRef" :show-file-list="false" :auto-upload="false" :on-change="handleFileChange"
+                                   accept=".md,.txt,.markdown">
+                            <ActionButton type="primary" text="从文件导入" icon="upload" size="small"/>
                         </el-upload>
                     </div>
-                    <div class="editor-wrapper" :class="editorThemeClass">
-                        <MdEditor
-                            v-if="editorLoaded"
-                            v-model="form.content"
-                            :toolbars="toolbars"
-                            :preview="showPreview"
-                            :previewTheme="previewTheme"
-                            :codeTheme="codeTheme"
-                            :style="{ height: editorHeight }"
-                            placeholder="请输入正文内容，支持 Markdown 语法"
-                            @onChange="handleContentChange"
-                        />
+                    <div class="editor-wrapper" :class="editorThemeClass()">
+                        <MdEditor v-if="editorLoaded" v-model="form.content" :toolbars="toolbars" :preview="showPreview"
+                                  :previewTheme="previewTheme" :codeTheme="codeTheme" :style="{ height: editorHeight }"
+                                  placeholder="请输入正文内容，支持 Markdown 语法" @onChange="(val) => handleContentChange(val)"/>
                         <div v-else class="editor-loading">
-                            <el-icon class="is-loading">
-                                <Loading/>
-                            </el-icon>
+                            <el-icon class="is-loading"><Loading/></el-icon>
                             <span>编辑器加载中...</span>
                         </div>
                     </div>
@@ -76,21 +55,17 @@
                     <el-col :span="12">
                         <el-form-item label="分类" prop="category">
                             <div class="select-with-button">
-                                <el-select v-model="form.category" placeholder="请选择分类" clearable
-                                           class="category-select">
-                                    <el-option v-for="cat in categories" :key="cat.id" :label="cat.name"
-                                               :value="cat.id"/>
+                                <el-select v-model="form.category" placeholder="请选择分类" clearable style="width: calc(100% - 60px)">
+                                    <el-option v-for="cat in categories" :key="cat.id" :label="cat.name" :value="cat.id"/>
                                 </el-select>
-                                <el-button type="primary" size="small" @click="showCategoryDialog = true">创建
-                                </el-button>
+                                <el-button type="primary" size="small" @click="showCategoryDialog = true">创建</el-button>
                             </div>
                         </el-form-item>
                     </el-col>
                     <el-col :span="12">
                         <el-form-item label="标签" prop="tags">
                             <div class="select-with-button">
-                                <el-select v-model="form.tags" multiple placeholder="请选择标签" class="tag-select"
-                                           label="name">
+                                <el-select v-model="form.tags" multiple placeholder="请选择标签" style="width: calc(100% - 60px)" label="name">
                                     <el-option v-for="tag in tags" :key="tag.id" :label="tag.name" :value="tag.id"/>
                                 </el-select>
                                 <el-button type="primary" size="small" @click="showTagDialog = true">创建</el-button>
@@ -103,8 +78,7 @@
                     <el-col :span="12">
                         <el-form-item label="作者" prop="author">
                             <el-select v-model="form.author" placeholder="请选择作者" style="width: 100%">
-                                <el-option v-for="user in users" :key="user.id" :label="user.username"
-                                           :value="user.id"/>
+                                <el-option v-for="user in users" :key="user.id" :label="user.username" :value="user.id"/>
                             </el-select>
                         </el-form-item>
                     </el-col>
@@ -115,48 +89,8 @@
                 <el-row :gutter="20">
                     <el-col :span="12">
                         <el-form-item label="封面图">
-                            <div class="cover-wrapper">
-                                <div class="cover-uploader" @click="triggerCoverSelect">
-                                    <img v-if="coverPreviewUrl" :src="coverPreviewUrl" class="cover-image"/>
-                                    <div v-else class="cover-placeholder">
-                                        <el-icon class="cover-uploader-icon">
-                                            <Plus/>
-                                        </el-icon>
-                                        <span>点击上传封面</span>
-                                    </div>
-                                </div>
-                                <div class="cover-toolbar">
-                                    <button type="button" class="cover-tool-btn" @click.stop="triggerCoverSelect">
-                                        <el-icon><Upload /></el-icon>
-                                        <span>上传文件</span>
-                                    </button>
-                                    <button type="button" class="cover-tool-btn" @click.stop="showMediaDialog = true">
-                                        <el-icon><FolderOpened /></el-icon>
-                                        <span>媒体库</span>
-                                    </button>
-                                    <button
-                                        v-if="coverPreviewUrl"
-                                        type="button"
-                                        class="cover-tool-btn cover-tool-btn-danger"
-                                        @click.stop="clearCover"
-                                    >
-                                        <el-icon><Delete /></el-icon>
-                                        <span>移除</span>
-                                    </button>
-                                </div>
-                                <div v-if="pendingCoverFile" class="cover-status-bar">
-                                    <el-icon class="status-icon"><Clock /></el-icon>
-                                    <span>封面图将在提交时上传</span>
-                                </div>
-                            </div>
-                            <input
-                                ref="coverInputRef"
-                                type="file"
-                                accept="image/jpeg,image/png,image/gif,image/webp"
-                                style="display: none"
-                                @change="handleCoverSelect"
-                            />
-                            <div class="cover-tip">支持 JPG/PNG/GIF/WEBP，建议尺寸 1920x1080</div>
+                            <CoverUpload ref="coverUploadRef" v-model="form.cover_image" @open-media="showMediaSelector = true"
+                                         @file-ready="(file) => pendingCoverFile = file"/>
                         </el-form-item>
                     </el-col>
                     <el-col :span="12">
@@ -176,245 +110,94 @@
                 <el-divider/>
 
                 <el-form-item>
-                    <el-button type="primary" @click="handleSubmit" :loading="loading">
-                        {{ isEdit ? '保存修改' : '创建内容' }}
-                    </el-button>
-                    <el-button @click="handleSaveDraft" :loading="loading" v-if="!isEdit">
-                        保存草稿
-                    </el-button>
-                    <el-button @click="$router.back()">取消</el-button>
+                    <ActionButton icon="approve" :text="isEdit ? '保存修改' : '创建内容'" size="normal" stop
+                               @click="handleSubmit" :loading="loading"/>
+                    <ActionButton variant="outline" type="text" icon="save" text="保存草稿" size="normal" stop
+                               @click="handleSaveDraft" :loading="loading" v-if="!isEdit"/>
+                    <ActionButton variant="outline" type="text" icon="reset" text="取消" size="normal" @click="$router.back()"/>
                 </el-form-item>
             </el-form>
         </el-card>
 
         <!-- 创建分类对话框 -->
-        <FormDialog
-            v-model="categoryForm"
-            v-model:show="showCategoryDialog"
-            create-title="创建分类"
-            width="400px"
-            label-width="80px"
-            :rules="categoryRules"
-            :loading="creatingCategory"
-            @submit="handleCreateCategory"
-        >
-            <el-form-item label="分类名称" prop="name">
-                <el-input v-model="categoryForm.name" placeholder="请输入分类名称"/>
-            </el-form-item>
-            <el-form-item label="URL 别名">
-                <el-input v-model="categoryForm.slug" placeholder="留空自动生成"/>
-            </el-form-item>
+        <FormDialog v-model="categoryForm" v-model:show="showCategoryDialog" create-title="创建分类" width="400px"
+                   label-width="80px" :rules="categoryRules" :loading="creatingCategory"
+                   @submit="() => handleCreateCategory(categories)">
+            <el-form-item label="分类名称" prop="name"><el-input v-model="categoryForm.name" placeholder="请输入分类名称"/></el-form-item>
+            <el-form-item label="URL 别名"><el-input v-model="categoryForm.slug" placeholder="留空自动生成"/></el-form-item>
         </FormDialog>
 
         <!-- 创建标签对话框 -->
-        <FormDialog
-            v-model="tagForm"
-            v-model:show="showTagDialog"
-            create-title="创建标签"
-            width="400px"
-            label-width="80px"
-            :rules="tagRules"
-            :loading="creatingTag"
-            @submit="handleCreateTag"
-        >
-            <el-form-item label="标签名称" prop="name">
-                <el-input v-model="tagForm.name" placeholder="请输入标签名称"/>
-            </el-form-item>
-            <el-form-item label="URL 别名">
-                <el-input v-model="tagForm.slug" placeholder="留空自动生成"/>
-            </el-form-item>
+        <FormDialog v-model="tagForm" v-model:show="showTagDialog" create-title="创建标签" width="400px"
+                   label-width="80px" :rules="tagRules" :loading="creatingTag"
+                   @submit="() => handleCreateTag(tags)">
+            <el-form-item label="标签名称" prop="name"><el-input v-model="tagForm.name" placeholder="请输入标签名称"/></el-form-item>
+            <el-form-item label="URL 别名"><el-input v-model="tagForm.slug" placeholder="留空自动生成"/></el-form-item>
         </FormDialog>
 
-        <!-- 媒体库选择对话框 -->
-        <MediaDialog
-            v-model:visible="showMediaDialog"
-            title="从媒体库选择"
-            :width="800"
-        >
-            <div class="media-library">
-                <div class="media-toolbar">
-                    <el-input
-                        v-model="mediaSearch"
-                        placeholder="搜索文件名..."
-                        prefix-icon="Search"
-                        clearable
-                        size="default"
-                        @input="handleMediaSearch"
-                        style="width: 240px"
-                    />
-                </div>
+        <!-- 媒体库选择 -->
+        <MediaSelectorDialog v-model:visible="showMediaSelector" @select="handleMediaSelect"/>
 
-                <div v-if="mediaLoading" class="media-loading">
-                    <el-icon class="is-loading"><Loading /></el-icon>
-                    <span>加载中...</span>
-                </div>
-
-                <div v-else-if="mediaList.length === 0" class="media-empty">
-                    <el-icon><Picture /></el-icon>
-                    <span>暂无图片</span>
-                </div>
-
-                <div v-else class="media-grid">
-                    <div
-                        v-for="item in mediaList"
-                        :key="item.id"
-                        class="media-item"
-                        :class="{ 'is-selected': selectedMediaId === item.id }"
-                        @click="selectMedia(item)"
-                    >
-                        <img :src="getMediaFullUrl(item.url)" :alt="item.filename" class="media-thumb"/>
-                        <div class="media-info">
-                            <span class="media-filename">{{ item.filename }}</span>
-                            <span class="media-size">{{ formatFileSize(item.file_size) }}</span>
-                        </div>
-                        <div v-if="selectedMediaId === item.id" class="media-check">
-                            <el-icon><Check /></el-icon>
-                        </div>
-                    </div>
-                </div>
-
-                <div v-if="mediaTotal > mediaPageSize" class="media-pagination">
-                    <el-pagination
-                        v-model:current-page="mediaPage"
-                        :page-size="mediaPageSize"
-                        :total="mediaTotal"
-                        layout="prev, pager, next"
-                        small
-                        @current-change="handleMediaPageChange"
-                    />
+        <!-- 草稿恢复提示 -->
+        <BaseDialog :visible="hasDraft" title="发现未保存的草稿" width="450px"
+                   @update:visible="(val) => { if (!val) discardDraft() }">
+            <div class="draft-restore-hint">
+                <p>检测到您上次编辑的内容尚未保存，是否恢复？</p>
+                <div v-if="draftData" class="draft-preview">
+                    <div class="draft-info"><strong>标题：</strong>{{ draftData.title || '(空)' }}</div>
+                    <div class="draft-info"><strong>字数：</strong>{{ (draftData.content || '').length }} 字</div>
+                    <div class="draft-info"><strong>保存时间：</strong>{{ formatDraftTime(draftData.savedAt) }}</div>
                 </div>
             </div>
             <template #footer>
-                <ActionButton variant="outline" type="text" text="取消" icon="reset" size="normal" @click="showMediaDialog = false"/>
-                <ActionButton text="确认选择" icon="approve" size="normal" stop @click="confirmMediaSelect" :disabled="!selectedMediaId"/>
+                <ActionButton variant="outline" type="text" text="放弃草稿" icon="delete" size="normal" @click="discardDraft"/>
+                <ActionButton text="恢复草稿" icon="refresh" size="normal" stop @click="restoreDraft"/>
             </template>
-        </MediaDialog>
+        </BaseDialog>
     </div>
 </template>
 
 <script setup>
-import {ref, reactive, computed, onMounted, onUnmounted, watch} from 'vue'
+import {ref, reactive, computed, onMounted, onUnmounted} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {ElMessage, ElMessageBox} from 'element-plus'
-import {Plus, Loading, Upload, Delete, Clock, FolderOpened, Picture, Check, Search} from '@element-plus/icons-vue'
+import {Loading} from '@element-plus/icons-vue'
 import {MdEditor} from 'md-editor-v3'
 import 'md-editor-v3/lib/style.css'
+
 import {createContent, updateContent, getContent} from '@/api/content'
-import {getMedia} from '@/api/media'
 import api from '@/api'
 import {useUserStore} from '@/stores/user'
-import {useThemeStore} from '@/stores/theme'
+
 import StatusTag from '@/components/StatusTag.vue'
-import MediaDialog from '@/components/MediaDialog.vue'
-import FormDialog from '@/components/FormDialog.vue'
 import ActionButton from '@/components/ActionButton.vue'
+import FormDialog from '@/components/FormDialog.vue'
+import BaseDialog from '@/components/BaseDialog.vue'
+import CoverUpload from './components/CoverUpload.vue'
+import MediaSelectorDialog from './components/MediaSelectorDialog.vue'
+import {useCategoryTagForm} from '@/composables/useCategoryTagForm.js'
+import {useContentEditor} from '@/composables/useContentEditor.js'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
-const themeStore = useThemeStore()
 
 const isEdit = computed(() => !!route.params.id)
 const isAdmin = computed(() => userStore.user?.role_code === 'admin' || userStore.user?.is_superuser)
-const editorThemeClass = computed(() => ({
-    'md-editor-dark': themeStore.theme === 'dark'
-}))
+
 const formRef = ref()
 const loading = ref(false)
 const categories = ref([])
 const tags = ref([])
 const users = ref([])
-
-const editorLoaded = ref(false)
-const showPreview = ref(false)
-const previewTheme = ref('github')
-const codeTheme = ref('github')
-const editorHeight = ref('500px')
-const autoSaveStatus = ref('')
-const autoSaveTimer = ref(null)
-const lastSaveContent = ref('')
-const showCategoryDialog = ref(false)
-const showTagDialog = ref(false)
-const creatingCategory = ref(false)
-const creatingTag = ref(false)
-
-const categoryForm = reactive({name: '', slug: ''})
-const tagForm = reactive({name: '', slug: ''})
-
-const categoryRules = {
-    name: [{required: true, message: '请输入分类名称', trigger: 'blur'}]
-}
-
-const tagRules = {
-    name: [{required: true, message: '请输入标签名称', trigger: 'blur'}]
-}
-
-const coverInputRef = ref(null)
+const coverUploadRef = ref(null)
 const pendingCoverFile = ref(null)
-const coverPreviewUrl = ref('')
-
-const showMediaDialog = ref(false)
-const mediaList = ref([])
-const allMediaItems = ref([])
-const mediaLoading = ref(false)
-const mediaPage = ref(1)
-const mediaPageSize = ref(12)
-const mediaTotal = ref(0)
-const mediaSearch = ref('')
-const selectedMediaId = ref(null)
-const selectedMediaItem = ref(null)
-
-const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg']
-
-const isImageFile = (item) => {
-    const filename = item.filename?.toLowerCase() || item.url?.toLowerCase() || ''
-    return imageExtensions.some(ext => filename.endsWith(`.${ext}`))
-}
-
-const filterMediaList = () => {
-    let items = allMediaItems.value
-
-    if (mediaSearch.value) {
-        const keyword = mediaSearch.value.toLowerCase()
-        items = items.filter(item => {
-            const filename = item.filename?.toLowerCase() || ''
-            return filename.includes(keyword)
-        })
-    }
-
-    mediaTotal.value = items.length
-    const start = (mediaPage.value - 1) * mediaPageSize.value
-    const end = start + mediaPageSize.value
-    mediaList.value = items.slice(start, end)
-}
-
-const handleMediaSearch = () => {
-    mediaPage.value = 1
-    filterMediaList()
-}
-
-const handleMediaPageChange = (page) => {
-    mediaPage.value = page
-    filterMediaList()
-}
-
-const updateEditorTheme = () => {
-    const isDark = themeStore.theme === 'dark'
-    previewTheme.value = isDark ? 'mk-cute' : 'github'
-    codeTheme.value = isDark ? 'one-dark' : 'github'
-}
+const showMediaSelector = ref(false)
 
 const form = ref({
-    title: '',
-    slug: '',
-    summary: '',
-    content: '',
-    category: null,
-    tags: [],
-    cover_image: '',
-    status: 'draft',
-    is_top: false,
-    author: null,
+    title: '', slug: '', summary: '', content: '',
+    category: null, tags: [], cover_image: '',
+    status: 'draft', is_top: false, author: null,
 })
 
 const rules = {
@@ -422,345 +205,67 @@ const rules = {
     content: [{required: true, message: '请输入内容', trigger: 'blur'}],
 }
 
-const toolbars = [
-    'bold',
-    'underline',
-    'italic',
-    '-',
-    'title',
-    'strikeThrough',
-    'quote',
-    'unorderedList',
-    'orderedList',
-    '-',
-    'codeRow',
-    'code',
-    'link',
-    'image',
-    'table',
-    '-',
-    'revoke',
-    'next',
-    '=',
-    'pageFullscreen',
-    'fullscreen',
-    'preview',
-]
+const {
+    editorLoaded, showPreview, previewTheme, codeTheme, editorHeight,
+    autoSaveStatus, toolbars, editorThemeClass, handleContentChange,
+    initLastContent, hasDraft, draftData,
+    checkLocalDraft, restoreDraft, discardDraft,
+} = useContentEditor(form)
 
-const handleContentChange = () => {
-    if (form.value.content && form.value.content !== lastSaveContent.value && form.value.content.length > 100) {
-        triggerAutoSave()
-    }
-}
+const {
+    showCategoryDialog, showTagDialog, creatingCategory, creatingTag,
+    categoryForm, tagForm, categoryRules, tagRules,
+    handleCreateCategory, handleCreateTag,
+} = useCategoryTagForm(
+    (id) => { form.value.category = id },
+    (id) => { if (!form.value.tags) form.value.tags = []; form.value.tags.push(id) }
+)
 
 const handleFileChange = (file) => {
     const reader = new FileReader()
     reader.onload = (e) => {
-        const content = e.target.result
         if (form.value.content) {
-            ElMessageBox.confirm(
-                '当前编辑器已有内容，是否覆盖？',
-                '确认导入',
-                {
-                    confirmButtonText: '覆盖',
-                    cancelButtonText: '追加',
-                    type: 'warning',
-                }
-            ).then(() => {
-                form.value.content = content
-                ElMessage.success('文件导入成功')
-            }).catch(() => {
-                form.value.content = form.value.content + '\n\n' + content
-                ElMessage.success('文件内容已追加')
-            })
-        } else {
-            form.value.content = content
-            ElMessage.success('文件导入成功')
-        }
+            ElMessageBox.confirm('当前编辑器已有内容，是否覆盖？', '确认导入', {
+                confirmButtonText: '覆盖', cancelButtonText: '追加', type: 'warning',
+            }).then(() => { form.value.content = e.target.result; ElMessage.success('文件导入成功') })
+              .catch(() => { form.value.content += '\n\n' + e.target.result; ElMessage.success('文件内容已追加') })
+        } else { form.value.content = e.target.result; ElMessage.success('文件导入成功') }
     }
-    reader.onerror = () => {
-        ElMessage.error('文件读取失败')
-    }
+    reader.onerror = () => ElMessage.error('文件读取失败')
     reader.readAsText(file.raw)
 }
 
-const triggerAutoSave = () => {
-    if (autoSaveTimer.value) {
-        clearTimeout(autoSaveTimer.value)
-    }
-    autoSaveTimer.value = setTimeout(() => {
-        if (isEdit.value) {
-            autoSave()
-        }
-    }, 3000)
-}
-
-const autoSave = async () => {
-    if (!form.value.content || form.value.content === lastSaveContent.value) return
-
-    autoSaveStatus.value = 'saving'
-    try {
-        const submitData = {
-            title: form.value.title,
-            content: form.value.content,
-            summary: form.value.summary,
-            category: form.value.category,
-            tags: form.value.tags,
-            cover_image: form.value.cover_image,
-            status: form.value.status,
-            is_top: form.value.is_top,
-        }
-        if (!submitData.category) delete submitData.category
-        if (!submitData.cover_image) delete submitData.cover_image
-        if (submitData.tags.length === 0) delete submitData.tags
-
-        await updateContent(route.params.id, submitData)
-        lastSaveContent.value = form.value.content
-        autoSaveStatus.value = 'saved'
-        setTimeout(() => {
-            autoSaveStatus.value = ''
-        }, 2000)
-    } catch (error) {
-        autoSaveStatus.value = ''
-    }
-}
-
-const triggerCoverSelect = () => {
-    coverInputRef.value?.click()
-}
-
-const handleCoverSelect = (event) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-
-    const isValidType = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)
-    if (!isValidType) {
-        ElMessage.error('只能上传 JPG/PNG/GIF/WEBP 格式的图片')
-        event.target.value = ''
-        return
-    }
-
-    const isLt10M = file.size / 1024 / 1024 < 10
-    if (!isLt10M) {
-        ElMessage.error('图片大小不能超过 10MB')
-        event.target.value = ''
-        return
-    }
-
-    if (coverPreviewUrl.value && coverPreviewUrl.value.startsWith('blob:')) {
-        URL.revokeObjectURL(coverPreviewUrl.value)
-    }
-
-    pendingCoverFile.value = file
-    coverPreviewUrl.value = URL.createObjectURL(file)
-    form.value.cover_image = ''
-    event.target.value = ''
-}
-
-const clearCover = () => {
-    if (coverPreviewUrl.value && coverPreviewUrl.value.startsWith('blob:')) {
-        URL.revokeObjectURL(coverPreviewUrl.value)
-    }
-    pendingCoverFile.value = null
-    coverPreviewUrl.value = ''
-    form.value.cover_image = ''
-}
-
-const getMediaFullUrl = (url) => {
-    if (!url) return ''
-    if (url.startsWith('http')) return url
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
-    const mediaBaseUrl = apiBaseUrl.replace(/\/api\/?$/, '')
-    return `${mediaBaseUrl}${url}`
-}
-
-const fetchMediaList = async () => {
-    mediaLoading.value = true
-    try {
-        const params = {
-            page: 1,
-            page_size: 100,
-            type: 'image'
-        }
-
-        const {data} = await getMedia(params)
-        const allItems = data.results || data || []
-        allMediaItems.value = allItems.filter(isImageFile)
-        filterMediaList()
-    } catch (error) {
-        console.error('获取媒体列表失败:', error)
-        ElMessage.error('获取媒体列表失败')
-    } finally {
-        mediaLoading.value = false
-    }
-}
-
-const selectMedia = (item) => {
-    selectedMediaId.value = item.id
-    selectedMediaItem.value = item
-}
-
-const confirmMediaSelect = () => {
-    if (!selectedMediaItem.value) return
-
-    if (coverPreviewUrl.value && coverPreviewUrl.value.startsWith('blob:')) {
-        URL.revokeObjectURL(coverPreviewUrl.value)
-    }
-
-    pendingCoverFile.value = null
-    coverPreviewUrl.value = getMediaFullUrl(selectedMediaItem.value.url)
-    form.value.cover_image = coverPreviewUrl.value
-
-    showMediaDialog.value = false
-    ElMessage.success('已选择封面图')
-}
-
-const formatFileSize = (bytes) => {
-    if (!bytes) return '0 B'
-    const k = 1024
-    const sizes = ['B', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
+const handleMediaSelect = (media) => {
+    coverUploadRef.value?.setFromMedia(media.url)
 }
 
 const uploadCoverImage = async (file) => {
     const formData = new FormData()
     formData.append('file', file)
-
     const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
     const token = userStore.accessToken
-
     const response = await fetch(`${baseUrl}/media/`, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`
-        },
-        body: formData
+        method: 'POST', headers: {'Authorization': `Bearer ${token}`}, body: formData,
     })
-
-    if (!response.ok) {
-        throw new Error('封面图上传失败')
-    }
-
+    if (!response.ok) throw new Error('封面图上传失败')
     const result = await response.json()
     const mediaData = result.data || result
-
     if (mediaData.url) {
-        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
-        const mediaBaseUrl = apiBaseUrl.replace(/\/api\/?$/, '')
+        const mediaBaseUrl = baseUrl.replace(/\/api\/?$/, '')
         return mediaData.url.startsWith('http') ? mediaData.url : `${mediaBaseUrl}${mediaData.url}`
     }
-
     throw new Error('响应格式错误')
 }
 
-const fetchCategories = async () => {
-    try {
-        const {data} = await api.get('/categories/')
-        categories.value = data.results || data
-    } catch (error) {
-        console.error(error)
-    }
-}
-
-const fetchTags = async () => {
-    try {
-        const {data} = await api.get('/tags/')
-        tags.value = data.results || data
-    } catch (error) {
-        console.error(error)
-    }
-}
-
-const handleCreateCategory = async () => {
-    if (!categoryForm.name.trim()) {
-        ElMessage.warning('请输入分类名称')
-        return
-    }
-    creatingCategory.value = true
-    try {
-        const payload = {
-            name: categoryForm.name.trim(),
-            slug: categoryForm.slug.trim() || undefined,
-        }
-        const {data} = await api.post('/categories/', payload)
-        ElMessage.success('分类创建成功')
-        showCategoryDialog.value = false
-        categoryForm.name = ''
-        categoryForm.slug = ''
-        categories.value = [...categories.value, data]
-        form.value.category = data.id
-    } catch (error) {
-        ElMessage.error('创建分类失败')
-        console.error(error)
-    } finally {
-        creatingCategory.value = false
-    }
-}
-
-const handleCreateTag = async () => {
-    if (!tagForm.name.trim()) {
-        ElMessage.warning('请输入标签名称')
-        return
-    }
-    creatingTag.value = true
-    try {
-        const payload = {
-            name: tagForm.name.trim(),
-            slug: tagForm.slug.trim() || undefined,
-        }
-        const {data} = await api.post('/tags/', payload)
-        ElMessage.success('标签创建成功')
-        showTagDialog.value = false
-        tagForm.name = ''
-        tagForm.slug = ''
-        tags.value = [...tags.value, data]
-        if (!form.value.tags) form.value.tags = []
-        form.value.tags.push(data.id)
-    } catch (error) {
-        ElMessage.error('创建标签失败')
-        console.error(error)
-    } finally {
-        creatingTag.value = false
-    }
-}
-
-const fetchUsers = async () => {
-    if (!isAdmin.value) return
-    try {
-        const {data} = await api.get('/auth/')
-        users.value = data.results || data
-    } catch (error) {
-        console.error(error)
-    }
-}
-
-const fetchContent = async () => {
-    if (!route.params.id) return
-    loading.value = true
-    try {
-        const {data} = await getContent(route.params.id)
-        Object.assign(form.value, {
-            title: data.title,
-            slug: data.slug,
-            summary: data.summary,
-            content: data.content,
-            category: data.category,
-            tags: data.tags?.map(t => t.id) || [],
-            cover_image: data.cover_image,
-            status: data.status,
-            is_top: data.is_top,
-            author: data.author?.id || data.author,
-        })
-        if (data.cover_image) {
-            coverPreviewUrl.value = data.cover_image
-        }
-        lastSaveContent.value = data.content
-    } catch (error) {
-        ElMessage.error('获取内容失败')
-    } finally {
-        loading.value = false
-    }
+const buildSubmitData = async () => {
+    let coverImageUrl = form.value.cover_image
+    if (pendingCoverFile.value) coverImageUrl = await uploadCoverImage(pendingCoverFile.value)
+    const data = {...form.value, cover_image: coverImageUrl}
+    if (!data.category) delete data.category
+    if (!data.cover_image) delete data.cover_image
+    if (data.tags.length === 0) delete data.tags
+    if (!isAdmin.value || !data.author) delete data.author
+    return data
 }
 
 const handleSubmit = async () => {
@@ -768,742 +273,76 @@ const handleSubmit = async () => {
     await formRef.value.validate()
     loading.value = true
     try {
-        let coverImageUrl = form.value.cover_image
-
-        if (pendingCoverFile.value) {
-            try {
-                coverImageUrl = await uploadCoverImage(pendingCoverFile.value)
-            } catch (error) {
-                ElMessage.error('封面图上传失败')
-                loading.value = false
-                return
-            }
-        }
-
-        const submitData = {...form.value, cover_image: coverImageUrl}
-        if (!submitData.category) delete submitData.category
-        if (!submitData.cover_image) delete submitData.cover_image
-        if (submitData.tags.length === 0) delete submitData.tags
-        if (!isAdmin.value || !submitData.author) delete submitData.author
-
-        if (isEdit.value) {
-            await updateContent(route.params.id, submitData)
-            ElMessage.success('保存成功')
-        } else {
-            await createContent(submitData)
-            ElMessage.success('创建成功')
-        }
+        const submitData = await buildSubmitData()
+        if (isEdit.value) { await updateContent(route.params.id, submitData); ElMessage.success('保存成功') }
+        else { await createContent(submitData); ElMessage.success('创建成功'); clearDraftStorage() }
         router.push('/contents')
     } catch (error) {
         ElMessage.error(isEdit.value ? '保存失败' : '创建失败')
-    } finally {
-        loading.value = false
-    }
+    } finally { loading.value = false }
 }
 
 const handleSaveDraft = async () => {
-    if (!form.value.title && !form.value.content) {
-        ElMessage.warning('请至少填写标题或内容')
-        return
-    }
+    if (!form.value.title && !form.value.content) { ElMessage.warning('请至少填写标题或内容'); return }
     loading.value = true
     try {
-        let coverImageUrl = form.value.cover_image
+        const submitData = {...(await buildSubmitData()), status: 'draft'}
+        if (isEdit.value) { await updateContent(route.params.id, submitData); ElMessage.success('草稿保存成功') }
+        else { await createContent(submitData); ElMessage.success('草稿保存成功'); router.push('/contents'); clearDraftStorage() }
+    } catch { ElMessage.error('保存草稿失败') } finally { loading.value = false }
+}
 
-        if (pendingCoverFile.value) {
-            try {
-                coverImageUrl = await uploadCoverImage(pendingCoverFile.value)
-            } catch (error) {
-                ElMessage.error('封面图上传失败')
-                loading.value = false
-                return
-            }
-        }
+const fetchCategories = async () => { try { const {data} = await api.get('/categories/'); categories.value = data.results || data } catch {} }
+const fetchTags = async () => { try { const {data} = await api.get('/tags/'); tags.value = data.results || data } catch {} }
+const fetchUsers = async () => { if (!isAdmin.value) return; try { const {data} = await api.get('/auth/'); users.value = data.results || data } catch {} }
 
-        const submitData = {...form.value, status: 'draft', cover_image: coverImageUrl}
-        if (!submitData.category) delete submitData.category
-        if (!submitData.cover_image) delete submitData.cover_image
-        if (submitData.tags.length === 0) delete submitData.tags
-        if (!isAdmin.value || !submitData.author) delete submitData.author
+const fetchContent = async () => {
+    if (!route.params.id) return
+    loading.value = true
+    try {
+        const {data} = await getContent(route.params.id)
+        Object.assign(form.value, {
+            title: data.title, slug: data.slug, summary: data.summary, content: data.content,
+            category: data.category, tags: data.tags?.map(t => t.id) || [],
+            cover_image: data.cover_image, status: data.status, is_top: data.is_top,
+            author: data.author?.id || data.author,
+        })
+        initLastContent(data.content)
+    } catch { ElMessage.error('获取内容失败') } finally { loading.value = false }
+}
 
-        if (isEdit.value) {
-            await updateContent(route.params.id, submitData)
-            ElMessage.success('草稿保存成功')
-        } else {
-            await createContent(submitData)
-            ElMessage.success('草稿保存成功')
-            router.push('/contents')
-        }
-    } catch (error) {
-        ElMessage.error('保存草稿失败')
-    } finally {
-        loading.value = false
-    }
+const formatDraftTime = (timestamp) => {
+    if (!timestamp) return ''
+    const date = new Date(timestamp)
+    const now = new Date()
+    const diff = now - date
+    if (diff < 60000) return '刚刚'
+    if (diff < 3600000) return `${Math.floor(diff / 60000)} 分钟前`
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)} 小时前`
+    return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`
 }
 
 onMounted(async () => {
-    await Promise.all([
-        fetchCategories(),
-        fetchTags(),
-        fetchUsers(),
-        fetchContent(),
-    ])
-
-    updateEditorTheme()
-
-    setTimeout(() => {
-        editorLoaded.value = true
-    }, 100)
-})
-
-watch(() => themeStore.theme, () => {
-    updateEditorTheme()
-})
-
-watch(showMediaDialog, (val) => {
-    if (val) {
-        mediaPage.value = 1
-        mediaSearch.value = ''
-        selectedMediaId.value = null
-        selectedMediaItem.value = null
-        fetchMediaList()
-    }
-})
-
-onUnmounted(() => {
-    if (autoSaveTimer.value) {
-        clearTimeout(autoSaveTimer.value)
-    }
-    if (coverPreviewUrl.value && coverPreviewUrl.value.startsWith('blob:')) {
-        URL.revokeObjectURL(coverPreviewUrl.value)
+    await Promise.all([fetchCategories(), fetchTags(), fetchUsers(), fetchContent()])
+    setTimeout(() => { editorLoaded.value = true }, 100)
+    if (!route.params.id) {
+        checkLocalDraft()
     }
 })
 </script>
 
 <style scoped>
-.content-form {
-    padding: 20px;
-}
-
-.card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.header-actions {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.editor-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 12px;
-}
-
-.editor-label {
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text-primary);
-}
-
-.select-with-button {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    width: 100%;
-}
-
-.select-with-button .el-select,
-.select-with-button .category-select,
-.select-with-button .tag-select {
-    width: calc(100% - 60px);
-}
-
-.editor-wrapper {
-    width: 100%;
-}
-
-.editor-loading {
-    height: 500px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    color: var(--text-tertiary);
-    background: var(--bg-tertiary);
-    border-radius: var(--radius-md);
-}
-
-.editor-loading .el-icon {
-    font-size: 32px;
-}
-
-.cover-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.cover-uploader {
-    border: 1px dashed var(--border-color);
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-    width: 320px;
-    height: 180px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: var(--bg-tertiary);
-    transition: border-color var(--transition-fast);
-}
-
-.cover-uploader:hover {
-    border-color: var(--primary-color);
-}
-
-.cover-placeholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
-
-.cover-uploader-icon {
-    font-size: 32px;
-    color: var(--text-tertiary);
-}
-
-.cover-image {
-    max-width: 100%;
-    max-height: 100%;
-    display: block;
-    object-fit: contain;
-}
-
-.cover-actions {
-    display: flex;
-    gap: 8px;
-}
-
-.cover-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 10px;
-    border: none;
-    border-radius: var(--radius-xs);
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.15s ease;
-}
-
-.cover-btn .el-icon {
-    font-size: 12px;
-}
-
-.cover-btn-warning {
-    background: var(--warning-color, #e6a23c);
-    color: #fff;
-}
-
-.cover-btn-warning:hover {
-    background: var(--warning-hover, #ebb563);
-}
-
-.cover-btn-danger {
-    background: var(--danger-color);
-    color: #fff;
-}
-
-.cover-btn-danger:hover {
-    background: var(--danger-hover);
-}
-
-.cover-toolbar {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-}
-
-.cover-tool-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 5px 10px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-xs);
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text-secondary);
-    cursor: pointer;
-    background: var(--bg-primary);
-    transition: all 0.15s ease;
-}
-
-.cover-tool-btn:hover {
-    color: var(--primary-color);
-    border-color: var(--primary-color);
-    background: var(--primary-bg);
-}
-
-.cover-tool-btn .el-icon {
-    font-size: 13px;
-}
-
-.cover-tool-btn-danger {
-    color: var(--danger-color);
-    border-color: transparent;
-    background: rgba(245, 108, 108, 0.08);
-}
-
-.cover-tool-btn-danger:hover {
-    background: var(--danger-color);
-    color: #fff;
-}
-
-.cover-status-bar {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    background: var(--warning-bg, #fdf6ec);
-    border-radius: var(--radius-sm);
-    font-size: 12px;
-    color: var(--warning-color, #e6a23c);
-}
-
-.cover-status-bar .status-icon {
-    font-size: 14px;
-}
-
-[data-theme="dark"] .cover-status-bar {
-    background: rgba(230, 162, 60, 0.1);
-}
-
-.cover-tip {
-    font-size: 12px;
-    color: var(--text-tertiary);
-    margin-top: 8px;
-}
-
-/* 媒体库弹窗样式 */
-.media-library {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    height: 100%;
-    overflow: hidden;
-}
-
-.media-toolbar {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-shrink: 0;
-}
-
-.media-loading,
-.media-empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    padding: 48px 24px;
-    color: var(--text-tertiary);
-}
-
-.media-loading .el-icon,
-.media-empty .el-icon {
-    font-size: 40px;
-}
-
-.media-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    flex: 1;
-    overflow-y: auto;
-    padding: 4px;
-    min-height: 0;
-}
-
-.media-item {
-    position: relative;
-    border: 2px solid transparent;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    overflow: hidden;
-    background: var(--bg-tertiary);
-    transition: all 0.2s ease;
-}
-
-.media-item:hover {
-    border-color: var(--border-color);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.media-item.is-selected {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.15);
-}
-
-.media-thumb {
-    width: 100%;
-    aspect-ratio: 4 / 3;
-    object-fit: cover;
-    display: block;
-}
-
-.media-info {
-    padding: 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.media-filename {
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text-primary);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.media-size {
-    font-size: 11px;
-    color: var(--text-tertiary);
-}
-
-.media-check {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    width: 22px;
-    height: 22px;
-    background: var(--primary-color);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #fff;
-    font-size: 13px;
-}
-
-.media-pagination {
-    display: flex;
-    justify-content: center;
-    padding-top: 8px;
-    flex-shrink: 0;
-}
-
-.form-tip {
-    font-size: 12px;
-    color: var(--text-tertiary);
-    margin-left: 10px;
-}
-
-/* Markdown 编辑器主题适配 */
-[data-theme="dark"] .md-editor {
-    background: var(--bg-primary) !important;
-    border-color: var(--border-color) !important;
-}
-
-[data-theme="dark"] .md-editor-preview-wrapper {
-    background: var(--bg-primary) !important;
-}
-
-[data-theme="dark"] .md-editor-preview-wrapper h1,
-[data-theme="dark"] .md-editor-preview-wrapper h2,
-[data-theme="dark"] .md-editor-preview-wrapper h3,
-[data-theme="dark"] .md-editor-preview-wrapper h4,
-[data-theme="dark"] .md-editor-preview-wrapper h5,
-[data-theme="dark"] .md-editor-preview-wrapper h6 {
-    color: var(--text-primary) !important;
-    border-bottom-color: var(--border-color) !important;
-}
-
-[data-theme="dark"] .md-editor-preview-wrapper p,
-[data-theme="dark"] .md-editor-preview-wrapper li,
-[data-theme="dark"] .md-editor-preview-wrapper blockquote {
-    color: var(--text-secondary) !important;
-}
-
-[data-theme="dark"] .md-editor-preview-wrapper code {
-    background: var(--bg-tertiary) !important;
-    color: var(--text-primary) !important;
-}
-
-[data-theme="dark"] .md-editor-preview-wrapper pre {
-    background: var(--bg-secondary) !important;
-    border-color: var(--border-color) !important;
-}
-
-[data-theme="dark"] .md-editor-preview-wrapper table td,
-[data-theme="dark"] .md-editor-preview-wrapper table th {
-    border-color: var(--border-color) !important;
-    background: var(--bg-secondary) !important;
-    color: var(--text-primary) !important;
-}
-
-[data-theme="dark"] .md-editor-preview-wrapper table tr:nth-child(2n) {
-    background: var(--bg-tertiary) !important;
-}
-
-[data-theme="dark"] .md-editor-preview-wrapper hr {
-    background-color: var(--border-color) !important;
-}
-
-[data-theme="dark"] .md-editor-preview-wrapper a {
-    color: var(--primary-color) !important;
-}
-
-/* 编辑器工具栏主题适配 */
-[data-theme="dark"] .md-editor-toolbar {
-    background: var(--bg-primary) !important;
-    border-bottom-color: var(--border-color) !important;
-}
-
-[data-theme="dark"] .md-editor-toolbar-item {
-    color: var(--text-secondary) !important;
-}
-
-[data-theme="dark"] .md-editor-toolbar-item:hover {
-    background: var(--bg-secondary) !important;
-    color: var(--primary-color) !important;
-}
-
-[data-theme="dark"] .md-editor-toolbar-item.active {
-    background: var(--primary-bg) !important;
-    color: var(--primary-color) !important;
-}
-
-[data-theme="dark"] .md-editor-divider {
-    background: var(--border-color) !important;
-}
-
-/* 编辑器输入区域主题适配 */
-[data-theme="dark"] .md-editor-input-wrapper {
-    background: var(--bg-primary) !important;
-}
-
-[data-theme="dark"] .md-editor-input-wrapper textarea {
-    color: var(--text-primary) !important;
-    background: var(--bg-primary) !important;
-}
-
-/* 代码块主题适配 */
-[data-theme="dark"] .md-editor-code-block-language {
-    color: var(--text-secondary) !important;
-}
-
-/* CodeMirror 滚动区域主题适配 */
-[data-theme="dark"] .cm-scroller {
-    background: var(--bg-primary) !important;
-    color: var(--text-primary) !important;
-}
-
-[data-theme="dark"] .cm-scroller .cm-content {
-    color: var(--text-primary) !important;
-}
-
-[data-theme="dark"] .cm-scroller .cm-line {
-    color: var(--text-primary) !important;
-}
-
-[data-theme="dark"] .cm-scroller ::selection {
-    background: var(--primary-bg-hover) !important;
-}
-
-[data-theme="dark"] .cm-activeLine {
-    background: var(--bg-tertiary) !important;
-}
-
-[data-theme="dark"] .cm-activeLineGutter {
-    background: var(--bg-secondary) !important;
-}
-
-[data-theme="dark"] .cm-gutters {
-    background: var(--bg-primary) !important;
-    border-right-color: var(--border-color) !important;
-    color: var(--text-tertiary) !important;
-}
-
-[data-theme="dark"] .cm-cursor {
-    border-left-color: var(--text-primary) !important;
-}
-
-[data-theme="dark"] .cm-matchingBracket {
-    background: var(--primary-bg) !important;
-}
-
-[data-theme="dark"] .cm-foldPlaceholder {
-    background: var(--bg-secondary) !important;
-    border-color: var(--border-color) !important;
-    color: var(--text-secondary) !important;
-}
-
-/* 强制覆盖 md-editor-v3 的编辑器主题 */
-[data-theme="dark"] .md-editor-input-wrapper .cm-editor {
-    background: var(--bg-primary) !important;
-}
-
-[data-theme="dark"] .md-editor-input-wrapper .cm-editor .cm-scroller {
-    background: var(--bg-primary) !important;
-}
-
-[data-theme="dark"] .md-editor-input-wrapper .cm-focused {
-    outline: none !important;
-}
-
-/* 亮色模式下的样式保证 */
-.md-editor-input-wrapper .cm-editor .cm-scroller {
-    background: #ffffff !important;
-}
-
-.md-editor-input-wrapper .cm-content {
-    color: #24292f !important;
-}
-
-/* 全局样式 - 强制主题适配 */
-.md-editor-dark {
-    --md-bk-color: #252526 !important;
-    --md-bk-color-outstand: #2d2d2d !important;
-    --md-bk-hover-color: #383838 !important;
-    --md-border-color: #3a3a3a !important;
-    --md-modal-color: #1e1e1e !important;
-    --md-bar-color: #2d2d2d !important;
-    --md-bar-border-color: #3a3a3a !important;
-    --md-icon-color: #b4b4b4 !important;
-    --md-icon-hover-color: #ffffff !important;
-    --md-text-color: #ffffff !important;
-    --md-text-active-color: #0078d4 !important;
-    --md-text-unchecked-color: #b4b4b4 !important;
-    --md-scrollbar-bg-color: transparent !important;
-    --md-scrollbar-thumb-color: #424242 !important;
-    --md-scrollbar-thumb-hover-color: #4f4f4f !important;
-}
-
-.md-editor-dark .cm-scroller {
-    --cm-readonly-bg: #252526 !important;
-    background-color: #252526 !important;
-}
-
-.md-editor-dark .cm-gutters {
-    background-color: #252526 !important;
-    border-right: 1px solid #3a3a3a !important;
-}
-
-.md-editor-dark .cm-lineNumbers {
-    color: #858585 !important;
-}
-
-.md-editor-dark .cm-activeLineGutter {
-    background-color: #2d2d2d !important;
-}
-
-.md-editor-dark .cm-cursorLayer {
-    caret-color: #ffffff !important;
-}
-
-.md-editor-dark .cm-selectionBackground,
-.md-editor-dark ::selection {
-    background: rgba(0, 120, 212, 0.3) !important;
-}
-
-.md-editor-dark .cm-focused .cm-cursor {
-    border-left-color: #ffffff !important;
-}
-</style>
-
-<style>
-/* 全局样式 - 用于覆盖 md-editor-v3 的主题 */
-[data-theme="dark"] .md-editor {
-    background: var(--bg-primary) !important;
-    border-color: var(--border-color) !important;
-}
-
-[data-theme="dark"] .md-editor-toolbar {
-    background: var(--bg-primary) !important;
-    border-bottom-color: var(--border-color) !important;
-}
-
-[data-theme="dark"] .md-editor-toolbar-item {
-    color: var(--text-secondary) !important;
-}
-
-[data-theme="dark"] .md-editor-toolbar-item:hover {
-    background: var(--bg-secondary) !important;
-    color: var(--primary-color) !important;
-}
-
-[data-theme="dark"] .md-editor-divider {
-    background-color: var(--border-color) !important;
-}
-
-[data-theme="dark"] .md-editor-input-wrapper,
-[data-theme="dark"] .md-editor-input-wrapper * {
-    background: var(--bg-primary) !important;
-}
-
-[data-theme="dark"] .cm-scroller {
-    background: var(--bg-primary) !important;
-    color: var(--text-primary) !important;
-}
-
-[data-theme="dark"] .cm-content,
-[data-theme="dark"] .cm-line {
-    color: var(--text-primary) !important;
-}
-
-[data-theme="dark"] .cm-gutters {
-    background: var(--bg-primary) !important;
-    border-right-color: var(--border-color) !important;
-    color: var(--text-tertiary) !important;
-}
-
-[data-theme="dark"] .cm-cursor {
-    border-left-color: var(--text-primary) !important;
-}
-
-[data-theme="dark"] .cm-activeLine {
-    background: var(--bg-tertiary) !important;
-}
-
-[data-theme="dark"] .cm-activeLineGutter {
-    background: var(--bg-secondary) !important;
-}
-
-[data-theme="dark"] ::selection {
-    background: var(--primary-bg-hover) !important;
-}
-
-/* 强制应用暗色主题到 CodeMirror */
-.md-editor-dark .cm-editor,
-.md-editor-dark .cm-scroller,
-.md-editor-dark .cm-content,
-.md-editor-dark .cm-line {
-    background-color: #252526 !important;
-    color: #c5c5c5 !important;
-}
-
-.md-editor-dark .cm-gutters {
-    background-color: #1e1e1e !important;
-    border-right-color: #3a3a3a !important;
-    color: #858585 !important;
-}
-
-.md-editor-dark .cm-cursor {
-    border-left-color: #ffffff !important;
-}
+.content-form {padding: 20px}
+.card-header {display: flex; justify-content: space-between; align-items: center}
+.header-actions {display: flex; align-items: center; gap: 12px}
+.editor-header {display: flex; align-items: center; gap: 12px; margin-bottom: 12px}
+.editor-label {font-size: 14px; font-weight: 500; color: var(--text-primary)}
+.select-with-button {display: flex; gap: 8px; align-items: center; width: 100%}
+.editor-wrapper {width: 100%}
+.editor-loading {height: 500px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: var(--text-tertiary); background: var(--bg-tertiary); border-radius: var(--radius-md)}
+.form-tip {font-size: 12px; color: var(--text-tertiary); margin-left: 8px}
+.draft-restore-hint p {margin: 0 0 12px; color: var(--text-secondary); font-size: 14px}
+.draft-preview {background: var(--bg-tertiary); border-radius: var(--radius-sm); padding: 12px}
+.draft-info {font-size: 13px; color: var(--text-secondary); padding: 4px 0}
+.draft-info strong {color: var(--text-primary)}
 </style>

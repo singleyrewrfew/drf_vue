@@ -28,7 +28,7 @@
 
 /* ---- 编辑器外容器：圆角 + 阴影 + 过渡 ---- */
 .md-editor {
-    border-radius: var(--radius-lg, 12px) !important;
+    border-radius: var(--radius-sm, 6px) !important;
     border: 1px solid var(--border-color, #dcdfe6) !important;
     box-shadow:
         0 1px 3px rgba(0, 0, 0, 0.04),
@@ -61,7 +61,7 @@
 }
 
 .md-editor-toolbar-item {
-    border-radius: 6px !important;
+    border-radius: 4px !important;
     transition: all 0.18s ease !important;
     padding: 5px 8px !important;
     color: var(--text-secondary, #606266) !important;
@@ -171,12 +171,45 @@
 }
 
 /* 状态栏（字数统计等） */
-.md-editor-status {
+.md-editor-status,
+.md-editor-footer {
     border-top: 1px solid var(--border-color-light, #e4e7ed) !important;
-    padding: 4px 14px !important;
+    padding: 6px 16px !important;
     font-size: 12px !important;
     color: var(--text-quaternary, #c0c4cc) !important;
     background: var(--bg-secondary, #f5f7fa) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    min-height: 32px !important;
+    overflow: visible !important;
+}
+
+/* footer 左右区域 */
+.md-editor-footer-left,
+.md-editor-footer-right {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    flex-shrink: 0 !important;
+}
+
+/* footer 内部元素 */
+.md-editor-footer-label {
+    color: var(--text-tertiary, #909399) !important;
+    margin-right: 4px !important;
+}
+
+.md-editor-footer-item {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 2px !important;
+    white-space: nowrap !important;
+}
+
+.md-editor-footer-item span {
+    color: var(--text-secondary, #606266) !important;
+    min-width: 20px !important;
 }
 
 /* ---- 预览区排版美化 ---- */
@@ -236,7 +269,7 @@
 }
 
 .md-editor-preview-wrapper pre {
-    border-radius: 8px !important;
+    border-radius: 4px !important;
     margin: 16px 0 !important;
     box-shadow: inset 0 0 0 1px var(--border-color-light, #e4e7ed) !important;
     overflow: hidden;
@@ -253,7 +286,7 @@
 .md-editor-preview-wrapper table {
     border-collapse: separate !important;
     border-spacing: 0 !important;
-    border-radius: 8px !important;
+    border-radius: 4px !important;
     overflow: hidden !important;
     border: 1px solid var(--border-color-light, #e4e7ed) !important;
     margin: 16px 0 !important;
@@ -272,7 +305,7 @@
 
 .md-editor-preview-wrapper img {
     max-width: 100% !important;
-    border-radius: 8px !important;
+    border-radius: 4px !important;
     box-shadow: 0 2px 12px rgba(0,0,0,0.08) !important;
     transition: transform 0.25s ease;
 }
@@ -634,10 +667,27 @@
 }
 
 /* ---- 状态栏（暗色，融入整体色调）---- */
-[data-theme="dark"] .md-editor-status {
+[data-theme="dark"] .md-editor-status,
+[data-theme="dark"] .md-editor-footer {
     background: var(--bg-secondary) !important;
     border-top-color: var(--border-color) !important;
     color: var(--text-tertiary) !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+[data-theme="dark"] .md-editor-footer-left,
+[data-theme="dark"] .md-editor-footer-right {
+    display: flex !important;
+    align-items: center !important;
+}
+
+[data-theme="dark"] .md-editor-footer-label {
+    color: var(--text-tertiary) !important;
+}
+
+[data-theme="dark"] .md-editor-footer-item span {
+    color: var(--text-secondary) !important;
 }
 
 /* ============================================================
