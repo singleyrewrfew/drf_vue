@@ -27,6 +27,7 @@ import { ref, shallowRef, computed, onBeforeUnmount, onMounted, watch, nextTick 
 import Artplayer from 'artplayer'
 import { getMediaUrl } from '@/utils'
 import { useThemeStore } from '@/stores/theme'
+import {logger} from '@/utils/logger.js'
 
 const props = defineProps({
     src:              { type: String, default: '' },
@@ -127,7 +128,7 @@ const initPlayer = async () => {
     await nextTick()
 
     if (!containerRef.value || !props.src) {
-        console.warn('[VideoPlayer] 缺少容器或 src，跳过初始化')
+        logger.warn('[VideoPlayer] 缺少容器或 src，跳过初始化')
         initializing = false
         return
     }
@@ -135,7 +136,7 @@ const initPlayer = async () => {
     // 3. 等待容器可见且有尺寸（关键！Artplayer 要求容器必须有尺寸）
     const hasSize = await waitForContainer()
     if (!hasSize) {
-        console.warn('[VideoPlayer] 容器尺寸仍为 0，跳过初始化', {
+        logger.warn('[VideoPlayer] 容器尺寸仍为 0，跳过初始化', {
             src: props.src,
             rect: containerRef.value?.getBoundingClientRect(),
         })
@@ -220,7 +221,7 @@ const initPlayer = async () => {
         art.value.on('video:loadstart', () => { hasError.value = false })
 
     } catch (err) {
-        console.error('[VideoPlayer] 创建实例异常:', err)
+        logger.error('[VideoPlayer] 创建实例异常', err)
         clearTimeout(initTimer)
         hasError.value = true
         initializing = false

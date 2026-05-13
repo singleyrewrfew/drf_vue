@@ -4,7 +4,7 @@
         <template v-if="isAdmin">
             <div class="stats-grid admin-grid">
                 <!-- 主指标卡片 -->
-                <div class="stat-item stat-item--contents stagger-reveal--slide" style="--stagger-delay: 0ms">
+                <div class="stat-item stat-item--contents stagger-reveal--slide delay-0">
                     <StatCard :value="stats.contents" label="内容总数" type="primary" icon="Document" clickable size="large" :animated="true">
                         <template #footer>
                             <div class="footer-stats">
@@ -16,21 +16,21 @@
                 </div>
 
                 <!-- 评论数 -->
-                <div class="stat-item stat-item--comments stagger-reveal--slide" style="--stagger-delay: 100ms">
+                <div class="stat-item stat-item--comments stagger-reveal--slide delay-1">
                     <StatCard :value="stats.comments" label="评论数" type="success" icon="ChatDotRound" size="normal" :animated="true">
                         <template #footer>互动数据</template>
                     </StatCard>
                 </div>
 
                 <!-- 用户数 -->
-                <div class="stat-item stat-item--users stagger-reveal--slide" style="--stagger-delay: 200ms">
+                <div class="stat-item stat-item--users stagger-reveal--slide delay-2">
                     <StatCard :value="stats.users" label="用户数" type="warning" icon="User" size="normal" :animated="true">
                         <template #footer>注册用户</template>
                     </StatCard>
                 </div>
 
                 <!-- 全宽数据流：总浏览量 -->
-                <div class="stat-item stat-item--views stagger-reveal--scale" style="--stagger-delay: 300ms">
+                <div class="stat-item stat-item--views stagger-reveal--scale delay-3">
                     <StatCard :value="formatNumber(stats.views)" label="总浏览量" type="danger" icon="View" size="wide" :animated="true">
                         <template #footer>累计访问量</template>
                     </StatCard>
@@ -41,7 +41,7 @@
         <!-- 普通用户视图：简化版 -->
         <template v-else>
             <div class="stats-grid user-grid">
-                <div class="stat-item stat-item--my-contents stagger-reveal--slide" style="--stagger-delay: 0ms">
+                <div class="stat-item stat-item--my-contents stagger-reveal--slide delay-0">
                     <StatCard :value="stats.my_contents || 0" label="我的内容" type="primary" icon="Document" clickable size="large" :animated="true">
                         <template #footer>
                             <div class="footer-stats">
@@ -52,13 +52,13 @@
                     </StatCard>
                 </div>
 
-                <div class="stat-item stat-item--my-views stagger-reveal--slide" style="--stagger-delay: 100ms">
+                <div class="stat-item stat-item--my-views stagger-reveal--slide delay-1">
                     <StatCard :value="formatNumber(stats.my_views || 0)" label="浏览量" type="success" icon="View" size="normal" :animated="true">
                         <template #footer>累计访问</template>
                     </StatCard>
                 </div>
 
-                <div class="stat-item stat-item--my-comments stagger-reveal--slide" style="--stagger-delay: 200ms">
+                <div class="stat-item stat-item--my-comments stagger-reveal--slide delay-2">
                     <StatCard :value="stats.my_comments || 0" label="评论" type="warning" icon="ChatDotRound" size="normal" :animated="true">
                         <template #footer>互动数据</template>
                     </StatCard>
@@ -141,6 +141,17 @@ const formatNumber = (num) => {
     font-weight: 600;
     margin-left: 4px;
 }
+
+/* ================================================================
+   动画延迟工具类
+   ================================================================ */
+
+.delay-0 { --stagger-delay: 0ms; }
+.delay-1 { --stagger-delay: 100ms; }
+.delay-2 { --stagger-delay: 200ms; }
+.delay-3 { --stagger-delay: 300ms; }
+.delay-4 { --stagger-delay: 400ms; }
+.delay-5 { --stagger-delay: 500ms; }
 
 /* ================================================================
    响应式断点（渐进式降级）

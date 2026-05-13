@@ -2,8 +2,8 @@
     <div class="dashboard">
         <DashboardStats :stats="stats"/>
 
-        <el-row :gutter="20" style="margin-top: 20px">
-            <el-col :xs="24" :lg="16" class="stagger-reveal" style="--stagger-delay: 400ms">
+        <el-row :gutter="20" class="content-row">
+            <el-col :xs="24" :lg="16" class="stagger-reveal delay-4">
                 <el-card shadow="hover">
                     <template #header>
                         <div class="card-header">
@@ -41,7 +41,7 @@
                     </div>
                 </el-card>
             </el-col>
-            <el-col :xs="24" :lg="8" class="sidebar-col stagger-reveal" style="--stagger-delay: 500ms">
+            <el-col :xs="24" :lg="8" class="sidebar-col stagger-reveal delay-5">
                 <QuickActionsPanel/>
                 <SystemInfoCard
                     v-if="isAdmin"
@@ -66,6 +66,7 @@ import QuickActionsPanel from './components/QuickActionsPanel.vue'
 import SystemInfoCard from './components/SystemInfoCard.vue'
 import {fetchStats} from "@/api/stats.js"
 import {fetchHealth} from "@/api/health.js"
+import {logger} from "@/utils/logger.js"
 
 const userStore = useUserStore()
 
@@ -94,7 +95,7 @@ const asyncFetchStats = async () => {
         const {data} = await fetchStats()
         stats.value = {...stats.value, ...data}
     } catch (error) {
-        console.error('获取统计数据失败', error)
+        logger.error('获取统计数据失败', error)
     } finally {
         loading.value = false
     }
@@ -134,6 +135,15 @@ onMounted(() => {
 .empty-state-wrapper {
     padding: 24px 16px;
 }
+
+/* 内容区域行间距 */
+.content-row {
+    margin-top: 20px;
+}
+
+/* ---- 动画延迟工具类 ---- */
+.delay-4 { --stagger-delay: 400ms; }
+.delay-5 { --stagger-delay: 500ms; }
 
 /* ---- 响应式布局优化 ---- */
 

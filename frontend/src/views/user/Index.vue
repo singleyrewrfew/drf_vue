@@ -99,7 +99,7 @@ const fetchRoles = async () => {
         const {data} = await getRoles()
         roles.value = data.results || data
     } catch (error) {
-        console.error('获取角色列表失败:', error)
+        logger.error('获取角色列表失败', error)
     }
 }
 

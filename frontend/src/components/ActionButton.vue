@@ -25,6 +25,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { logger } from '@/utils/logger.js'
 
 /** 内置图标 SVG 路径 - 定义在外部确保模板可访问 */
 const icons = {
@@ -67,7 +68,7 @@ const sanitizeSvg = (svgString) => {
     const doc = parser.parseFromString(`<svg>${svgString}</svg>`, 'image/svg+xml')
     
     if (doc.querySelector('parsererror')) {
-        console.warn('[ActionButton] Invalid SVG detected, rendering blocked')
+        logger.warn('Invalid SVG detected, rendering blocked')
         return ''
     }
     
@@ -241,7 +242,7 @@ const handleClick = (e) => {
 
 .action-btn--primary {
     background: var(--primary-color);
-    color: #fff;
+    color: var(--color-on-primary, #fff);
 }
 .action-btn--primary:hover {
     background: var(--primary-hover);
@@ -255,7 +256,7 @@ const handleClick = (e) => {
 
 .action-btn--danger {
     background: var(--danger-color);
-    color: #fff;
+    color: var(--color-on-primary, #fff);
 }
 .action-btn--danger:hover {
     background: var(--danger-hover);
@@ -269,7 +270,7 @@ const handleClick = (e) => {
 
 .action-btn--info {
     background: var(--info-color, #909399);
-    color: #fff;
+    color: var(--color-on-primary, #fff);
 }
 .action-btn--info:hover {
     background: var(--info-hover, #a6a9ad);
@@ -280,7 +281,7 @@ const handleClick = (e) => {
 
 .action-btn--success {
     background: var(--success-color, #67c23a);
-    color: #fff;
+    color: var(--color-on-primary, #fff);
 }
 .action-btn--success:hover {
     background: var(--success-hover, #85ce61);
@@ -294,7 +295,7 @@ const handleClick = (e) => {
 
 .action-btn--warning {
     background: var(--warning-color, #e6a23c);
-    color: #fff;
+    color: var(--color-on-primary, #fff);
 }
 .action-btn--warning:hover {
     background: var(--warning-hover, #ebb563);
@@ -351,7 +352,7 @@ const handleClick = (e) => {
 /* outline-danger / info / success / warning 同理 */
 .action-btn--outline.action-btn--danger { color: var(--danger-color); }
 .action-btn--outline.action-btn--danger:hover {
-    background: #fef0f0; border-color: var(--danger-color-light-5, #fbc4c4);
+    background: var(--danger-bg, #fef0f0); border-color: var(--danger-color-light-5, #fbc4c4);
 }
 .action-btn--outline.action-btn--danger:disabled:hover {
     background: var(--card-bg); border-color: var(--border-color);
@@ -359,7 +360,7 @@ const handleClick = (e) => {
 
 .action-btn--outline.action-btn--info { color: var(--info-color, #909399); }
 .action-btn--outline.action-btn--info:hover {
-    background: #f4f4f5; border-color: #c8c9cc;
+    background: var(--info-bg, #f4f4f5); border-color: var(--info-border-color, #c8c9cc);
 }
 .action-btn--outline.action-btn--info:disabled:hover {
     background: var(--card-bg); border-color: var(--border-color);

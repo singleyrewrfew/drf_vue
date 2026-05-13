@@ -1,21 +1,12 @@
 /**
- * 媒体文件处理工具函数
+ * 媒体文件处理工具函数（扩展）
  * 
- * 提供媒体 URL 处理、头像验证等通用功能
+ * 包含媒体特有的工具函数（头像处理、图片验证等）
+ * 通用函数（getMediaUrl、formatFileSize）从 utils/index.js re-export
  */
 
-/**
- * 获取媒体文件的完整 URL
- *
- * @param {string} file - 媒体文件路径
- * @returns {string} 完整的媒体 URL
- */
-export const getMediaUrl = (file) => {
-    if (!file) return ''
-    if (file.startsWith('http')) return file
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
-    return `${baseUrl.replace('/api', '')}${file}`
-}
+/** 从主工具库导入通用函数 */
+export { getMediaUrl, formatFileSize } from './index.js'
 
 /**
  * 标准化头像路径（从完整 URL 提取相对路径）
@@ -33,11 +24,11 @@ export const normalizeAvatarPath = (avatarPath) => {
             path = path.substring(mediaIndex)
         }
     }
-    
+
     if (!path.startsWith('/')) {
         path = `/${path}`
     }
-    
+
     return path
 }
 
@@ -72,20 +63,4 @@ export const validateImageFile = (file, options = {}) => {
     }
 
     return { valid: true, error: null }
-}
-
-/**
- * 格式化文件大小显示
- *
- * @param {number} bytes - 字节数
- * @returns {string} 格式化后的大小字符串
- */
-export const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 B'
-    
-    const units = ['B', 'KB', 'MB', 'GB']
-    const k = 1024
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    
-    return `${(bytes / Math.pow(k, i)).toFixed(1)} ${units[i]}`
 }

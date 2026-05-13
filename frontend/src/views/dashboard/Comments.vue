@@ -36,7 +36,7 @@
             <el-table-column label="回复对象" width="120">
                 <template #default="{ row }">
                     <span v-if="row.reply_to_name">@{{ row.reply_to_name }}</span>
-                    <span v-else style="color: #909399;">-</span>
+                    <span v-else class="text-muted">-</span>
                 </template>
             </el-table-column>
             <!-- 点赞数量 -->
@@ -290,5 +290,9 @@ onMounted(() => {
  */
 .comments-page {
     padding: 20px;
+}
+
+.text-muted {
+    color: var(--text-tertiary);
 }
 </style>

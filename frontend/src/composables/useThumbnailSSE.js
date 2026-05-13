@@ -2,6 +2,7 @@ import { onUnmounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { fetchEventSource } from '@microsoft/fetch-event-source'
 import { useUserStore } from '@/stores/user'
+import {logger} from '@/utils/logger.js'
 
 const FINAL_STATES = ['completed', 'failed']
 
@@ -36,7 +37,7 @@ export function useThumbnailSSE(baseUrl) {
 
         const token = userStore.accessToken
         if (!token) {
-            console.warn('[SSE] 未找到访问令牌')
+            logger.warn('[SSE] 未找到访问令牌')
             return
         }
 
@@ -56,7 +57,7 @@ export function useThumbnailSSE(baseUrl) {
                 /** 连接建立时校验响应状态 */
                 async onopen(response) {
                     if (!response.ok) {
-                        console.error(`[SSE] HTTP 错误: ${response.status}`)
+                        logger.error(`[SSE] HTTP 错误: ${response.status}`)
                         throw new Error(`HTTP ${response.status}`)
                     }
                     // 连接成功，库会自动处理后续流读取
@@ -74,7 +75,7 @@ export function useThumbnailSSE(baseUrl) {
                         const data = JSON.parse(rawData)
 
                         if (data.error) {
-                            console.error('[SSE] 服务器错误:', data.error)
+                            logger.error('[SSE] 服务器错误', data.error)
                             closeConnection(mediaId)
                             return
                         }
@@ -107,7 +108,7 @@ export function useThumbnailSSE(baseUrl) {
                  *   - 重试耗尽后抛出异常，触发 onError 回调
                  */
                 onerror(err) {
-                    console.error('[SSE] 连接错误:', err)
+                    logger.error('[SSE] 连接错误', err)
 
                     // HTTP 错误或认证失败不重连
                     if (err?.message?.startsWith('HTTP') || err?.status === 401) {
@@ -124,7 +125,7 @@ export function useThumbnailSSE(baseUrl) {
         } catch (err) {
             // fetchEventSource Promise 被 abort 或 throw 终止时到这里
             if (err.name !== 'AbortError') {
-                console.error('[SSE] 连接关闭异常:', err)
+                logger.error('[SSE] 连接关闭异常', err)
             }
         }
     }

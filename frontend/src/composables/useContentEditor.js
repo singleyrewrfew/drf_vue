@@ -1,6 +1,7 @@
 import {ref, watch, onUnmounted, computed} from 'vue'
 import {useThemeStore} from '@/stores/theme'
 import {useRoute} from 'vue-router'
+import {logger} from '@/utils/logger.js'
 
 const DRAFT_KEY_PREFIX = 'content_draft_'
 
@@ -14,9 +15,9 @@ function saveDraftToStorage(key, data) {
         localStorage.setItem(key, jsonStr)
         return true
     } catch (e) {
-        console.warn('草稿保存失败:', e.message || e)
+        logger.warn('草稿保存失败', e.message || e)
         if (e.name === 'QuotaExceededError') {
-            console.error('本地存储空间已满，建议清理旧草稿或减少内容长度')
+            logger.error('本地存储空间已满，建议清理旧草稿或减少内容长度')
         }
         return false
     }
@@ -119,7 +120,7 @@ export function useContentEditor(formRef) {
             const saved = saveDraftToStorage(draftKey.value, draftDataToSave)
             if (!saved) {
                 autoSaveStatus.value = ''
-                console.warn('草稿自动保存失败，内容可能过大')
+                logger.warn('草稿自动保存失败，内容可能过大')
                 return
             }
             

@@ -110,6 +110,7 @@ import {
     Sunny
 } from '@element-plus/icons-vue'
 import {getAvatarUrl} from '@/utils'
+import {logger} from '@/utils/logger.js'
 
 const RAW_MENU = [
     {
@@ -246,7 +247,7 @@ const currentPageTitle = computed(() => {
 
 const handleLogout = async () => {
     try { await userStore.logout() }
-    catch (error) { console.error('Logout error:', error) }
+    catch (error) { logger.error('Logout 异常', error) }
     finally { router.replace({ name: 'Login' }) }
 }
 

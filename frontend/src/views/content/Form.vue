@@ -69,7 +69,7 @@
                 <el-row :gutter="20" v-if="isAdmin">
                     <el-col :span="12">
                         <el-form-item label="作者" prop="author">
-                            <el-select id="author" v-model="form.author" placeholder="请选择作者" style="width: 100%">
+                            <el-select id="author" v-model="form.author" placeholder="请选择作者" class="full-width-select">
                                 <el-option v-for="user in users" :key="user.id" :label="user.username" :value="user.id"/>
                             </el-select>
                         </el-form-item>
@@ -100,9 +100,9 @@
                     <el-col :span="12">
                         <div class="form-item-custom">
                             <label for="status" class="form-label">状态</label>
-                            <div style="position: relative; display: inline-flex;">
+                            <div class="radio-wrapper">
                                 <input type="radio" id="status" name="status" :checked="form.status === 'published'"
-                                       style="position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none;"
+                                       class="sr-only"
                                        tabindex="-1" aria-hidden="true"/>
                                 <el-radio-group v-model="form.status" @change="(val) => form.status = val">
                                     <el-radio value="draft">草稿</el-radio>
@@ -181,6 +181,7 @@ import 'md-editor-v3/lib/style.css'
 import {createContent, updateContent, getContent} from '@/api/content'
 import api from '@/api'
 import {useUserStore} from '@/stores/user'
+import {logger} from '@/utils/logger.js'
 
 import StatusTag from '@/components/StatusTag.vue'
 import ActionButton from '@/components/ActionButton.vue'
@@ -314,13 +315,13 @@ const handleSubmit = async () => {
         try {
             clearDraftStorage()
         } catch (e) {
-            console.warn('清除草稿失败:', e)
+            logger.warn('清除草稿失败', e)
         }
-        
+
         router.push('/contents')
-        
+
     } catch (error) {
-        console.error('提交失败:', error)
+        logger.error('提交失败', error)
         ElMessage.error(isEdit.value ? '保存失败' : '创建失败')
     } finally {
         loading.value = false
@@ -346,12 +347,12 @@ const handleSaveDraft = async () => {
         try {
             clearDraftStorage()
         } catch (e) {
-            console.warn('清除草稿失败:', e)
+            logger.warn('清除草稿失败', e)
         }
-        
+
     } catch (error) {
-        console.error('保存草稿失败:', error)
-        ElMessage.error('保存草稿失败') 
+        logger.error('保存草稿失败', error)
+        ElMessage.error('保存草稿失败')
     } finally { 
         loading.value = false
     }
@@ -415,4 +416,15 @@ onMounted(async () => {
 .draft-info {font-size: 13px; color: var(--text-secondary); padding: 4px 0}
 .draft-info strong {color: var(--text-primary)}
 .form-actions :deep(.el-form-item__content) {display: flex; gap: 12px; align-items: center}
+
+/* ---- 工具类 ---- */
+.full-width-select {width: 100%}
+.radio-wrapper {position: relative; display: inline-flex}
+.sr-only {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
 </style>

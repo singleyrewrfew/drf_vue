@@ -5,6 +5,7 @@ import router from '@/router'
 import { CLIENT_ERROR_STATUS, SERVER_ERROR_STATUS } from '@/constants/httpStatus'
 import { handleTokenRefresh } from '@/utils/tokenRefresh'
 import { buildAuthHeader, AUTH_CONFIG } from '@/constants/authConfig'
+import {logger} from '@/utils/logger.js'
 
 // Axios 错误码常量
 const AXIOS_ERROR_CODES = {
@@ -129,7 +130,7 @@ api.interceptors.request.use(
             }
         } catch (error) {
             // 如果获取 store 失败，记录错误但不阻断请求
-            console.warn('获取用户 store 失败，无法添加认证头:', error)
+            logger.warn('获取用户 store 失败，无法添加认证头', error)
         }
 
         return config
@@ -292,7 +293,7 @@ api.interceptors.response.use(
                             return Promise.reject(error)
                         }
                     } catch (e) {
-                        console.error('获取用户信息失败:', e)
+                        logger.error('获取用户信息失败', e)
                     }
                 }
 

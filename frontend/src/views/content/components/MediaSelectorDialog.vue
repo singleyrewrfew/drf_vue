@@ -45,6 +45,7 @@ import {Loading, Picture, Check, Search} from '@element-plus/icons-vue'
 import MediaDialog from '@/components/MediaDialog.vue'
 import ActionButton from '@/components/ActionButton.vue'
 import {getMedia} from '@/api/media'
+import {logger} from '@/utils/logger.js'
 
 const props = defineProps({
     visible: {type: Boolean, default: false},
@@ -104,7 +105,7 @@ const fetchList = async () => {
         const {data} = await getMedia(params)
         allItems.value = (data.results || data || []).filter(isImageFile)
     } catch (error) {
-        console.error('获取媒体列表失败:', error)
+        logger.error('获取媒体列表失败', error)
         ElMessage.error('获取媒体列表失败')
     } finally {
         loading.value = false

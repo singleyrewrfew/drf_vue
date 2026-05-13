@@ -82,6 +82,7 @@ import TablePage from '@/components/TablePage.vue'
 import ActionButton from '@/components/ActionButton.vue'
 import StatusTag from '@/components/StatusTag.vue'
 import ContentSearchBar from './components/ContentSearchBar.vue'
+import {logger} from '@/utils/logger.js'
 
 const router = useRouter()
 
@@ -158,7 +159,7 @@ const fetchCategories = async () => {
         const {data} = await api.get('/categories/')
         categories.value = data.results || data
     } catch (error) {
-        console.error('获取分类列表失败:', error)
+        logger.error('获取分类列表失败', error)
     }
 }
 </script>

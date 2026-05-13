@@ -77,7 +77,7 @@ export const useUserStore = defineStore('user', () => {
                 await logoutApi({ [AUTH_CONFIG.REFRESH_TOKEN_KEY]: currentRefreshToken })
             }
         } catch (e) {
-            console.error('登出 API 调用失败:', e)
+            logger.error('登出 API 调用失败', e)
         }
 
         // 清空响应式状态

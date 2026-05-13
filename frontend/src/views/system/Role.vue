@@ -263,7 +263,7 @@ const fetchPermissions = async () => {
         const {data} = await getPermissions()
         permissions.value = normalizeListResponse(data)
     } catch (error) {
-        console.error('获取权限列表失败:', error)
+        logger.error('获取权限列表失败', error)
     }
 }
 

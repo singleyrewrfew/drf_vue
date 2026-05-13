@@ -295,6 +295,7 @@ import {getUploadUrl, getMedia} from '@/api/media'
 import {getAvatarUrl} from '@/utils'
 import {extractErrorMessage, normalizeListResponse} from '@/api/index.js'
 import {getMediaUrl, normalizeAvatarPath, validateImageFile} from '@/utils/media.js'
+import {logger} from '@/utils/logger.js'
 import ActionButton from '@/components/ActionButton.vue'
 import SearchInput from '@/components/SearchInput.vue'
 import MediaDialog from '@/components/MediaDialog.vue'
@@ -411,7 +412,7 @@ const fetchMedia = async () => {
         const {data} = await getMedia({limit: 50})
         mediaList.value = normalizeListResponse(data)
     } catch (error) {
-        console.error('获取媒体列表失败:', error)
+        logger.error('获取媒体列表失败', error)
     } finally {
         mediaLoading.value = false
     }
@@ -478,7 +479,7 @@ const handleAvatarSuccess = async (response, file) => {
             await userStore.fetchProfile(true)
             ElMessage.success('头像更新成功')
         } catch (error) {
-            console.error('头像更新失败:', error)
+            logger.error('头像更新失败', error)
             ElMessage.error(extractErrorMessage(error, '头像更新失败'))
         }
     }
@@ -509,7 +510,7 @@ const handleUpdateProfile = async () => {
         ElMessage.success('邮箱修改成功')
         form.email = userStore.user?.email || ''
     } catch (error) {
-        console.error('修改邮箱失败:', error)
+        logger.error('修改邮箱失败', error)
         ElMessage.error(extractErrorMessage(error, '修改失败'))
     } finally {
         loading.value = false
