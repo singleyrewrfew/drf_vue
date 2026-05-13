@@ -10,15 +10,11 @@
 
         <!-- 操作按钮 -->
         <div v-if="previewUrl" class="action-bar">
-            <button v-if="pendingFile" type="button" class="action-btn action-btn-warning"
-                    @click.stop="triggerSelect">
-                <el-icon><Upload /></el-icon>
-                <span>{{ replaceText }}</span>
-            </button>
-            <button type="button" class="action-btn action-btn-danger" @click.stop="handleClear">
-                <el-icon><Delete /></el-icon>
-                <span>{{ removeText }}</span>
-            </button>
+            <ActionButton icon="upload" type="primary" size="small" :stop="true"
+                         :text="replaceText" @click="triggerSelect"/>
+            <slot name="actions"/>
+            <ActionButton icon="delete" type="danger" size="small" :stop="true"
+                         :text="removeText" @click="handleClear"/>
         </div>
 
         <!-- 待上传提示 -->
@@ -38,7 +34,8 @@
 <script setup>
 import {ref, computed} from 'vue'
 import {ElMessage} from 'element-plus'
-import {Plus, Upload, Delete, Clock} from '@element-plus/icons-vue'
+import {Plus, Clock} from '@element-plus/icons-vue'
+import ActionButton from './ActionButton.vue'
 
 const props = defineProps({
     /** 当前预览 URL（已有图片或服务端返回的 URL） */
@@ -174,41 +171,6 @@ defineExpose({ triggerSelect, getPendingFile, clear: handleClear })
 .action-bar {
     display: flex;
     gap: 8px;
-}
-
-.action-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 10px;
-    border: none;
-    border-radius: var(--radius-xs);
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.15s ease;
-}
-
-.action-btn .el-icon {
-    font-size: 12px;
-}
-
-.action-btn-warning {
-    background: var(--warning-color, #e6a23c);
-    color: #fff;
-}
-
-.action-btn-warning:hover {
-    background: var(--warning-hover, #ebb563);
-}
-
-.action-btn-danger {
-    background: var(--danger-color);
-    color: #fff;
-}
-
-.action-btn-danger:hover {
-    background: var(--danger-hover);
 }
 
 .status-hint {

@@ -54,22 +54,14 @@
                 <el-row :gutter="20">
                     <el-col :span="12">
                         <el-form-item label="分类" prop="category">
-                            <div class="select-with-button">
-                                <el-select id="category" v-model="form.category" placeholder="请选择分类" clearable style="width: calc(100% - 60px)">
-                                    <el-option v-for="cat in categories" :key="cat.id" :label="cat.name" :value="cat.id"/>
-                                </el-select>
-                                <el-button type="primary" size="small" @click="showCategoryDialog = true">创建</el-button>
-                            </div>
+                            <SelectWithCreate v-model="form.category" :options="categories" placeholder="请选择分类"
+                                              @create="showCategoryDialog = true"/>
                         </el-form-item>
                     </el-col>
                     <el-col :span="12">
                         <el-form-item label="标签" prop="tags">
-                            <div class="select-with-button">
-                                <el-select id="tags" v-model="form.tags" multiple placeholder="请选择标签" style="width: calc(100% - 60px)" label="name">
-                                    <el-option v-for="tag in tags" :key="tag.id" :label="tag.name" :value="tag.id"/>
-                                </el-select>
-                                <el-button type="primary" size="small" @click="showTagDialog = true">创建</el-button>
-                            </div>
+                            <SelectWithCreate v-model="form.tags" :options="tags" :multiple="true" placeholder="请选择标签"
+                                              @create="showTagDialog = true"/>
                         </el-form-item>
                     </el-col>
                 </el-row>
@@ -89,8 +81,20 @@
                 <el-row :gutter="20">
                     <el-col :span="12">
                         <el-form-item label="封面图" prop="cover_image">
-                            <CoverUpload ref="coverUploadRef" id="cover_image" v-model="form.cover_image" @open-media="showMediaSelector = true"
-                                         @file-ready="(file) => pendingCoverFile = file"/>
+                            <div class="cover-upload-wrapper">
+                                <ImageUploader v-model="form.cover_image"
+                                               placeholder-text="点击上传封面"
+                                               replace-text="更换"
+                                               remove-text="移除"
+                                               :max-size-m-b="10"
+                                               tip="支持 JPG/PNG/GIF/WEBP，建议尺寸 1200x630"
+                                               @file-selected="(file) => pendingCoverFile = file"
+                                               ref="imageUploaderRef">
+                                    <template #actions>
+                                        <ActionButton icon="folder" size="small" class="media-btn" @click="showMediaSelector = true">媒体库</ActionButton>
+                                    </template>
+                                </ImageUploader>
+                            </div>
                         </el-form-item>
                     </el-col>
                     <el-col :span="12">
@@ -144,7 +148,10 @@
         <!-- 媒体库选择 -->
         <MediaSelectorDialog v-model:visible="showMediaSelector" @select="handleMediaSelect"/>
 
-        <!-- 草稿恢复提示 -->
+        <!-- 草稿恢复提示条（恢复后显示） -->
+        <DraftRestoreBar :visible="draftRestored" :saved-at="draftRestoreTime"/>
+
+        <!-- 草稿恢复对话框 -->
         <BaseDialog :visible="hasDraft" title="发现未保存的草稿" width="450px"
                    @update:visible="(val) => { if (!val) discardDraft() }">
             <div class="draft-restore-hint">
@@ -157,7 +164,7 @@
             </div>
             <template #footer>
                 <ActionButton variant="outline" type="text" text="放弃草稿" icon="delete" size="normal" @click="discardDraft"/>
-                <ActionButton text="恢复草稿" icon="refresh" size="normal" stop @click="restoreDraft"/>
+                <ActionButton text="恢复草稿" icon="refresh" size="normal" stop @click="handleRestoreDraft"/>
             </template>
         </BaseDialog>
     </div>
@@ -179,7 +186,9 @@ import StatusTag from '@/components/StatusTag.vue'
 import ActionButton from '@/components/ActionButton.vue'
 import FormDialog from '@/components/FormDialog.vue'
 import BaseDialog from '@/components/BaseDialog.vue'
-import CoverUpload from './components/CoverUpload.vue'
+import SelectWithCreate from '@/components/SelectWithCreate.vue'
+import DraftRestoreBar from '@/components/DraftRestoreBar.vue'
+import ImageUploader from '@/components/ImageUploader.vue'
 import MediaSelectorDialog from './components/MediaSelectorDialog.vue'
 import {useCategoryTagForm} from '@/composables/useCategoryTagForm.js'
 import {useContentEditor} from '@/composables/useContentEditor.js'
@@ -196,7 +205,7 @@ const loading = ref(false)
 const categories = ref([])
 const tags = ref([])
 const users = ref([])
-const coverUploadRef = ref(null)
+const imageUploaderRef = ref(null)
 const pendingCoverFile = ref(null)
 const showMediaSelector = ref(false)
 
@@ -217,6 +226,18 @@ const {
     initLastContent, hasDraft, draftData,
     checkLocalDraft, restoreDraft, discardDraft, clearDraftStorage,
 } = useContentEditor(form)
+
+const draftRestored = ref(false)
+const draftRestoreTime = ref(0)
+
+const handleRestoreDraft = () => {
+    if (draftData.value?.savedAt) {
+        draftRestoreTime.value = draftData.value.savedAt
+    }
+    restoreDraft()
+    draftRestored.value = true
+    setTimeout(() => { draftRestored.value = false }, 5000)
+}
 
 const {
     showCategoryDialog, showTagDialog, creatingCategory, creatingTag,
@@ -242,7 +263,7 @@ const handleFileChange = (file) => {
 }
 
 const handleMediaSelect = (media) => {
-    coverUploadRef.value?.setFromMedia(media.url)
+    form.value.cover_image = media.url
 }
 
 const uploadCoverImage = async (file) => {
@@ -387,6 +408,8 @@ onMounted(async () => {
 .form-tip {font-size: 12px; color: var(--text-tertiary); margin-left: 8px}
 .form-item-custom {display: flex; align-items: center; margin-bottom: 18px}
 .form-label {width: 100px; text-align: right; font-size: 14px; color: var(--text-primary); padding-right: 12px; box-sizing: border-box; flex-shrink: 0}
+.cover-upload-wrapper {display: flex; flex-direction: column; gap: 8px; align-items: flex-start}
+.cover-upload-wrapper .media-btn {width: 100%}
 .draft-restore-hint p {margin: 0 0 12px; color: var(--text-secondary); font-size: 14px}
 .draft-preview {background: var(--bg-tertiary); border-radius: var(--radius-sm); padding: 12px}
 .draft-info {font-size: 13px; color: var(--text-secondary); padding: 4px 0}
