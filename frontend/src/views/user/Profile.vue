@@ -294,6 +294,7 @@ import {updateProfile, changePassword} from '@/api/user'
 import {getUploadUrl, getMedia} from '@/api/media'
 import {getAvatarUrl} from '@/utils'
 import {extractErrorMessage, normalizeListResponse} from '@/api/index.js'
+import {getMediaUrl, normalizeAvatarPath, validateImageFile} from '@/utils/media.js'
 import ActionButton from '@/components/ActionButton.vue'
 import SearchInput from '@/components/SearchInput.vue'
 import MediaDialog from '@/components/MediaDialog.vue'
@@ -377,9 +378,6 @@ const uploadHeaders = computed(() => {
 
 /**
  * 头像上传前的验证
- *
- * @param {File} file - 待上传的文件对象
- * @returns {boolean} 是否允许上传
  */
 const beforeAvatarUpload = (file) => {
     const token = userStore.accessToken
@@ -387,14 +385,9 @@ const beforeAvatarUpload = (file) => {
         ElMessage.error('请先登录')
         return false
     }
-    const isValidType = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)
-    if (!isValidType) {
-        ElMessage.error('只能上传 JPG/PNG/GIF/WEBP 格式的图片')
-        return false
-    }
-    const isLt2M = file.size / 1024 / 1024 < 2
-    if (!isLt2M) {
-        ElMessage.error('头像大小不能超过 2MB')
+    const { valid, error } = validateImageFile(file)
+    if (!valid) {
+        ElMessage.error(error)
         return false
     }
     return true
@@ -408,43 +401,6 @@ const mediaLoading = ref(false)
 const mediaList = ref([])
 const mediaSearch = ref('')
 const selectedMedia = ref(null)
-
-/**
- * 获取媒体文件的完整 URL
- *
- * @param {string} file - 媒体文件路径
- * @returns {string} 完整的媒体 URL
- */
-const getMediaUrl = (file) => {
-    if (!file) return ''
-    if (file.startsWith('http')) return file
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
-    return `${baseUrl.replace('/api', '')}${file}`
-}
-
-/**
- * 标准化头像路径
- *
- * @param {string} avatarPath - 原始头像路径
- * @returns {string} 标准化后的路径
- */
-const normalizeAvatarPath = (avatarPath) => {
-    if (!avatarPath) return ''
-    
-    let path = avatarPath
-    if (path.startsWith('http')) {
-        const mediaIndex = path.indexOf('/media/')
-        if (mediaIndex !== -1) {
-            path = path.substring(mediaIndex)
-        }
-    }
-
-    if (!path.startsWith('/media/') && !path.startsWith('media/')) {
-        path = '/media/' + path
-    }
-    
-    return path
-}
 
 /**
  * 从后端获取媒体列表

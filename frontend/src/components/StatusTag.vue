@@ -1,10 +1,15 @@
 <template>
   <span class="status-tag" :class="`status-tag--${type}`">
+    <slot name="icon" v-if="$slots.icon || icon">
+      <el-icon v-if="icon" class="status-icon"><component :is="icon"/></el-icon>
+    </slot>
     <slot>{{ text }}</slot>
   </span>
 </template>
 
 <script setup>
+import { ElIcon } from 'element-plus'
+
 defineProps({
     type: {
         type: String,
@@ -14,6 +19,11 @@ defineProps({
     text: {
         type: String,
         default: ''
+    },
+    /** Element Plus 图标组件 */
+    icon: {
+        type: [String, Object, Function],
+        default: null
     }
 })
 </script>
@@ -22,6 +32,7 @@ defineProps({
 .status-tag {
     display: inline-flex;
     align-items: center;
+    gap: 4px;
     padding: 2px 10px;
     border-radius: 6px;
     font-size: 12px;
@@ -32,6 +43,11 @@ defineProps({
         background-color 0.2s ease,
         color 0.2s ease,
         border-color 0.2s ease;
+}
+
+.status-icon {
+    font-size: 13px;
+    flex-shrink: 0;
 }
 
 /* ---- default ---- */

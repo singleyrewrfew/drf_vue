@@ -63,7 +63,8 @@
                 <el-table-column
                     v-if="showActions"
                     label="操作"
-                    :width="actionsWidth"
+                    :min-width="actionsMinWidth"
+                    :width="actionsWidth === 'auto' ? undefined : actionsWidth"
                     fixed="right"
                     class-name="action-column"
                 >
@@ -260,10 +261,16 @@ const props = defineProps({
         default: true,
     },
 
-    /** 操作列宽度（px 或 auto） */
+    /** 操作列宽度（px 或 'auto' 自适应） */
     actionsWidth: {
         type: [String, Number],
-        default: 150,
+        default: 'auto',
+    },
+
+    /** 操作列最小宽度（px） */
+    actionsMinWidth: {
+        type: Number,
+        default: 120,
     },
 
     /** 是否显示编辑按钮 */
@@ -629,9 +636,17 @@ defineExpose({
 .actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
+    gap: 6px;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start; /* 左对齐更专业 */
+}
+
+/* 操作列样式优化 */
+:deep(.action-column) {
+    .cell {
+        padding: 8px 12px !important;
+        overflow: visible;
+    }
 }
 
 /* ---- 批量操作栏（多选列开启时默认显示） ---- */

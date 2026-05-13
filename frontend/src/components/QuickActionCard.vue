@@ -48,6 +48,14 @@ defineProps({
     position: relative;
 }
 
+/* 键盘焦点可见状态 */
+.quick-action-card:focus-visible {
+    outline: none;
+    box-shadow:
+        0 0 0 2px var(--card-bg),
+        0 0 0 4px var(--primary-color);
+}
+
 /* ---- 底部光晕装饰线（hover 时亮起） ---- */
 .quick-action-card::after {
     content: '';

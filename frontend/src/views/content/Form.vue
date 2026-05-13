@@ -5,9 +5,9 @@
                 <div class="card-header">
                     <span>{{ isEdit ? '编辑内容' : '新建内容' }}</span>
                     <div class="header-actions">
-                        <StatusTag v-if="autoSaveStatus === 'saving'" type="warning" text="⏳ 保存中..."/>
-                        <StatusTag v-else-if="autoSaveStatus === 'saved'" type="success" text="✓ 已保存"/>
-                        <StatusTag v-else-if="autoSaveStatus === 'local'" type="info" text="💾 本地缓存"/>
+                        <StatusTag v-if="autoSaveStatus === 'saving'" type="warning" icon="Loading" text="保存中..."/>
+                        <StatusTag v-else-if="autoSaveStatus === 'saved'" type="success" icon="CircleCheck" text="已保存"/>
+                        <StatusTag v-else-if="autoSaveStatus === 'local'" type="info" icon="Document" text="本地缓存"/>
                     </div>
                 </div>
             </template>
@@ -174,7 +174,7 @@
 import {ref, reactive, computed, onMounted, onUnmounted} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {ElMessage, ElMessageBox} from 'element-plus'
-import {Loading} from '@element-plus/icons-vue'
+import {Loading, CircleCheck, Document} from '@element-plus/icons-vue'
 import {MdEditor} from 'md-editor-v3'
 import 'md-editor-v3/lib/style.css'
 

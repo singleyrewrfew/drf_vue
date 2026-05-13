@@ -5,7 +5,6 @@
             title="内容管理"
             :show-create="false"
             :show-edit="false"
-            :actions-width="260"
             :data="contentList"
             :loading="loading"
             v-model:page="page"

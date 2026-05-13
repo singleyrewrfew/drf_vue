@@ -59,9 +59,17 @@ const isEditor = computed(() => userStore.isEditor())
     gap: 12px;
 }
 
+@media (max-width: 1199px) {
+    .quick-actions {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
+}
+
 @media (max-width: 768px) {
     .quick-actions {
         grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
     }
 }
 </style>

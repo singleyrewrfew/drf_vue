@@ -1,20 +1,20 @@
 <template>
-    <div class="stat-card" :class="[`stat-card--${type}`, { 'stat-card--clickable': clickable }]"
+    <div class="stat-card"
+         :class="[`stat-card--${type}`, `stat-card--${size}`, { 'stat-card--clickable': clickable }]"
          :role="clickable ? 'button' : undefined"
          :tabindex="clickable ? 0 : undefined"
          @click="handleClick"
          @keydown.enter="handleClick">
         <div class="stat-content">
             <div class="stat-icon">
-                <!-- slot 优先，fallback 到内置 icon -->
                 <slot name="icon">
-                    <el-icon :size="22" v-if="iconComponent">
+                    <el-icon :size="iconSize" v-if="iconComponent">
                         <component :is="iconComponent" />
                     </el-icon>
                 </slot>
             </div>
             <div class="stat-info">
-                <span class="stat-value">{{ value }}</span>
+                <span class="stat-value">{{ animated && animationStarted ? displayValue : formattedValue }}</span>
                 <span class="stat-label">{{ label }}</span>
             </div>
             <slot name="extra" />
@@ -26,11 +26,12 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, watch, onMounted, ref } from 'vue'
 import {
     Document, ChatDotRound, User, View,
     VideoPlay, Picture, Setting, Star, Message
 } from '@element-plus/icons-vue'
+import { useCountUp } from '@/composables/useCountUp.js'
 
 const props = defineProps({
     value: {
@@ -67,6 +68,17 @@ const props = defineProps({
     clickable: {
         type: Boolean,
         default: false
+    },
+    /** 尺寸变体：large(主卡片) / normal(默认) / wide(全宽) */
+    size: {
+        type: String,
+        default: 'normal',
+        validator: (v) => ['large', 'normal', 'wide'].includes(v)
+    },
+    /** 是否启用数字动画 */
+    animated: {
+        type: Boolean,
+        default: true
     }
 })
 
@@ -80,6 +92,57 @@ const iconMap = {
 
 /** 根据 icon 名称查找对应组件 */
 const iconComponent = computed(() => iconMap[props.icon] || null)
+
+/** 根据尺寸动态调整图标大小 */
+const iconSize = computed(() => {
+    const sizes = { large: 28, normal: 22, wide: 24 }
+    return sizes[props.size] || 22
+})
+
+/** 格式化静态数值（非动画模式）*/
+const formattedValue = computed(() => {
+    const num = Number(props.value) || 0
+    return num.toLocaleString('en-US')
+})
+
+/** CountUp 动画 Hook - 简化版 */
+const targetNum = computed(() => Number(props.value) || 0)
+const { displayValue, startAnimation } = useCountUp(0)
+
+/** 动画是否已启动 */
+const animationStarted = ref(false)
+
+/** 启动动画的统一方法 */
+const triggerAnimation = (value) => {
+    if (animationStarted.value) {
+        startAnimation(value, {
+            duration: props.size === 'wide' ? 1200 : 1000,
+            easing: 'easeOutQuart',
+            startFromCurrent: true
+        })
+    } else {
+        animationStarted.value = true
+        startAnimation(value, {
+            duration: props.size === 'wide' ? 1800 : 1400,
+            easing: 'easeOutExpo'
+        })
+    }
+}
+
+onMounted(() => {
+    if (props.animated && targetNum.value > 0) {
+        requestAnimationFrame(() => {
+            setTimeout(() => triggerAnimation(targetNum.value), 100)
+        })
+    }
+})
+
+watch(targetNum, (newValue, oldValue) => {
+    if (!props.animated) return
+    if (newValue !== oldValue) {
+        triggerAnimation(newValue)
+    }
+})
 
 const handleClick = () => {
     if (props.clickable) emit('click')
@@ -98,6 +161,21 @@ const handleClick = () => {
         border-color 0.25s ease,
         background 0.3s ease;
     border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* 让内容在等高容器中均匀分布 */
+    height: 100%; /* 填满 grid 单元格高度 */
+    min-width: 0; /* 允许在 grid 中收缩 */
+    overflow: hidden; /* 防止内容溢出 */
+}
+
+/* 键盘焦点可见状态（可点击卡片）*/
+.stat-card--clickable:focus-visible {
+    outline: none;
+    box-shadow:
+        0 4px 20px -6px rgba(0, 0, 0, 0.15),
+        0 0 0 3px var(--primary-bg),
+        0 0 0 5px var(--primary-color);
 }
 
 /* ---- 底部光晕装饰线（hover 时亮起） ---- */
@@ -117,6 +195,69 @@ const handleClick = () => {
 /* 可点击态 */
 .stat-card--clickable {
     cursor: pointer;
+}
+
+/* ================================================================
+   尺寸变体 — Bento Grid 适配
+   ================================================================ */
+
+/* ---- Large（主卡片，占据 2x1 空间） ---- */
+.stat-card--large {
+    padding: 20px 24px;
+}
+
+.stat-card--large .stat-content {
+    gap: 20px;
+}
+
+.stat-card--large .stat-icon {
+    width: 56px;
+    height: 56px;
+}
+
+.stat-card--large .stat-value {
+    font-size: 36px;
+}
+
+.stat-card--large .stat-label {
+    font-size: 15px;
+}
+
+/* ---- Normal（标准卡片，默认尺寸） ---- */
+.stat-card--normal {
+    padding: 16px;
+}
+
+/* ---- Wide（全宽数据流卡片） ---- */
+.stat-card--wide {
+    padding: 24px 32px;
+    background: linear-gradient(135deg, var(--card-bg) 0%, var(--bg-secondary) 100%);
+}
+
+.stat-card--wide .stat-content {
+    justify-content: center;
+    text-align: center;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.stat-card--wide .stat-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-md);
+}
+
+.stat-card--wide .stat-value {
+    font-size: 42px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.stat-card--wide .stat-label {
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.8;
 }
 
 /* ---- 统一 hover 效果 ---- */
@@ -145,6 +286,7 @@ const handleClick = () => {
     display: flex;
     align-items: center;
     gap: 16px;
+    flex: 1; /* 自动填充可用空间 */
 }
 
 /* ---- 图标容器 ---- */
@@ -176,8 +318,9 @@ const handleClick = () => {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    min-width: 0;
+    min-width: 0; /* 允许收缩 */
     flex: 1;
+    overflow: hidden; /* 防止内容溢出 */
 }
 
 .stat-value {
@@ -186,6 +329,9 @@ const handleClick = () => {
     color: var(--text-primary);
     line-height: 1.2;
     transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.3s ease;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* hover 数值微微上移 + 变色 */
@@ -204,6 +350,9 @@ const handleClick = () => {
     color: var(--text-secondary);
     font-weight: 400;
     transition: color 0.3s ease;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .stat-card:hover .stat-label {
@@ -218,6 +367,8 @@ const handleClick = () => {
     font-size: 12px;
     color: var(--text-tertiary);
     transition: color 0.3s ease;
+    overflow: hidden;
+    flex-shrink: 0; /* 防止 footer 被压缩 */
 }
 
 .stat-card:hover .stat-footer {

@@ -24,6 +24,8 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+
 /** 内置图标 SVG 路径 - 定义在外部确保模板可访问 */
 const icons = {
     plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
@@ -42,6 +44,51 @@ const icons = {
 }
 
 const emit = defineEmits(['click'])
+
+/**
+ * SVG 安全白名单 - 只允许这些元素和属性
+ */
+const SVG_ALLOWED_TAGS = new Set(['svg', 'path', 'line', 'polyline', 'circle', 'rect', 'polygon', 'ellipse'])
+const SVG_ALLOWED_ATTRS = new Set([
+    'viewBox', 'fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin',
+    'stroke-opacity', 'cx', 'cy', 'r', 'rx', 'ry', 'x1', 'y1', 'x2', 'y2',
+    'points', 'width', 'height', 'x', 'y', 'd', 'transform'
+])
+
+/**
+ * 安全过滤 SVG 字符串（防止 XSS）
+ * @param {string} svgString - 原始 SVG 字符串
+ * @returns {string} 过滤后的安全 SVG
+ */
+const sanitizeSvg = (svgString) => {
+    if (!svgString) return ''
+    
+    const parser = new DOMParser()
+    const doc = parser.parseFromString(`<svg>${svgString}</svg>`, 'image/svg+xml')
+    
+    if (doc.querySelector('parsererror')) {
+        console.warn('[ActionButton] Invalid SVG detected, rendering blocked')
+        return ''
+    }
+    
+    const allowedElements = doc.querySelectorAll(Array.from(SVG_ALLOWED_TAGS).join(','))
+    let safeSvg = ''
+    
+    allowedElements.forEach(el => {
+        if (!SVG_ALLOWED_TAGS.has(el.tagName.toLowerCase())) return
+        
+        let attrs = ''
+        Array.from(el.attributes).forEach(attr => {
+            if (SVG_ALLOWED_ATTRS.has(attr.name.toLowerCase())) {
+                attrs += ` ${attr.name}="${attr.value.replace(/"/g, '&quot;')}"`
+            }
+        })
+        
+        safeSvg += `<${el.tagName}${attrs}/>`
+    })
+    
+    return safeSvg
+}
 
 const props = defineProps({
     /** 按钮文字（支持 slot 覆盖，不传则使用 slot 内容） */
@@ -103,7 +150,7 @@ const props = defineProps({
     }
 })
 
-const iconSvg = icons[props.icon] || ''
+const iconSvg = computed(() => sanitizeSvg(icons[props.icon] || ''))
 
 const handleClick = (e) => {
     if (props.stop && e) e.stopPropagation()
@@ -121,11 +168,39 @@ const handleClick = (e) => {
     border: none;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: 
+        transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1),
+        background-color 0.2s ease,
+        box-shadow 0.2s ease,
+        opacity 0.15s ease;
     user-select: none;
     position: relative;
     z-index: 1;
     white-space: nowrap;
+    overflow: hidden;
+}
+
+/* ---- Ripple 波纹效果容器 ---- */
+.action-btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle, rgba(255,255,255,0.3) 10%, transparent 10%);
+    transform: scale(10);
+    opacity: 0;
+    transition: transform 0.5s ease, opacity 0.4s ease;
+    pointer-events: none;
+}
+
+.action-btn:active::after {
+    transform: scale(0);
+    opacity: 1;
+    transition: 0s;
+}
+
+/* ---- 按压反馈：物理下压感 ---- */
+.action-btn:not(:disabled):not(.action-btn--loading):active {
+    transform: scale(0.96) translateY(1px);
 }
 
 /* ---- 尺寸变体 ---- */
@@ -141,6 +216,10 @@ const handleClick = (e) => {
     width: 14px;
     height: 14px;
     transition: transform 0.15s ease;
+}
+/* hover 时轻微提升 */
+.action-btn--normal:not(:disabled):hover {
+    transform: translateY(-1px);
 }
 
 /* small — 小号按钮（用于表格行内操作） */
